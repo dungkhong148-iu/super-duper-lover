@@ -10,3 +10,6 @@
 [2026-11-08 10:22] director: A2 approved (2f487ab). Re-ran :core:test OK (27 tests); read Budgets/Money/Goals, match plan. A3 assigned to head_agent.
 [2026-11-08 10:23] director: rule 16 changed (user): predict C: writes before adding something new; small writes need no report; only large ones need the user's OK in advance; no routine C: checks.
 [2026-11-08 10:27] director: app named ChiLi (user). applicationId com.chili.app (debug com.chili.app.debug); Kotlin package unchanged. head_agent applies it in A3.
+[2026-11-08 11:10] head_agent: A3 done. Room schema v1 + Repo (plan interface exactly), Accounts tab, one-screen Add transaction, Transactions tab, app renamed ChiLi (com.chili.app). Commits 5d6df33 (A3), e82d5b6 (stub screens + routes for B1-B3), specs/B1-B4.txt committed. :core:test + assembleDebug + assembleRelease OK. Reported to director, hand-off sent to back_agent.
+[2026-11-08 10:32] director: A3 approved (5d6df33, e82d5b6, c5ef1c7); rebuilt OK. Specs B1-B4 read. A3b (Repo.deleteContribution + B3 spec update) assigned to head_agent.
+[2026-11-08 10:32] director -> agy_director: B1, B2, B4 sent via deck_inject (specs/B1.txt, B2.txt, B4.txt; disjoint files, may run in parallel). B3 follows after A3b.
