@@ -33,6 +33,7 @@ import com.superduperlover.finance.ui.categories.CategoriesScreen
 import com.superduperlover.finance.ui.goals.GoalDetailScreen
 import com.superduperlover.finance.ui.goals.GoalsScreen
 import com.superduperlover.finance.ui.home.HomeScreen
+import com.superduperlover.finance.ui.settings.SettingsScreen
 import com.superduperlover.finance.ui.transactions.TransactionsScreen
 
 private enum class Tab(val route: String, val label: String, val icon: ImageVector) {
@@ -45,6 +46,7 @@ private enum class Tab(val route: String, val label: String, val icon: ImageVect
 
 private const val ADD_ROUTE = "add/{txnId}"
 private const val CATEGORIES_ROUTE = "categories"
+private const val SETTINGS_ROUTE = "settings"
 
 @Composable
 fun FinanceApp() {
@@ -97,7 +99,10 @@ fun FinanceApp() {
                 )
             }
             composable(Tab.ACCOUNTS.route) {
-                AccountsScreen(onOpenCategories = { navController.navigate(CATEGORIES_ROUTE) })
+                AccountsScreen(
+                    onOpenCategories = { navController.navigate(CATEGORIES_ROUTE) },
+                    onOpenSettings = { navController.navigate(SETTINGS_ROUTE) },
+                )
             }
             composable(Tab.TRANSACTIONS.route) {
                 TransactionsScreen(onEdit = { id -> navController.navigate("add/$id") })
@@ -106,6 +111,7 @@ fun FinanceApp() {
             composable(Tab.GOALS.route) {
                 GoalsScreen(onOpenGoal = { id -> navController.navigate("goal/$id") })
             }
+            composable(SETTINGS_ROUTE) { SettingsScreen(onBack = { navController.popBackStack() }) }
             composable(CATEGORIES_ROUTE) { CategoriesScreen(onBack = { navController.popBackStack() }) }
             composable(
                 "goal/{goalId}",

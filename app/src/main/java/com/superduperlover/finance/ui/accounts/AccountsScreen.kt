@@ -49,7 +49,7 @@ import com.superduperlover.finance.ui.components.label
 import kotlinx.coroutines.launch
 
 @Composable
-fun AccountsScreen(onOpenCategories: () -> Unit) {
+fun AccountsScreen(onOpenCategories: () -> Unit, onOpenSettings: () -> Unit) {
     val repo = LocalRepo.current
     val accounts by repo.accounts().collectAsState(initial = emptyList())
     val txns by repo.txns().collectAsState(initial = emptyList())
@@ -100,6 +100,12 @@ fun AccountsScreen(onOpenCategories: () -> Unit) {
                 onClick = onOpenCategories,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
             ) { Text("Danh mục") }
+        }
+        item(key = "settings") {
+            OutlinedButton(
+                onClick = onOpenSettings,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            ) { Text("Cài đặt và sao lưu") }
         }
         item(key = "add") {
             OutlinedButton(
