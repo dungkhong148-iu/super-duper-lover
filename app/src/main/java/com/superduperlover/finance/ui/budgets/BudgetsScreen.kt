@@ -95,10 +95,10 @@ fun BudgetsScreen() {
     var monthStr by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
     val month = remember(monthStr) { YearMonth.parse(monthStr) }
 
-    val budgets by repo.budgets(month).collectAsState(initial = emptyList())
-    val txns by repo.txns(month = month).collectAsState(initial = emptyList())
-    val accounts by repo.accounts(includeArchived = true).collectAsState(initial = emptyList())
-    val categories by repo.categories(CategoryKind.EXPENSE, includeArchived = true).collectAsState(initial = emptyList())
+    val budgets by remember(repo, month) { repo.budgets(month) }.collectAsState(initial = emptyList())
+    val txns by remember(repo, month) { repo.txns(month = month) }.collectAsState(initial = emptyList())
+    val accounts by remember(repo) { repo.accounts(includeArchived = true) }.collectAsState(initial = emptyList())
+    val categories by remember(repo) { repo.categories(CategoryKind.EXPENSE, includeArchived = true) }.collectAsState(initial = emptyList())
 
     val accountsById = remember(accounts) { accounts.associateBy { it.id } }
     val categoriesById = remember(categories) { categories.associateBy { it.id } }

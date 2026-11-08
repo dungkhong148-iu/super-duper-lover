@@ -86,8 +86,8 @@ fun TransactionsScreen(onEdit: (Long) -> Unit) {
         repo.txns(month = month, accountId = filterAccountId, categoryId = filterCategoryId)
     }
     val rawTxns by txnsFlow.collectAsState(initial = emptyList())
-    val accounts by repo.accounts(includeArchived = true).collectAsState(initial = emptyList())
-    val categories by repo.categories(includeArchived = true).collectAsState(initial = emptyList())
+    val accounts by remember(repo) { repo.accounts(includeArchived = true) }.collectAsState(initial = emptyList())
+    val categories by remember(repo) { repo.categories(includeArchived = true) }.collectAsState(initial = emptyList())
     var toDelete by remember { mutableStateOf<Txn?>(null) }
 
     val txns = remember(rawTxns, searchText) {

@@ -71,7 +71,7 @@ private fun CategoryKind.color(): Color = when (this) {
 fun CategoriesScreen(onBack: () -> Unit) {
     val repo = LocalRepo.current
     val scope = rememberCoroutineScope()
-    val allCategories by repo.categories(includeArchived = true).collectAsState(initial = emptyList())
+    val allCategories by remember(repo) { repo.categories(includeArchived = true) }.collectAsState(initial = emptyList())
     var editing by remember { mutableStateOf<Category?>(null) }
 
     val expenseCategories = remember(allCategories) {

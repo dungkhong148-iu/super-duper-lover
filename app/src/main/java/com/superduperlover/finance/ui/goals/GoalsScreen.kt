@@ -31,7 +31,7 @@ import java.time.LocalDate
 @Composable
 fun GoalsScreen(onOpenGoal: (Long) -> Unit) {
     val repo = LocalRepo.current
-    val goals by repo.goals().collectAsState(initial = emptyList())
+    val goals by remember(repo) { repo.goals() }.collectAsState(initial = emptyList())
     var editingGoal by remember { mutableStateOf<Goal?>(null) }
 
     LazyColumn(
@@ -79,7 +79,7 @@ fun GoalsScreen(onOpenGoal: (Long) -> Unit) {
 @Composable
 private fun GoalCard(goal: Goal, onOpen: () -> Unit) {
     val repo = LocalRepo.current
-    val contributions by repo.contributions(goal.id).collectAsState(initial = emptyList())
+    val contributions by remember(repo, goal.id) { repo.contributions(goal.id) }.collectAsState(initial = emptyList())
     val progress = goalProgress(goal, contributions, LocalDate.now())
 
     Card(

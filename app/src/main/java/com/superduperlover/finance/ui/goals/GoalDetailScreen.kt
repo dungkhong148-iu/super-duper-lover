@@ -64,7 +64,7 @@ import kotlinx.coroutines.launch
 fun GoalDetailScreen(goalId: Long, onBack: () -> Unit) {
     val repo = LocalRepo.current
     val scope = rememberCoroutineScope()
-    val goalsNullable by repo.goals().collectAsState(initial = null)
+    val goalsNullable by remember(repo) { repo.goals() }.collectAsState(initial = null)
 
     if (goalsNullable == null) {
         return
@@ -78,7 +78,7 @@ fun GoalDetailScreen(goalId: Long, onBack: () -> Unit) {
         return
     }
 
-    val contributions by repo.contributions(goal.id).collectAsState(initial = emptyList())
+    val contributions by remember(repo, goal.id) { repo.contributions(goal.id) }.collectAsState(initial = emptyList())
     val progress = goalProgress(goal, contributions, LocalDate.now())
 
     var editingGoal by remember { mutableStateOf<Goal?>(null) }

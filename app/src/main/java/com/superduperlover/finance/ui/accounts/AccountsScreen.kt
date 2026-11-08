@@ -51,8 +51,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun AccountsScreen(onOpenCategories: () -> Unit, onOpenSettings: () -> Unit) {
     val repo = LocalRepo.current
-    val accounts by repo.accounts().collectAsState(initial = emptyList())
-    val txns by repo.txns().collectAsState(initial = emptyList())
+    val accounts by remember(repo) { repo.accounts() }.collectAsState(initial = emptyList())
+    val txns by remember(repo) { repo.txns() }.collectAsState(initial = emptyList())
     // null = sheet closed; id 0 = new account
     var editing by remember { mutableStateOf<Account?>(null) }
 

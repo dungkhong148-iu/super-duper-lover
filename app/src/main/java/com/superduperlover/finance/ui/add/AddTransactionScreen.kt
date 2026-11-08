@@ -89,8 +89,8 @@ private const val MILLIS_PER_DAY = 86_400_000L
 fun AddTransactionScreen(txnId: Long, onClose: () -> Unit, onGoAccounts: () -> Unit) {
     val repo = LocalRepo.current
     val scope = rememberCoroutineScope()
-    val allAccounts by repo.accounts(includeArchived = true).collectAsState(initial = emptyList())
-    val allCategories by repo.categories(includeArchived = true).collectAsState(initial = emptyList())
+    val allAccounts by remember(repo) { repo.accounts(includeArchived = true) }.collectAsState(initial = emptyList())
+    val allCategories by remember(repo) { repo.categories(includeArchived = true) }.collectAsState(initial = emptyList())
 
     var kindName by rememberSaveable { mutableStateOf(TxnKind.EXPENSE.name) }
     var digits by rememberSaveable { mutableStateOf("") }
