@@ -1,0 +1,89 @@
+SPEC U2 - Add transaction redesign + calculator pad     (writer: head_agent, 2026-11-08; base commit ee4724a)
+
+GOAL
+Rebuild the "Thêm / Sửa giao dịch" screen as in docs/ui-layout.md section 2 "Add transaction" (read it first, plus sections 3, 4, 5, 7),
+with a calculator number pad that uses `evalAmountExpr`. Speed stays the point: amount -> category -> save.
+Skill for visual decisions: .agents/skills/ui-ux-pro-max (search with --stack jetpack-compose; touch targets, forms, feedback).
+
+ENV (every shell)
+  . D:\android-tools\env.ps1
+Check command: .\gradlew :core:test assembleDebug   (must end BUILD SUCCESSFUL)
+
+FILES
+  REWRITE app/src/main/java/com/superduperlover/finance/ui/add/AddTransactionScreen.kt
+          keep exactly: fun AddTransactionScreen(txnId: Long, onClose: () -> Unit, onGoAccounts: () -> Unit)   (FinanceApp.kt calls it)
+  CREATE  app/src/main/java/com/superduperlover/finance/ui/add/AmountPad.kt       number pad composable (digits + operator column)
+  CREATE  app/src/main/java/com/superduperlover/finance/ui/add/AddPickers.kt      account picker sheet, category picker sheet
+Nothing else may change.
+
+DO NOT TOUCH
+  FinanceApp.kt, every other ui/ file (home, accounts, budgets, goals, categories, settings, transactions, components, theme),
+  data/*, core/*, build files, libs.versions.toml, app/schemas/*, manifest, res/. No new library, no material-icons-extended.
+  Do not edit docs/ui-layout.md (ask the director through agy_director if a rule is unclear).
+
+ALREADY AVAILABLE (use, do not reimplement)
+  core (package com.superduperlover.finance.core):
+    Currency {VND, TWD, USD}, MAIN_CURRENCY (TWD), Account.currency, Txn(..., note, toAmount: Long?),
+    parseAmount(text, currency): Long?, formatMoney(amount, currency): String, amountToInput(amount, currency): String,
+    currencySymbol(currency): String, evalAmountExpr(text, currency): Long?   // minor units; operators + - * / x ÷ −; null = invalid
+    validateTxn(txn, accounts, categories): List<String>     // Vietnamese messages; "số tiền" -> amount field, "tài khoản" -> accounts, "danh mục" -> category
+  ui/components: OneLineText, ChiLiTopBar, SectionCard, EmptyState, CurrencyChips, color helpers in Common.kt
+    (TxnKind.color()/label()/icon(), CategoryIcons.get(key), expenseColor(), incomeColor()), theme tokens in ui/theme/Theme.kt (ChiLiTheme.colors).
+  data: LocalRepo.current -> repo.accounts(includeArchived), repo.categories(includeArchived), repo.categoryUsage(kind), repo.txns(), repo.saveTxn(txn).
+  Read the CURRENT AddTransactionScreen.kt first: it already has the loading of an existing txn (edit mode), default account,
+  category sorting by usage, date picker, validateTxn error placement, "no accounts" card, cross-currency "Số tiền nhận" field and the
+  decimal point for USD. Keep every one of those behaviours; change the layout and the pad.
+
+LAYOUT (top to bottom; Vietnamese text; all single-line labels via OneLineText)
+ 1. Top bar: ✕ (Close, contentDescription "Đóng") left, title "Thêm giao dịch" / "Sửa giao dịch", ✓ (Check, "Lưu") right.
+    ✕ closes without saving. ✓ evaluates the expression first (step 7) and then runs the same save logic as today (validateTxn, then repo.saveTxn).
+    Build it with a Row like ChiLiTopBar does (ChiLiTopBar has a back arrow, not ✕; do not change it). Scaffold already pads system bars.
+ 2. Type tabs: three equal-width tabs "Chi tiêu" · "Thu nhập" · "Chuyển khoản", full width, one line each (OneLineText), each with its colour
+    (TxnKind.color()) and icon (TxnKind.icon()); selected = tinted container + 2dp border + semantics selected. Min height 48dp.
+ 3. Amount header: a rounded 16dp box tinted with the type colour at ~16% alpha (container tone, not full saturation):
+    sign ("-" expense, "+" income, none for transfer) + amount in displayMedium, ONE line, auto-size (OneLineText) + currency symbol is part of formatMoney.
+    Under the number, when the typed text has an operator, the expression itself in bodyMedium muted (e.g. `50k+30k`).
+    Shown value: no operator -> formatMoney(parseAmount(expr) ?: 0, currency); operator -> formatMoney(evalAmountExpr(expr, currency) ?: 0, currency).
+    Amount errors (errorsAbout("số tiền")) go right under the header in the error colour.
+ 4. Pickers row (two equal buttons, outlined, min height 56dp, label above value, value one line): "Tài khoản" | "Danh mục"
+    (transfer: "Từ tài khoản" | "Đến tài khoản"). Tap opens a ModalBottomSheet list (AddPickers.kt):
+      - account sheet: one row per account (non-archived, plus the selected one if archived): name, currency code, type icon is optional; selected row checked.
+      - category sheet: grid or list of categories of the type (sorted by usage like today), icon + name, selected checked.
+    Account errors under the row, category errors under the category picker.
+ 5. (not for transfer) One horizontal row of chips: the 8 most used categories of the type (usage order) + a final chip "Tất cả" that opens the
+    category sheet. Selecting a chip sets the category (chip selected state visible). Chips min height 48dp... use FilterChip.
+ 6. Compact row: date chip (OutlinedButton showing "Hôm nay" or the date; opens the same DatePickerDialog as today) + note field (OutlinedTextField "Ghi chú", single line, weight 1f).
+ 7. Cross-currency transfer only: below the pickers a field "Số tiền nhận (symbol)" exactly like today (OutlinedTextField, parseAmount with the TARGET account's currency).
+ 8. Number pad fixed at the bottom, above the system bar: 4 columns. Columns 1-3 digits:  7 8 9 / 4 5 6 / 1 2 3 / (000 or .) 0 ⌫.
+    Column 4 operators: ÷ × − + and "=" (five keys over four rows: make the "=" key span the last two rows, or use rows of ÷ × / − + / = taller; your choice,
+    but every key >= 56dp tall and >= 48dp wide, 6dp gaps). "000" key becomes "." when the currency has decimals (USD) - same rule as today.
+    Typing rules (state = one String `expr`):
+      - digit: append (leading zero rule as today; at most 14 characters total; for a USD number at most 2 digits after the "." in the current operand).
+      - "." (USD only): append only if the current operand has no "." yet; an empty operand gets "0.".
+      - operator: append the symbol (use "+", "-", "*", "/" in the string); if the last character is already an operator replace it; ignore at the very start (an expression cannot start with an operator).
+      - ⌫: remove the last character. Long-press ⌫ clears everything.
+      - "=": if evalAmountExpr(expr, currency) != null, replace expr with amountToInput(result, currency); otherwise show the amount error "Biểu thức không hợp lệ" (do NOT clear).
+    Keys' labels: show × ÷ − + (pretty), pass * / - + into the string. contentDescription for operators and ⌫ ("Chia", "Nhân", "Trừ", "Cộng", "Bằng", "Xóa số cuối").
+ 9. Save: amount = evalAmountExpr(expr, currency) (plain numbers go through it too; it handles groups and k). If null -> amount 0 so validateTxn reports "Số tiền phải lớn hơn 0".
+    Everything else in `save()` stays as it is today (toAmount for cross-currency, categoryId rules, validateTxn, errors per field).
+
+KEYBOARD
+  The note field opens the keyboard: hide the pad while the keyboard is open (WindowInsets.isImeVisible or imePadding with the pad inside the column and
+  verticalScroll for the middle part), so the form never gets covered. The middle part scrolls; the pad and nothing else is fixed.
+
+RULES
+  - Colours from theme tokens only (no raw hex). Text >= 12sp (pad keys 22sp digits, 18sp operators; labels >= 14sp where possible; auto-size minimum 10sp).
+  - Money only through the core functions above; never Double/Float for amounts.
+  - Large fonts: the screen must look right at font scale 1.0 and 1.25 (the user's phone uses 1.25): nothing clipped, no wrapped single-line labels.
+  - Every clickable thing >= 48dp.
+
+HOW TO CHECK (no UI/e2e tests, rule 14; code review is enough)
+ 1. .\gradlew :core:test assembleDebug -> BUILD SUCCESSFUL.
+ 2. Read your diff against this spec: only the 3 files in FILES changed (`git status`), signature unchanged, "=" and ✓ both use evalAmountExpr,
+    a VND/TWD account never gets a "." key, a USD account does, cross-currency transfer still asks for the received amount, edit mode still loads and saves,
+    no raw hex colours, every label that must be one line uses OneLineText.
+ 3. The director installs the debug APK and tries: 50k+30k = -> 80.000 ₫; USD account: 10.50+2.25 = -> $12.75; 100000/3 = -> 33.333 ₫;
+    transfer VND -> TWD asks for "Số tiền nhận"; edit an old transaction; no account -> the "Thêm tài khoản" card.
+
+COMMIT (local only, no push): `feat(ui): add transaction redesign with calculator pad`
+Report to agy_director: files changed, build result, open issues.
