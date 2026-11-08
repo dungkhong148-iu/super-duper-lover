@@ -1,4 +1,4 @@
-# Finance App v1 Implementation Plan
+# ChiLi (Finance App) v1 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. In this vibe deck, the director assigns each task to the owner named in it (see `task_plan.txt`); AGENTS.md rules apply.
 
@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Toolchain: only `D:\android-tools` (JDK 21, Android SDK command-line tools, platform 36, build-tools 36.0.0). Every shell that builds first runs `. D:\android-tools\env.ps1`. No Android Studio, no emulator, nothing new on C:.
-- Package `com.superduperlover.finance`; minSdk 26; compileSdk/targetSdk 36; debug `applicationIdSuffix ".debug"`.
+- App name **ChiLi**; applicationId `com.chili.app`; Kotlin package/namespace `com.superduperlover.finance`; minSdk 26; compileSdk/targetSdk 36; debug `applicationIdSuffix ".debug"`.
 - No DI framework, no network library, no image library. Release: R8 minify + shrinkResources; release APK < 10 MB.
 - Money: `Long` đồng. No `Double`/`Float` for amounts anywhere.
 - Display: `1.250.000 ₫`. Input: `1250000`, `1.250.000`, `1,250,000`, `1 250 000`, `50k`.

@@ -12,8 +12,8 @@ The director fills this section in for each project. Every rule below that says 
 - Code folders: `core/`, `app/`, `docs/`, `specs/`
 - Build command: `.\gradlew assembleDebug`
 - Test command: `.\gradlew :core:test`
-- Real data: the release app (`com.superduperlover.finance`) on the user's phone. Never install over it, clear it or run checks against it.
-- Test data: the debug app (`com.superduperlover.finance.debug`), installed with `adb install -r app\build\outputs\apk\debug\app-debug.apk`. Only the director installs on the user's phone.
+- Real data: the release app ChiLi (`com.chili.app`) on the user's phone. Never install over it, clear it or run checks against it.
+- Test data: the debug app ChiLi debug (`com.chili.app.debug`), installed with `adb install -r app\build\outputs\apk\debug\app-debug.apk`. Only the director installs on the user's phone.
 - **IMPORTANT - drive C:**: keep everything off the user's C: drive unless there is truly no other way (rule 16).
 
 ## Divisions & Team

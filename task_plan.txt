@@ -1,4 +1,4 @@
-TASK PLAN — Finance App v1  (written by director; only the director edits this file)
+TASK PLAN — ChiLi (finance app) v1  (written by director; only the director edits this file)
 
 Spec: docs/superpowers/specs/2026-11-08-finance-app-design.md
 Plan: docs/superpowers/plans/2026-11-08-finance-app.md  (steps, interfaces, checks for every task)

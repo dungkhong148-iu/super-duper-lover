@@ -1,4 +1,4 @@
-# Finance App — Design (v1)
+# ChiLi — Finance App Design (v1)
 
 Date: 2026-11-08. Owner: director. Status: draft, waiting for user review.
 
@@ -57,7 +57,7 @@ Director's call (user may override):
 
 - Stack: Kotlin, Jetpack Compose (Material 3), Room (SQLite), Navigation Compose, Jetpack Glance for widgets. No DI framework, no network library, no image library.
 - Modules: `:core` = pure Kotlin/JVM (all money rules, tested with JUnit, no Android), `:app` = Android app (UI, Room, widgets).
-- Package `com.superduperlover.finance`. minSdk 26, targetSdk and compileSdk 36.
+- App name (user decided): **ChiLi**. applicationId `com.chili.app` (fixed before the first release install). Kotlin package / namespace stays `com.superduperlover.finance`. minSdk 26, targetSdk and compileSdk 36.
 - Release build: R8 minify + shrinkResources. Weight target: release APK under 10 MB.
 - Debug build uses `applicationIdSuffix ".debug"`, so the debug app installs next to the release app with separate data. Debug app = test data; release app = the user's real data.
 - Testing by the user: the debug APK is installed on the Redmi over wireless ADB (no cable needed) at each milestone, with a short click-through checklist.
