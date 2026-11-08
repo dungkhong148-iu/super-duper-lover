@@ -10,6 +10,7 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.ui.components.ChiLiTopBar
@@ -44,11 +45,18 @@ fun HomeScreen(
                     selected = pagerState.currentPage == index,
                     onClick = { showPage(index) },
                     modifier = Modifier.heightIn(min = 48.dp),
+                    selectedContentColor = MaterialTheme.colorScheme.primary,
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     text = { OneLineText(title, style = MaterialTheme.typography.titleSmall) },
                 )
             }
         }
-        HorizontalPager(state = pagerState, modifier = Modifier.weight(1f)) { page ->
+        // Pages start at the top (the pager centres a short page vertically by default).
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.Top,
+        ) { page ->
             when (page) {
                 0 -> AccountsPage(
                     onOpenAccountTransactions = onOpenAccountTransactions,
