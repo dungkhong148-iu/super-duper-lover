@@ -24,3 +24,10 @@ fun goalProgress(goal: Goal, contributions: List<GoalContribution>, today: Local
     }
     return GoalProgress(saved = saved, remaining = remaining, ratio = ratio, done = done, perMonth = perMonth)
 }
+
+/**
+ * True when a contribution just brought the saved amount to the target: it was below before, is at or above now,
+ * and the goal is not completed yet. A reopened goal (saved already >= target) is not completed again by this.
+ */
+fun shouldAutoComplete(goal: Goal, savedBefore: Long, savedAfter: Long): Boolean =
+    goal.completedAt == null && savedBefore < goal.target && savedAfter >= goal.target

@@ -3,6 +3,8 @@ package com.superduperlover.finance.data
 import com.superduperlover.finance.core.AccountType
 import com.superduperlover.finance.core.BACKUP_VERSION
 import com.superduperlover.finance.core.accountColorKeyOrDefault
+import com.superduperlover.finance.core.budgetPeriodFromBackup
+import com.superduperlover.finance.core.budgetStartDateFromBackup
 import com.superduperlover.finance.core.currencyFromBackup
 import com.superduperlover.finance.core.validateBackup
 import org.json.JSONArray
@@ -72,7 +74,9 @@ fun BackupData.toJson(exportedAt: String): String {
     for (b in budgets) {
         val obj = JSONObject()
         obj.put("id", b.id)
-        obj.put("month", b.month)
+        obj.put("period", b.period)
+        obj.put("startDate", b.startDate)
+        obj.put("rollover", b.rollover)
         obj.put("accountId", jsonNull(b.accountId))
         obj.put("categoryId", jsonNull(b.categoryId))
         obj.put("limit", b.limitAmount)
@@ -90,6 +94,7 @@ fun BackupData.toJson(exportedAt: String): String {
         obj.put("deadline", jsonNull(g.deadline))
         obj.put("archived", g.archived)
         obj.put("currency", g.currency)
+        obj.put("completedAt", jsonNull(g.completedAt))
         goalsArr.put(obj)
     }
     root.put("goals", goalsArr)
@@ -201,11 +206,14 @@ fun parseBackup(root: Map<String, Any?>): BackupData {
         val r = it as Map<*, *>
         BudgetEntity(
             id = toLong(r["id"]),
-            month = toStr(r["month"]),
+            // version 3: period + startDate + rollover; versions 1-2: month -> MONTH from the 1st, rollover off
+            period = budgetPeriodFromBackup(r["period"]).name,
+            startDate = (budgetStartDateFromBackup(r) ?: error("Ngày bắt đầu không hợp lệ")).toString(),
             accountId = toLongOrNull(r["accountId"]),
             categoryId = toLongOrNull(r["categoryId"]),
             limitAmount = toLong(r["limit"]),
             currency = currencyFromBackup(r["currency"]).name,
+            rollover = (r["rollover"] as? Boolean) ?: false,
         )
     }
     val goals = (root["goals"] as List<*>).map {
@@ -217,6 +225,7 @@ fun parseBackup(root: Map<String, Any?>): BackupData {
             deadline = toStrOrNull(r["deadline"]),
             archived = toBool(r["archived"]),
             currency = currencyFromBackup(r["currency"]).name,
+            completedAt = toStrOrNull(r["completedAt"]),
         )
     }
     val contributions = (root["goalContributions"] as List<*>).map {

@@ -8,6 +8,8 @@ import com.superduperlover.finance.core.CategoryKind
 import com.superduperlover.finance.core.Goal
 import com.superduperlover.finance.core.GoalContribution
 import com.superduperlover.finance.core.Txn
+import com.superduperlover.finance.core.shouldAutoComplete
+import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -81,8 +83,8 @@ class Repo(private val db: AppDatabase) {
     suspend fun deleteTxn(id: Long) = dao.deleteTxn(id)
 
     // budgets
-    fun budgets(month: YearMonth): Flow<List<Budget>> =
-        dao.budgets(month.toString()).map { rows -> rows.map { it.toCore() } }
+    /** All budgets. Each repeats every period from its start date; use `budgetUsage(..., today)` for the current one. */
+    fun budgets(): Flow<List<Budget>> = dao.budgets().map { rows -> rows.map { it.toCore() } }
 
     suspend fun saveBudget(b: Budget): Long = idOf(b.id, dao.upsertBudget(b.toEntity()))
 
@@ -96,10 +98,28 @@ class Repo(private val db: AppDatabase) {
 
     suspend fun archiveGoal(id: Long) = dao.archiveGoal(id)
 
+    /** Marks the goal completed on [date] (by hand, before the target is reached). */
+    suspend fun completeGoal(id: Long, date: LocalDate = LocalDate.now()) = dao.setGoalCompletedAt(id, date.toString())
+
+    /** Back to "in progress". It is not completed again until a contribution crosses the target (see shouldAutoComplete). */
+    suspend fun reopenGoal(id: Long) = dao.setGoalCompletedAt(id, null)
+
     fun contributions(goalId: Long): Flow<List<GoalContribution>> =
         dao.contributions(goalId).map { rows -> rows.map { it.toCore() } }
 
-    suspend fun addContribution(c: GoalContribution): Long = idOf(c.id, dao.upsertContribution(c.toEntity()))
+    /**
+     * Adds (id = 0) or edits a contribution. When it brings the saved amount to the target, the goal is completed
+     * on [today] (only if it is not completed yet and was below the target before).
+     */
+    suspend fun addContribution(c: GoalContribution, today: LocalDate = LocalDate.now()): Long = db.withTransaction {
+        val goal = dao.goalById(c.goalId)?.toCore()
+        val savedBefore = dao.contributionSum(c.goalId)
+        val id = idOf(c.id, dao.upsertContribution(c.toEntity()))
+        if (goal != null && shouldAutoComplete(goal, savedBefore, dao.contributionSum(c.goalId))) {
+            dao.setGoalCompletedAt(goal.id, today.toString())
+        }
+        id
+    }
 
     suspend fun deleteContribution(id: Long) = dao.deleteContribution(id)
 

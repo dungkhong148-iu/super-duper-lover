@@ -6,6 +6,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.AutoMigrationSpec
+import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.execSQL
@@ -19,7 +20,7 @@ import androidx.sqlite.execSQL
         GoalEntity::class,
         ContributionEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
     autoMigrations = [AutoMigration(from = 1, to = 2, spec = Migration1To2::class)],
 )
@@ -29,6 +30,7 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "finance.db")
+                .addMigrations(Migration2To3)
                 .addCallback(SeedCallback)
                 .build()
     }
@@ -76,5 +78,28 @@ class Migration1To2 : AutoMigrationSpec {
             "UPDATE accounts SET colorKey = CASE type " +
                 "WHEN 'BANK' THEN 'sky' WHEN 'CARD' THEN 'indigo' WHEN 'EWALLET' THEN 'violet' ELSE 'emerald' END",
         )
+    }
+}
+
+/**
+ * v2 -> v3: budgets repeat (period, startDate, rollover) instead of belonging to one month; goals get completedAt.
+ * Existing budgets become MONTH budgets starting on the 1st of their old month, rollover off. Rows are copied,
+ * nothing is lost. The CREATE statement is the one Room generated into schemas/.../3.json.
+ */
+object Migration2To3 : Migration(2, 3) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            "CREATE TABLE IF NOT EXISTS `budgets_new` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`period` TEXT NOT NULL, `startDate` TEXT NOT NULL, `accountId` INTEGER, `categoryId` INTEGER, " +
+                "`limitAmount` INTEGER NOT NULL, `currency` TEXT NOT NULL DEFAULT 'VND', `rollover` INTEGER NOT NULL)",
+        )
+        connection.execSQL(
+            "INSERT INTO `budgets_new` (`id`, `period`, `startDate`, `accountId`, `categoryId`, `limitAmount`, " +
+                "`currency`, `rollover`) SELECT `id`, 'MONTH', `month` || '-01', `accountId`, `categoryId`, " +
+                "`limitAmount`, `currency`, 0 FROM `budgets`",
+        )
+        connection.execSQL("DROP TABLE `budgets`")
+        connection.execSQL("ALTER TABLE `budgets_new` RENAME TO `budgets`")
+        connection.execSQL("ALTER TABLE `goals` ADD COLUMN `completedAt` TEXT")
     }
 }

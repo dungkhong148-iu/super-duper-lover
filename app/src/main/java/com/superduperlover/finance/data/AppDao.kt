@@ -71,8 +71,8 @@ interface AppDao {
     suspend fun deleteTxn(id: Long)
 
     // budgets
-    @Query("SELECT * FROM budgets WHERE month = :month ORDER BY id")
-    fun budgets(month: String): Flow<List<BudgetEntity>>
+    @Query("SELECT * FROM budgets ORDER BY id")
+    fun budgets(): Flow<List<BudgetEntity>>
 
     @Upsert
     suspend fun upsertBudget(entity: BudgetEntity): Long
@@ -86,6 +86,15 @@ interface AppDao {
 
     @Upsert
     suspend fun upsertGoal(entity: GoalEntity): Long
+
+    @Query("SELECT * FROM goals WHERE id = :id")
+    suspend fun goalById(id: Long): GoalEntity?
+
+    @Query("UPDATE goals SET completedAt = :date WHERE id = :id")
+    suspend fun setGoalCompletedAt(id: Long, date: String?)
+
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM goal_contributions WHERE goalId = :goalId")
+    suspend fun contributionSum(goalId: Long): Long
 
     @Query("UPDATE goals SET archived = 1 WHERE id = :id")
     suspend fun archiveGoal(id: Long)

@@ -1,5 +1,6 @@
 package com.superduperlover.finance.core
 
+import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -59,8 +60,8 @@ class BackupTest {
     }
 
     @Test
-    fun version3Fails() {
-        val errors = validateBackup(minimalValidBackup(version = 3))
+    fun version4Fails() {
+        val errors = validateBackup(minimalValidBackup(version = 4))
         assertTrue(errors.isNotEmpty())
         assertTrue(errors.any { it.contains("Phiên bản") })
     }
@@ -160,7 +161,7 @@ class BackupTest {
         val backup = minimalValidBackup(version = 2L).apply {
             put("accounts", listOf(mapOf("id" to 1L, "name" to "A", "type" to "BANK", "openingBalance" to 0L, "currency" to "TWD", "colorKey" to "sky")))
             put("txns", listOf(mapOf("id" to 1L, "kind" to "TRANSFER", "amount" to 1_000_000L, "accountId" to 1L, "toAccountId" to 2L, "toAmount" to 1_250L, "categoryId" to null)))
-            put("budgets", listOf(mapOf("id" to 1L, "limit" to 5L, "accountId" to null, "categoryId" to null, "currency" to "USD")))
+            put("budgets", listOf(mapOf("id" to 1L, "month" to "2026-11", "limit" to 5L, "accountId" to null, "categoryId" to null, "currency" to "USD")))
             put("goals", listOf(mapOf("id" to 1L, "target" to 5L, "currency" to "VND")))
         }
         assertEquals(emptyList<String>(), validateBackup(backup))
@@ -176,5 +177,57 @@ class BackupTest {
             put("txns", listOf(mapOf("id" to 1L, "amount" to 5L, "toAmount" to 12.5)))
         }
         assertTrue(validateBackup(badReceived).any { it.contains("txns.toAmount") })
+    }
+
+    @Test
+    fun version3BudgetsWithPeriodStartDateAndRolloverAreValid() {
+        val backup = minimalValidBackup(version = 3L).apply {
+            put(
+                "budgets",
+                listOf(
+                    mapOf(
+                        "id" to 1L, "period" to "WEEK", "startDate" to "2026-11-05", "rollover" to true,
+                        "accountId" to null, "categoryId" to null, "limit" to 5L, "currency" to "TWD",
+                    ),
+                ),
+            )
+            put("goals", listOf(mapOf("id" to 1L, "target" to 5L, "currency" to "VND", "completedAt" to "2026-11-08")))
+        }
+        assertEquals(emptyList<String>(), validateBackup(backup))
+    }
+
+    @Test
+    fun budgetNeedsAStartDateOrAMonth() {
+        val backup = minimalValidBackup(version = 3L).apply {
+            put("budgets", listOf(mapOf("id" to 1L, "limit" to 5L)))
+        }
+        assertTrue(validateBackup(backup).any { it.contains("budgets.startDate") })
+        val badDate = minimalValidBackup(version = 3L).apply {
+            put("budgets", listOf(mapOf("id" to 1L, "startDate" to "2026-13-40", "limit" to 5L)))
+        }
+        assertTrue(validateBackup(badDate).any { it.contains("budgets.startDate") })
+    }
+
+    @Test
+    fun unknownPeriodAndBadCompletedAtFail() {
+        val badPeriod = minimalValidBackup(version = 3L).apply {
+            put("budgets", listOf(mapOf("id" to 1L, "month" to "2026-11", "period" to "DECADE", "limit" to 5L)))
+        }
+        assertTrue(validateBackup(badPeriod).any { it.contains("budgets.period") })
+        val badCompleted = minimalValidBackup(version = 3L).apply {
+            put("goals", listOf(mapOf("id" to 1L, "target" to 5L, "completedAt" to "yesterday")))
+        }
+        assertTrue(validateBackup(badCompleted).any { it.contains("goals.completedAt") })
+    }
+
+    @Test
+    fun oldMonthBudgetsBecomeMonthlyFromTheFirst() {
+        val old = mapOf("id" to 1L, "month" to "2026-11", "limit" to 5L)
+        assertEquals(LocalDate.of(2026, 11, 1), budgetStartDateFromBackup(old))
+        assertEquals(BudgetPeriod.MONTH, budgetPeriodFromBackup(old["period"]))
+        val v3 = mapOf("id" to 1L, "startDate" to "2026-11-25", "period" to "QUARTER")
+        assertEquals(LocalDate.of(2026, 11, 25), budgetStartDateFromBackup(v3))
+        assertEquals(BudgetPeriod.QUARTER, budgetPeriodFromBackup(v3["period"]))
+        assertEquals(null, budgetStartDateFromBackup(mapOf("id" to 1L)))
     }
 }

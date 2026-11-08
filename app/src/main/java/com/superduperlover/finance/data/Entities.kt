@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 import com.superduperlover.finance.core.Account
 import com.superduperlover.finance.core.AccountType
 import com.superduperlover.finance.core.Budget
+import com.superduperlover.finance.core.BudgetPeriod
 import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
 import com.superduperlover.finance.core.Currency
@@ -15,7 +16,6 @@ import com.superduperlover.finance.core.GoalContribution
 import com.superduperlover.finance.core.Txn
 import com.superduperlover.finance.core.TxnKind
 import java.time.LocalDate
-import java.time.YearMonth
 
 // Enums are stored by name, dates as ISO text (yyyy-MM-dd), months as yyyy-MM. Amounts are Long đồng.
 
@@ -57,15 +57,18 @@ data class TxnEntity(
     val toAmount: Long?,
 )
 
-@Entity(tableName = "budgets", indices = [Index("month")])
+@Entity(tableName = "budgets")
 data class BudgetEntity(
     @PrimaryKey(autoGenerate = true) val id: Long,
-    val month: String,
+    // BudgetPeriod name; the budget repeats every period, counted from startDate (ISO date). DB v3.
+    val period: String,
+    val startDate: String,
     val accountId: Long?,
     val categoryId: Long?,
     // "limit" is an SQL keyword, so the column is named differently.
     val limitAmount: Long,
     @ColumnInfo(defaultValue = "VND") val currency: String,
+    val rollover: Boolean,
 )
 
 @Entity(tableName = "goals")
@@ -76,6 +79,8 @@ data class GoalEntity(
     val deadline: String?,
     val archived: Boolean,
     @ColumnInfo(defaultValue = "VND") val currency: String,
+    /** ISO date the goal was completed, null = in progress. DB v3. */
+    val completedAt: String?,
 )
 
 @Entity(tableName = "goal_contributions", indices = [Index("goalId")])
@@ -100,15 +105,21 @@ fun TxnEntity.toCore() =
 fun Txn.toEntity() =
     TxnEntity(id, kind.name, amount, accountId, toAccountId, categoryId, date.toString(), note, toAmount)
 
-fun BudgetEntity.toCore() =
-    Budget(id, YearMonth.parse(month), accountId, categoryId, limitAmount, Currency.valueOf(currency))
+fun BudgetEntity.toCore() = Budget(
+    id, BudgetPeriod.valueOf(period), LocalDate.parse(startDate), accountId, categoryId, limitAmount,
+    Currency.valueOf(currency), rollover,
+)
 
-fun Budget.toEntity() = BudgetEntity(id, month.toString(), accountId, categoryId, limit, currency.name)
+fun Budget.toEntity() =
+    BudgetEntity(id, period.name, startDate.toString(), accountId, categoryId, limit, currency.name, rollover)
 
-fun GoalEntity.toCore() =
-    Goal(id, name, target, deadline?.let(LocalDate::parse), archived, Currency.valueOf(currency))
+fun GoalEntity.toCore() = Goal(
+    id, name, target, deadline?.let(LocalDate::parse), archived, Currency.valueOf(currency),
+    completedAt?.let(LocalDate::parse),
+)
 
-fun Goal.toEntity() = GoalEntity(id, name, target, deadline?.toString(), archived, currency.name)
+fun Goal.toEntity() =
+    GoalEntity(id, name, target, deadline?.toString(), archived, currency.name, completedAt?.toString())
 
 fun ContributionEntity.toCore() = GoalContribution(id, goalId, amount, LocalDate.parse(date))
 fun GoalContribution.toEntity() = ContributionEntity(id, goalId, amount, date.toString())

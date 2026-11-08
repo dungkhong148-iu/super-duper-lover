@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.R
 import com.superduperlover.finance.core.Budget
+import com.superduperlover.finance.core.BudgetPeriod
 import com.superduperlover.finance.core.BudgetStatus
 import com.superduperlover.finance.core.CategoryKind
 import com.superduperlover.finance.core.budgetUsage
@@ -50,7 +51,7 @@ import com.superduperlover.finance.ui.components.SectionCard
 import com.superduperlover.finance.ui.components.expenseColor
 import com.superduperlover.finance.ui.components.incomeColor
 import com.superduperlover.finance.ui.theme.ChiLiTheme
-import java.time.YearMonth
+import java.time.LocalDate
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -75,11 +76,10 @@ fun BudgetsScreen() {
     val repo = LocalRepo.current
     val scope = rememberCoroutineScope()
 
-    var monthStr by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
-    val month = remember(monthStr) { YearMonth.parse(monthStr) }
-
-    val budgets by remember(repo, month) { repo.budgets(month) }.collectAsState(initial = emptyList())
-    val txns by remember(repo, month) { repo.txns(month = month) }.collectAsState(initial = emptyList())
+    val today = remember { LocalDate.now() }
+    val budgets by remember(repo) { repo.budgets() }.collectAsState(initial = emptyList())
+    // Repeating budgets need every expense since their start date (periods roll over from the start).
+    val txns by remember(repo) { repo.txns() }.collectAsState(initial = emptyList())
     val accounts by remember(repo) { repo.accounts(includeArchived = true) }.collectAsState(initial = emptyList())
     val categories by remember(repo) { repo.categories(CategoryKind.EXPENSE, includeArchived = true) }.collectAsState(initial = emptyList())
 
@@ -87,45 +87,8 @@ fun BudgetsScreen() {
     val categoriesById = remember(categories) { categories.associateBy { it.id } }
 
     var editingBudget by remember { mutableStateOf<Budget?>(null) }
-    var copyMessage by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(monthStr) {
-        copyMessage = null
-    }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(
-                onClick = { monthStr = month.minusMonths(1).toString() },
-                modifier = Modifier.size(48.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                    contentDescription = "Tháng trước",
-                )
-            }
-            OneLineText(
-                text = "Tháng ${month.monthValue}/${month.year}",
-                style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.weight(1f),
-            )
-            IconButton(
-                onClick = { monthStr = month.plusMonths(1).toString() },
-                modifier = Modifier.size(48.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = "Tháng sau",
-                )
-            }
-        }
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -139,12 +102,12 @@ fun BudgetsScreen() {
                     message = "Đặt hạn mức để biết mỗi tháng còn được tiêu bao nhiêu.",
                     actionLabel = "Tạo ngân sách",
                     onAction = {
-                        editingBudget = Budget(id = 0L, month = month, accountId = null, categoryId = null, limit = 0L)
+                        editingBudget = newBudget(today)
                     },
                 )
             } else {
                 for (budget in budgets) {
-                    val usage = budgetUsage(budget, txns, accounts)
+                    val usage = budgetUsage(budget, txns, accounts, today)
                     val statusColor = budgetStatusColor(usage.status)
                     val accountName = budget.accountId?.let { accountsById[it]?.name ?: "?" } ?: "Tất cả tài khoản (${budget.currency.name})"
                     val categoryName = budget.categoryId?.let { categoriesById[it]?.name ?: "?" } ?: "Tất cả danh mục"
@@ -182,7 +145,7 @@ fun BudgetsScreen() {
                                 .height(8.dp),
                         )
                         OneLineText(
-                            text = "Đã chi ${formatMoney(usage.spent, budget.currency)} / ${formatMoney(usage.limit, budget.currency)}",
+                            text = "Đã chi ${formatMoney(usage.spent, budget.currency)} / ${formatMoney(usage.effectiveLimit, budget.currency)}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -201,63 +164,13 @@ fun BudgetsScreen() {
 
             Button(
                 onClick = {
-                    editingBudget = Budget(
-                        id = 0L,
-                        month = month,
-                        accountId = null,
-                        categoryId = null,
-                        limit = 0L,
-                    )
+                    editingBudget = newBudget(today)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 48.dp),
             ) {
                 OneLineText("Thêm ngân sách", style = MaterialTheme.typography.labelLarge)
-            }
-
-            OutlinedButton(
-                onClick = {
-                    scope.launch {
-                        val lastMonth = month.minusMonths(1)
-                        val lastMonthBudgets = repo.budgets(lastMonth).first()
-                        if (lastMonthBudgets.isEmpty()) {
-                            copyMessage = "Tháng trước chưa có ngân sách"
-                            return@launch
-                        }
-                        val currentBudgets = repo.budgets(month).first()
-                        val toCopy = lastMonthBudgets.filter { last ->
-                            currentBudgets.none { curr ->
-                                curr.accountId == last.accountId && curr.categoryId == last.categoryId
-                            }
-                        }
-                        if (toCopy.isEmpty()) {
-                            copyMessage = "Đã có đủ ngân sách"
-                        } else {
-                            copyMessage = null
-                            for (b in toCopy) {
-                                repo.saveBudget(b.copy(id = 0L, month = month))
-                            }
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp),
-            ) {
-                OneLineText("Sao chép từ tháng trước", style = MaterialTheme.typography.labelLarge)
-            }
-
-            copyMessage?.let { msg ->
-                Text(
-                    text = msg,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                )
             }
         }
     }
@@ -272,3 +185,13 @@ fun BudgetsScreen() {
         )
     }
 }
+
+/** A new budget: repeats monthly from the 1st of the current month, no rollover (the V2 form lets the user change this). */
+internal fun newBudget(today: LocalDate) = Budget(
+    id = 0L,
+    period = BudgetPeriod.MONTH,
+    startDate = today.withDayOfMonth(1),
+    accountId = null,
+    categoryId = null,
+    limit = 0L,
+)

@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.superduperlover.finance.core.AccountType
+import com.superduperlover.finance.core.BudgetPeriod
 import com.superduperlover.finance.core.TxnKind
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 import java.time.DayOfWeek
@@ -80,6 +81,15 @@ fun TxnKind.icon(): ImageVector = when (this) {
     TxnKind.EXPENSE -> Icons.Filled.KeyboardArrowDown
     TxnKind.INCOME -> Icons.Filled.KeyboardArrowUp
     TxnKind.TRANSFER -> Icons.AutoMirrored.Filled.ArrowForward
+}
+
+/** "hôm nay", "tuần này", "tháng này", "quý này", "năm nay": names the current period of a budget. */
+fun BudgetPeriod.thisLabel(): String = when (this) {
+    BudgetPeriod.DAY -> "hôm nay"
+    BudgetPeriod.WEEK -> "tuần này"
+    BudgetPeriod.MONTH -> "tháng này"
+    BudgetPeriod.QUARTER -> "quý này"
+    BudgetPeriod.YEAR -> "năm nay"
 }
 
 fun AccountType.label(): String = when (this) {

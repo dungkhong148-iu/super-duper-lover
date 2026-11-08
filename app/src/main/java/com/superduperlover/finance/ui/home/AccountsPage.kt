@@ -50,7 +50,9 @@ import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.SectionCard
 import com.superduperlover.finance.ui.components.expenseColor
 import com.superduperlover.finance.ui.components.incomeColor
+import java.time.LocalDate
 import java.time.YearMonth
+import com.superduperlover.finance.ui.components.thisLabel
 
 private val FullWidth: (androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope.() -> GridItemSpan) =
     { GridItemSpan(maxLineSpan) }
@@ -67,7 +69,8 @@ fun AccountsPage(
 ) {
     val repo = LocalRepo.current
     val month = remember { YearMonth.now() }
-    val budgets by remember(repo, month) { repo.budgets(month) }.collectAsState(initial = emptyList())
+    val today = remember { LocalDate.now() }
+    val budgets by remember(repo) { repo.budgets() }.collectAsState(initial = emptyList())
     val monthTxns by remember(repo, month) { repo.txns(month = month) }.collectAsState(initial = emptyList())
     val allTxns by remember(repo) { repo.txns() }.collectAsState(initial = emptyList())
     val accounts by remember(repo) { repo.accounts() }.collectAsState(initial = emptyList())
@@ -76,7 +79,8 @@ fun AccountsPage(
     // null = sheet closed; id 0 = new account
     var editing by remember { mutableStateOf<Account?>(null) }
 
-    val usages = budgets.map { it to budgetUsage(it, monthTxns, allAccounts) }
+    // budgets repeat every period: their usage needs every expense since the start date
+    val usages = budgets.map { it to budgetUsage(it, allTxns, allAccounts, today) }
     val totalBudgets = usages.filter { (b, _) -> b.categoryId == null }
     // Money left to spend, per currency (currencies are never added together).
     val leftByCurrency = CURRENCY_DISPLAY_ORDER.mapNotNull { currency ->
@@ -124,7 +128,7 @@ fun AccountsPage(
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 OneLineText(
-                    text = "Còn được tiêu tháng này (${month.monthValue}/${month.year})",
+                    text = "Còn được tiêu ${totalBudgets.map { (b, _) -> b.period }.distinct().singleOrNull()?.thisLabel() ?: "kỳ này"}",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -223,7 +227,7 @@ fun AccountsPage(
                             )
                             OneLineText(
                                 text = if (usage.remaining >= 0) {
-                                    "Đã chi ${formatMoney(usage.spent, budget.currency)} / ${formatMoney(usage.limit, budget.currency)}"
+                                    "Đã chi ${formatMoney(usage.spent, budget.currency)} / ${formatMoney(usage.effectiveLimit, budget.currency)}"
                                 } else {
                                     "Vượt ${formatMoney(-usage.remaining, budget.currency)}"
                                 },

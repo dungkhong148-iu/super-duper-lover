@@ -77,8 +77,8 @@ fun GoalSheet(
         if (trimmed.isNotEmpty() && parsedTarget != null) {
             scope.launch {
                 repo.saveGoal(
-                    Goal(
-                        id = goal.id,
+                    // copy: keeps completedAt (editing a goal must not reopen it)
+                    goal.copy(
                         name = trimmed,
                         target = parsedTarget,
                         deadline = deadline,

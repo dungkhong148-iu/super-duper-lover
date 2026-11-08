@@ -1,7 +1,14 @@
 package com.superduperlover.finance.core
 
-/** Written by export. Import also accepts version 1 (before currencies: no currency, colorKey or toAmount; VND). */
-const val BACKUP_VERSION = 2
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.DateTimeParseException
+
+/**
+ * Written by export. Import also accepts version 1 (before currencies: no currency, colorKey or toAmount; VND)
+ * and version 2 (budgets have `month` instead of period / startDate / rollover; goals have no completedAt).
+ */
+const val BACKUP_VERSION = 3
 const val OLDEST_SUPPORTED_BACKUP_VERSION = 1
 val BACKUP_TABLES = listOf("accounts", "categories", "txns", "budgets", "goals", "goalContributions")
 
@@ -46,6 +53,20 @@ fun validateBackup(root: Map<String, Any?>): List<String> {
                     ) {
                         errors.add("Tiền tệ không hợp lệ: $tableName.currency")
                     }
+                    if (tableName == "budgets") {
+                        val period = row["period"]
+                        if (period != null && (period !is String || BudgetPeriod.entries.none { it.name == period })) {
+                            errors.add("Chu kỳ không hợp lệ: budgets.period")
+                        }
+                        // version 3 has startDate; versions 1-2 have month (yyyy-MM)
+                        if (budgetStartDateFromBackup(row) == null) errors.add("Ngày bắt đầu không hợp lệ: budgets.startDate")
+                    }
+                    if (tableName == "goals") {
+                        val completedAt = row["completedAt"]
+                        if (completedAt != null && parseIsoDate(completedAt) == null) {
+                            errors.add("Ngày không hợp lệ: goals.completedAt")
+                        }
+                    }
                     for (field in integerFields) {
                         val value = row[field]
                         if (value != null && value !is Int && value !is Long) {
@@ -58,4 +79,21 @@ fun validateBackup(root: Map<String, Any?>): List<String> {
     }
 
     return errors.distinct()
+}
+
+private fun parseIsoDate(raw: Any?): LocalDate? =
+    (raw as? String)?.let { text -> try { LocalDate.parse(text) } catch (e: DateTimeParseException) { null } }
+
+/** Period of a backup budget row; missing or unknown (versions 1-2) -> MONTH. */
+fun budgetPeriodFromBackup(raw: Any?): BudgetPeriod =
+    (raw as? String)?.let { name -> BudgetPeriod.entries.firstOrNull { it.name == name } } ?: BudgetPeriod.MONTH
+
+/**
+ * Start date of a backup budget row: `startDate` (version 3), or the first day of `month` (versions 1-2,
+ * "2026-11" -> 2026-11-01). null when neither is valid.
+ */
+fun budgetStartDateFromBackup(row: Map<*, *>): LocalDate? {
+    parseIsoDate(row["startDate"])?.let { return it }
+    val month = row["month"] as? String ?: return null
+    return try { YearMonth.parse(month).atDay(1) } catch (e: DateTimeParseException) { null }
 }

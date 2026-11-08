@@ -2,6 +2,7 @@ package com.superduperlover.finance.core
 
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -44,5 +45,22 @@ class GoalsTest {
         assertTrue(p.done)
         assertEquals(0L, p.remaining)
         assertNull(p.perMonth)
+    }
+
+    @Test
+    fun autoCompleteOnlyWhenCrossingTheTarget() {
+        val g = Goal(1, "Du lịch", 1000, null)
+        assertTrue(shouldAutoComplete(g, savedBefore = 900, savedAfter = 1000))
+        assertTrue(shouldAutoComplete(g, savedBefore = 0, savedAfter = 5000))
+        assertFalse(shouldAutoComplete(g, savedBefore = 500, savedAfter = 800))
+    }
+
+    @Test
+    fun noAutoCompleteWhenAlreadyCompletedOrAlreadyOverTarget() {
+        val done = Goal(1, "Du lịch", 1000, null, completedAt = LocalDate.of(2026, 11, 8))
+        assertFalse(shouldAutoComplete(done, savedBefore = 1000, savedAfter = 1100))
+        // a reopened goal already has saved >= target, so one more contribution does not complete it again
+        val reopened = Goal(1, "Du lịch", 1000, null, completedAt = null)
+        assertFalse(shouldAutoComplete(reopened, savedBefore = 1000, savedAfter = 1100))
     }
 }

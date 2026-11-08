@@ -49,14 +49,26 @@ data class Txn(
     val toAmount: Long? = null,
 )
 
+/** How often a budget repeats. Periods are counted from [Budget.startDate] (see [periodRange]). */
+enum class BudgetPeriod { DAY, WEEK, MONTH, QUARTER, YEAR }
+
+/**
+ * A budget repeats every [period], counted from [startDate]. With [rollover] what is left at the end of a period
+ * (or the overspend, as a negative amount) is added to the limit of the next one.
+ */
 data class Budget(
     val id: Long,
-    val month: YearMonth,
+    val period: BudgetPeriod,
+    val startDate: LocalDate,
     val accountId: Long?,
     val categoryId: Long?,
     val limit: Long,
     val currency: Currency = MAIN_CURRENCY,
+    val rollover: Boolean = false,
 )
+
+/** First and last day (both included) of one budget period. */
+data class PeriodRange(val start: LocalDate, val endInclusive: LocalDate)
 
 data class Goal(
     val id: Long,
@@ -65,6 +77,8 @@ data class Goal(
     val deadline: LocalDate?,
     val archived: Boolean = false,
     val currency: Currency = MAIN_CURRENCY,
+    /** Day the goal was completed (automatically on reaching the target, or by hand); null = in progress. */
+    val completedAt: LocalDate? = null,
 )
 
 data class GoalContribution(
@@ -83,7 +97,14 @@ data class BudgetUsage(
     val remaining: Long,
     val ratio: Double,
     val status: BudgetStatus,
-)
+    /** The current period of the budget. */
+    val range: PeriodRange,
+    /** Amount carried in from earlier periods (rollover); 0 when rollover is off. Negative after an overspend. */
+    val carried: Long = 0,
+) {
+    /** The limit that counts in this period: [limit] plus [carried]. */
+    val effectiveLimit: Long get() = limit + carried
+}
 
 /** [ratio] is a display value only; it is never stored or added up. */
 data class GoalProgress(

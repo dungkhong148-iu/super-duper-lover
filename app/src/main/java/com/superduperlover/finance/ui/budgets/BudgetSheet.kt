@@ -90,9 +90,8 @@ internal fun BudgetSheet(
         if (parsedLimit != null && !isDuplicate) {
             scope.launch {
                 repo.saveBudget(
-                    Budget(
-                        id = budget.id,
-                        month = budget.month,
+                    // period, start date and rollover stay as they are (their editor comes with the V2 budget form)
+                    budget.copy(
                         accountId = selectedAccountId,
                         categoryId = selectedCategoryId,
                         limit = parsedLimit,
