@@ -1,0 +1,71 @@
+SPEC B1 - Categories screen            (writer: head_agent, 2026-11-08; base commit e82d5b6)
+
+GOAL
+Screen to manage categories: list by kind, add, rename, change icon, archive/restore, delete when unused.
+Opened from the "Danh mục" button on the Accounts tab (already wired in A3).
+
+ENV (every shell)
+  . D:\android-tools\env.ps1
+Check command: .\gradlew :core:test assembleDebug   (must end BUILD SUCCESSFUL)
+
+FILE TO EDIT (only this one)
+  app/src/main/java/com/superduperlover/finance/ui/categories/CategoriesScreen.kt
+It is a stub today: `fun CategoriesScreen(onBack: () -> Unit)` showing ComingSoon. Keep that exact signature
+(FinanceApp.kt already calls it). You may add private composables in the same file. You may NOT create new files
+unless the file gets above ~400 lines (then one extra file in the same folder, e.g. CategorySheet.kt).
+
+DO NOT TOUCH
+  FinanceApp.kt, AccountsScreen.kt, any other ui/ file, app/src/main/java/.../data/*, core/*, build.gradle.kts,
+  gradle/libs.versions.toml, app/schemas/*, AndroidManifest.xml. No new libraries. No material-icons-extended.
+
+DATA (already built, use as is - `val repo = LocalRepo.current`, import com.superduperlover.finance.ui.LocalRepo)
+  repo.categories(kind: CategoryKind? = null, includeArchived: Boolean = false): Flow<List<Category>>
+  suspend repo.saveCategory(c: Category): Long        // id = 0 inserts, otherwise updates
+  suspend repo.archiveCategory(id: Long)
+  suspend repo.deleteCategory(id: Long): DeleteResult // DELETED | HAS_TRANSACTIONS (deletes nothing if used)
+  Category(id, name, kind: CategoryKind {EXPENSE, INCOME}, icon: String, archived)
+  Restore an archived category with repo.saveCategory(c.copy(archived = false)).
+  Read flows with `val x by repo.categories(includeArchived = true).collectAsState(initial = emptyList())`.
+  Write inside `val scope = rememberCoroutineScope()` + `scope.launch { ... }`.
+
+LAYOUT (Vietnamese text)
+1. Top row like AddTransactionScreen.kt: IconButton(ArrowBack, contentDescription "Quay lại", onClick = onBack) + title "Danh mục".
+2. LazyColumn (keys = category ids, bottom contentPadding 24.dp). Two sections, headers "Chi tiêu" and "Thu nhập"
+   (labels from TxnKind.EXPENSE.label() / INCOME.label() in ui/components/Common.kt). Per section: active categories
+   (archived = false) as rows: icon in a 40.dp circle (CategoryIcons.get(c.icon), tinted with the kind colour),
+   name, tap opens the edit sheet. Row min height 56.dp.
+3. Under each section an OutlinedButton "Thêm danh mục" (opens the sheet with kind preset to that section).
+4. A third section "Đã lưu trữ" (only when at least one archived category exists): rows show name dimmed
+   (onSurfaceVariant) and a TextButton "Khôi phục".
+5. Edit/add sheet: copy the structure of `AccountSheet` in ui/accounts/AccountsScreen.kt (ModalBottomSheet,
+   skipPartiallyExpanded = true, verticalScroll + navigationBarsPadding + imePadding, 16.dp padding, spacedBy 12.dp):
+   - OutlinedTextField "Tên danh mục" (singleLine, error text under the field).
+   - Label "Biểu tượng" + a grid of the icons in CategoryIcons.all (ui/components/Common.kt; 5 per row via chunked(5),
+     each tile min 48.dp, selected tile: primaryContainer background + 2.dp primary border and
+     semantics { selected = true }). The map key is what you store in Category.icon.
+   - Kind is chosen only for a NEW category (two FilterChips "Chi tiêu" / "Thu nhập", preset from the section);
+     for an existing category show the kind as plain text (kind never changes after creation).
+   - Button "Lưu" (min height 48.dp). For an existing category also OutlinedButton "Lưu trữ" and
+     OutlinedButton "Xóa danh mục" (error colour).
+
+RULES
+- Name: trimmed, must not be empty -> error "Nhập tên danh mục". Must be unique within the same kind among ALL
+  categories including archived, case-insensitive, ignoring the category being edited
+  -> error "Tên danh mục đã tồn tại". Check against the list you already collected (includeArchived = true).
+- "Lưu trữ": repo.archiveCategory(id), close the sheet.
+- "Xóa danh mục": result = repo.deleteCategory(id). DELETED -> close sheet. HAS_TRANSACTIONS -> keep the sheet open and
+  show under the buttons, in the error colour: "Danh mục đã có giao dịch, chỉ có thể lưu trữ".
+- A category that is used by transactions is NEVER deleted; this is enforced by Repo, you only show the message.
+- Archived categories already disappear from the Add-transaction grid and still show on old transactions
+  (A3 code does that). Do not change that code.
+- Visible labels, error text under the field, touch targets >= 48.dp, icon + text (never colour alone).
+
+HOW TO CHECK (no UI/e2e tests, rule 14; code review is enough)
+1. .\gradlew :core:test assembleDebug -> BUILD SUCCESSFUL.
+2. Read your diff against this spec: signature unchanged, no other file changed (`git status` shows only
+   CategoriesScreen.kt), delete-with-transactions path shows the exact message, uniqueness check is
+   case-insensitive and ignores the edited item, archived section has "Khôi phục".
+3. The director installs the debug build on the phone and clicks through; you do not install anything.
+
+COMMIT (local only, no push): `feat: categories screen`
+Report to agy_director: files changed, build result, open issues.
