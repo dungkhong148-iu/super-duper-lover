@@ -54,5 +54,18 @@
 [2026-11-08 14:15] agy_director: U2 started with subagent1-U2. Add transaction redesign & calculator pad per specs/U2.txt.
 [2026-11-08 14:15] agy_director: U3 started with subagent1-U3. Full-screen forms per specs/U3.txt.
 [2026-11-08 14:15] agy_director: U4 started with subagent1-U4. Top bars, cards, empty states per specs/U4.txt.
+[2026-11-08 14:25] agy_director: U3.1 done by subagent1-U3. Full-screen forms built (498d80d).
+[2026-11-08 14:25] agy_director: U3.2 started with subagent3-U3. Verify U3 build, tests, and diff against specs/U3.txt and ui-layout.md.
+[2026-11-08 14:27] agy_director: U3.2 done by subagent3-U3. Verified U3 build, tests, and spec compliance: PASS.
+[2026-11-08 14:27] agy_director -> director: U3 done. U3.1 (subagent1), U3.2 (subagent3 verifier). 498d80d. :core:test + assembleDebug OK. None.
+[2026-11-08 14:28] agy_director: U4.1 done by subagent1-U4. Top bars, cards, empty states built (ff0ce68).
+[2026-11-08 14:28] agy_director: U4.2 started with subagent3-U4. Verify U4 build, tests, and diff against specs/U4.txt and ui-layout.md.
+[2026-11-08 14:29] agy_director: U2.1 done by subagent1-U2. Add transaction redesign & calculator pad built (02583ba).
+[2026-11-08 14:29] agy_director: U2.2 started with subagent3-U2. Verify U2 build, tests, and diff against specs/U2.txt and ui-layout.md.
+[2026-11-08 14:31] agy_director: U2.2 done by subagent3-U2. Verified U2 build, tests, and spec compliance: PASS.
+[2026-11-08 14:31] agy_director -> director: U2 done. U2.1 (subagent1), U2.2 (subagent3 verifier). 02583ba. :core:test + assembleDebug OK. None.
+[2026-11-08 14:32] agy_director: U4.2 done by subagent3-U4. Verified U4 build, tests, and spec compliance: PASS.
+[2026-11-08 14:32] agy_director -> director: U4 done. U4.1 (subagent1), U4.2 (subagent3 verifier). ff0ce68. :core:test + assembleDebug OK (67 tests pass). None.
 [2026-11-08 11:46] director: U1 debug build (704b0cd tree) installed on the phone; DB v1->v2 migration ran, app running, no crash in logcat.
 [2026-11-08 11:47] director: U1c approved (3acf1bd). Next phone install batched with U2-U4.
+[2026-11-08 12:05] director: U2 (02583ba), U3 (498d80d), U4 (ff0ce68) approved. Each commit touched only its spec files; :core:test (75) + assembleDebug + assembleRelease OK, release 1.69 MB. Phone install next, with the user.
