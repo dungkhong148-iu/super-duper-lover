@@ -82,6 +82,7 @@ import com.superduperlover.finance.ui.components.color
 import com.superduperlover.finance.ui.components.display
 import com.superduperlover.finance.ui.components.icon
 import com.superduperlover.finance.ui.components.label
+import com.superduperlover.finance.ui.theme.LocalAppPrefs
 import java.time.LocalDate
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -117,13 +118,19 @@ private fun currentOperand(text: String): String {
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun AddTransactionScreen(txnId: Long, onClose: () -> Unit, onGoAccounts: () -> Unit) {
+fun AddTransactionScreen(
+    txnId: Long,
+    onClose: () -> Unit,
+    onGoAccounts: () -> Unit,
+    initialKind: TxnKind = TxnKind.EXPENSE,
+) {
     val repo = LocalRepo.current
+    val prefs = LocalAppPrefs.current
     val scope = rememberCoroutineScope()
     val allAccounts by remember(repo) { repo.accounts(includeArchived = true) }.collectAsState(initial = emptyList())
     val allCategories by remember(repo) { repo.categories(includeArchived = true) }.collectAsState(initial = emptyList())
 
-    var kindName by rememberSaveable { mutableStateOf(TxnKind.EXPENSE.name) }
+    var kindName by rememberSaveable { mutableStateOf(initialKind.name) }
     var expr by rememberSaveable { mutableStateOf("") }
     var exprError by rememberSaveable { mutableStateOf<String?>(null) }
     var accountId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -158,11 +165,18 @@ fun AddTransactionScreen(txnId: Long, onClose: () -> Unit, onGoAccounts: () -> U
         }
     }
 
-    // New transaction: start on the first active account.
-    LaunchedEffect(allAccounts) {
-        if (txnId == 0L && accountId == null) {
-            allAccounts.firstOrNull { !it.archived }?.let { accountId = it.id }
+    // New transaction: start on the account used last for this type, else on the first active account.
+    fun applyRememberedAccounts(k: TxnKind) {
+        val active = allAccounts.filter { !it.archived }
+        val from = active.firstOrNull { it.id == prefs.lastAccount(k) } ?: active.firstOrNull()
+        accountId = from?.id
+        if (k == TxnKind.TRANSFER) {
+            toAccountId = active.firstOrNull { it.id == prefs.lastToAccount() && it.id != from?.id }?.id
         }
+    }
+
+    LaunchedEffect(allAccounts) {
+        if (txnId == 0L && accountId == null) applyRememberedAccounts(kind)
     }
 
     LaunchedEffect(kind) {
@@ -290,6 +304,7 @@ fun AddTransactionScreen(txnId: Long, onClose: () -> Unit, onGoAccounts: () -> U
         if (found.isEmpty() && evaluatedAmount != null) {
             scope.launch {
                 repo.saveTxn(txn)
+                if (txnId == 0L) prefs.rememberAccount(txn.kind, txn.accountId, txn.toAccountId)
                 onClose()
             }
         } else {
@@ -351,6 +366,7 @@ fun AddTransactionScreen(txnId: Long, onClose: () -> Unit, onGoAccounts: () -> U
                 selected = kind,
                 onPick = { picked ->
                     kindName = picked.name
+                    if (txnId == 0L) applyRememberedAccounts(picked)
                     if (picked == TxnKind.TRANSFER) {
                         categoryId = null
                     } else if (allCategories.firstOrNull { it.id == categoryId }?.kind?.name != picked.name) {

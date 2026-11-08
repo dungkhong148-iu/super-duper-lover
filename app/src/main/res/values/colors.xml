@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Same as the app background token in ui/theme/Theme.kt; used for the window before Compose draws. -->
+    <color name="chili_background">#F6FAF7</color>
+    <color name="widget_expense">#B91C1C</color>
+    <color name="widget_income">#047857</color>
+    <color name="widget_transfer">#475569</color>
+</resources>

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.superduperlover.finance.core.Currency
+import com.superduperlover.finance.core.TxnKind
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
@@ -31,6 +32,24 @@ class AppPrefs(context: Context) {
             }
         }
 
+    /**
+     * Account used by the last saved new transaction of [kind] (for a transfer: the source account), or null.
+     * The caller checks that it still exists and is not archived.
+     */
+    fun lastAccount(kind: TxnKind): Long? = prefs.getLong(lastAccountKey(kind), NONE).takeIf { it != NONE }
+
+    /** Target account of the last saved transfer, or null. */
+    fun lastToAccount(): Long? = prefs.getLong(KEY_LAST_TO_ACCOUNT, NONE).takeIf { it != NONE }
+
+    fun rememberAccount(kind: TxnKind, accountId: Long, toAccountId: Long? = null) {
+        prefs.edit().apply {
+            putLong(lastAccountKey(kind), accountId)
+            if (kind == TxnKind.TRANSFER && toAccountId != null) putLong(KEY_LAST_TO_ACCOUNT, toAccountId)
+        }.apply()
+    }
+
+    private fun lastAccountKey(kind: TxnKind) = "last_account_${kind.name.lowercase()}"
+
     private fun readThemeMode(): ThemeMode {
         val stored = prefs.getString(KEY_THEME_MODE, null) ?: return ThemeMode.SYSTEM
         return runCatching { ThemeMode.valueOf(stored) }.getOrDefault(ThemeMode.SYSTEM)
@@ -45,6 +64,8 @@ class AppPrefs(context: Context) {
         private const val PREFS_NAME = "chili_prefs"
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_SUMMARY_CURRENCY = "summary_currency"
+        private const val KEY_LAST_TO_ACCOUNT = "last_to_account_transfer"
+        private const val NONE = -1L
     }
 }
 

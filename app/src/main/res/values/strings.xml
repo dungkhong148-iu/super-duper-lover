@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ChiLi</string>
+    <string name="widget_quick_description">Thêm nhanh một giao dịch</string>
+    <string name="widget_pick_title">Widget thêm nhanh</string>
+    <string name="widget_pick_hint">Chọn loại giao dịch cho widget này</string>
+    <string name="kind_expense">Chi tiêu</string>
+    <string name="kind_income">Thu nhập</string>
+    <string name="kind_transfer">Chuyển khoản</string>
 </resources>

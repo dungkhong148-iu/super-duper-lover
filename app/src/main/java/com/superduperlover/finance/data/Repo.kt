@@ -7,11 +7,16 @@ import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
 import com.superduperlover.finance.core.Goal
 import com.superduperlover.finance.core.GoalContribution
+import com.superduperlover.finance.core.RECONCILE_CATEGORY_NAME
 import com.superduperlover.finance.core.Txn
+import com.superduperlover.finance.core.TxnKind
+import com.superduperlover.finance.core.reconcileKind
+import com.superduperlover.finance.core.reconcileTxn
 import com.superduperlover.finance.core.shouldAutoComplete
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 enum class DeleteResult { DELETED, HAS_TRANSACTIONS }
@@ -67,6 +72,36 @@ class Repo(private val db: AppDatabase) {
     /** category id -> number of transactions of [kind] that use it. Missing = never used. */
     suspend fun categoryUsage(kind: CategoryKind): Map<Long, Int> =
         dao.categoryUsage(kind.name).associate { it.categoryId to it.uses }
+
+    /** Like [categoryUsage] but counts only transactions of the last [days] days up to [today]. */
+    suspend fun categoryUsageRecent(kind: CategoryKind, days: Int = 60, today: LocalDate = LocalDate.now()): Map<Long, Int> =
+        dao.categoryUsageSince(kind.name, today.minusDays(days.toLong()).toString()).associate { it.categoryId to it.uses }
+
+    /**
+     * Id of the "Chênh lệch" category of [kind] (used for balance corrections). Created on first use, no schema
+     * change; an archived one is reused as is.
+     */
+    suspend fun reconcileCategoryId(kind: CategoryKind): Long = db.withTransaction {
+        dao.categoryByName(kind.name, RECONCILE_CATEGORY_NAME)?.id
+            ?: dao.upsertCategory(
+                CategoryEntity(0, RECONCILE_CATEGORY_NAME, kind.name, "tool", archived = false),
+            )
+    }
+
+    /**
+     * Makes the computed balance of the account equal [realBalance] by saving one Expense or Income (category
+     * "Chênh lệch") dated [today]. Returns the new transaction id, or null when there is no difference (or the
+     * account does not exist).
+     */
+    suspend fun reconcileAccount(accountId: Long, realBalance: Long, today: LocalDate = LocalDate.now()): Long? =
+        db.withTransaction {
+            val account = dao.accounts(true).first().firstOrNull { it.id == accountId }?.toCore() ?: return@withTransaction null
+            val txns = dao.txns(null, null, accountId, null).first().map { it.toCore() }
+            val kind = reconcileKind(account, txns, realBalance) ?: return@withTransaction null
+            val categoryId = reconcileCategoryId(if (kind == TxnKind.INCOME) CategoryKind.INCOME else CategoryKind.EXPENSE)
+            val txn = reconcileTxn(account, txns, realBalance, categoryId, today) ?: return@withTransaction null
+            dao.upsertTxn(txn.toEntity())
+        }
 
     // transactions
     /** Newest first. [month] filters by the transaction's own date; [accountId] also matches transfers into it. */

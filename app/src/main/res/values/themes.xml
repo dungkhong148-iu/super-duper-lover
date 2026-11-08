@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- QuickAddActivity: opaque window in the app background colour (no transparent theme, so no flash). -->
+    <style name="Theme.ChiLi.QuickAdd" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/chili_background</item>
+        <item name="android:windowIsTranslucent">false</item>
+    </style>
+
+    <!-- Widget type picker shown when a widget is placed. -->
+    <style name="Theme.ChiLi.Dialog" parent="@android:style/Theme.Material.Light.Dialog">
+        <item name="android:windowBackground">@color/chili_background</item>
+    </style>
+</resources>

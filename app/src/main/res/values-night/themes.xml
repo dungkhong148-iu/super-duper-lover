@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ChiLi.QuickAdd" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/chili_background</item>
+        <item name="android:windowIsTranslucent">false</item>
+    </style>
+
+    <style name="Theme.ChiLi.Dialog" parent="@android:style/Theme.Material.Dialog">
+        <item name="android:windowBackground">@color/chili_background</item>
+    </style>
+</resources>

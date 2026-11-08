@@ -56,6 +56,16 @@ interface AppDao {
     )
     suspend fun categoryUsage(kind: String): List<UsageRow>
 
+    /** Like [categoryUsage] but only transactions dated [since] (ISO date) or later. */
+    @Query(
+        "SELECT categoryId, COUNT(*) AS uses FROM txns " +
+            "WHERE categoryId IS NOT NULL AND kind = :kind AND date >= :since GROUP BY categoryId",
+    )
+    suspend fun categoryUsageSince(kind: String, since: String): List<UsageRow>
+
+    @Query("SELECT * FROM categories WHERE kind = :kind AND name = :name ORDER BY id LIMIT 1")
+    suspend fun categoryByName(kind: String, name: String): CategoryEntity?
+
     // transactions; from/to are ISO dates (inclusive), null = no limit
     @Query(
         "SELECT * FROM txns WHERE (:from IS NULL OR date >= :from) AND (:to IS NULL OR date <= :to) " +
