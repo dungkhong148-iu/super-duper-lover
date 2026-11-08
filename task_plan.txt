@@ -1,0 +1,37 @@
+TASK PLAN — Finance App v1  (written by director; only the director edits this file)
+
+Spec: docs/superpowers/specs/2026-11-08-finance-app-design.md
+Plan: docs/superpowers/plans/2026-11-08-finance-app.md  (steps, interfaces, checks for every task)
+
+Status: WAITING FOR USER APPROVAL of spec + plan. No task starts before that.
+
+Stack: Kotlin + Jetpack Compose + Room + Glance. Toolchain only in D:\android-tools (run `. D:\android-tools\env.ps1` first).
+Target phone: Xiaomi Redmi, Android 16, HyperOS 3.0. Debug app (.debug) = test data. Release app = real data.
+
+Project structure
+  core/         pure Kotlin logic + JUnit tests (:core)
+  app/          Android app (:app): data/ (Room, Repo), ui/, widget/
+  specs/        agy specs (<task ID>.txt)
+
+Phase A — foundation
+  A1  head_agent    Gradle skeleton, 5 empty tabs, debug + release build.                   TODO
+  A2  head_agent    Core logic: money, months, balance, budget, goal, validate (TDD).       TODO  after A1
+  A3  head_agent    Room + Repo + Accounts + Add transaction + list. Then specs B1-B4.      TODO  after A2
+
+Phase B — screens (agy_director, specs by head_agent)
+  B1  agy_director  Categories screen.                         TODO  after A3 + specs/B1.txt
+  B2  agy_director  Budgets tab.                               TODO  after A3 + specs/B2.txt
+  B3  agy_director  Goals tab.                                 TODO  after A3 + specs/B3.txt
+  B4  agy_director  Transaction filters, totals, search.       TODO  after A3 + specs/B4.txt
+
+Phase C — home, backup, release
+  C1  head_agent    Home dashboard.                            TODO  after B2, B3
+  C2  agy_director  Backup export/import (JSON).               TODO  after A3
+  C3  director      Release key + release APK on the phone.    TODO  after C1, C2
+
+Phase D — widgets (own plan after C3)
+
+Milestones for user testing (debug APK on the phone over wireless ADB)
+  M1 after A3: accounts and transactions.
+  M2 after B4: budgets, goals, categories, filters.
+  M3 after C3: release app with real data.

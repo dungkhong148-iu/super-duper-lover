@@ -1,0 +1,3 @@
+AFTERWORK - summaries by back_agent (readable by director, back_agent, subagent1, subagent2; not head_agent)
+Format per task: task ID | agent | what was built | files/commits | build/test | open issues
+

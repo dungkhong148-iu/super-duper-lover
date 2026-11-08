@@ -1,0 +1,16 @@
+VIBE DECK TEMPLATE - how to start a new project
+
+1. Copy this whole folder to the new project folder.
+2. In AGENTS.md, fill the agy session IDs under "Agy session IDs" (open each agy agent once,
+   then the director can read its ID from the agy conversation list).
+3. Rename the Claude sessions to match the roles: /rename [director], [head_agent], [back_agent].
+4. Put reference material in raw/.
+5. The director writes task_plan.txt (structure + task split) before any build work starts.
+6. Ask the director before git init, installs or anything that changes the machine.
+
+Files
+- AGENTS.md              team, director-only powers, permissions, workflow, rules
+- discussion_session.txt shared log for every agent (append only)
+- afterwork.txt          back_agent summaries (back_agent + director only)
+- raw/                   raw materials (designated agents only)
+- deck_inject.ps1        director-only: type a task into an open agy window
