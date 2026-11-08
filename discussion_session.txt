@@ -6,3 +6,5 @@
 [2026-11-08 10:13] director -> head_agent: A1 assigned (Gradle skeleton, :core + :app, 5 tabs, debug/release build). Base commit f0cd1f3; toolchain D:\android-tools via env.ps1; nothing on C: (rule 16).
 [2026-11-08 10:25] head_agent: A1 done. Gradle skeleton committed (369fda9): :core + :app, 5 empty tabs, SmokeTest passes, assembleDebug + assembleRelease build. Nothing written to C: (checked .gradle, .android, .kotlin, .m2). Reported to director, hand-off sent to back_agent.
 [2026-11-08 10:20] director: A1 approved (369fda9). Re-ran :core:test + assembleDebug OK; no C: writes. Pinned set stays on compileSdk 36. A2 assigned to head_agent.
+[2026-11-08 10:40] head_agent: A2 done. Core logic in :core (Money, Months, Balance, Budgets, Goals, Validate + Model types exactly as in plan), TDD, 27 tests pass, SmokeTest removed. Commit 2f487ab. Reported to director, hand-off sent to back_agent. No C: writes.
+[2026-11-08 10:22] director: A2 approved (2f487ab). Re-ran :core:test OK (27 tests); read Budgets/Money/Goals, match plan. A3 assigned to head_agent.
