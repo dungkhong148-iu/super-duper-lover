@@ -1,10 +1,9 @@
 package com.superduperlover.finance.ui.home
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +12,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -35,10 +36,12 @@ import com.superduperlover.finance.core.AccountType
 import com.superduperlover.finance.core.Budget
 import com.superduperlover.finance.core.BudgetStatus
 import com.superduperlover.finance.core.BudgetUsage
-import com.superduperlover.finance.core.accountBalance
-import com.superduperlover.finance.core.budgetUsage
 import com.superduperlover.finance.core.CURRENCY_DISPLAY_ORDER
+import com.superduperlover.finance.core.MAIN_CURRENCY
+import com.superduperlover.finance.core.TxnTotals
+import com.superduperlover.finance.core.accountBalance
 import com.superduperlover.finance.core.balancesByCurrency
+import com.superduperlover.finance.core.budgetUsage
 import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.core.txnTotals
 import com.superduperlover.finance.ui.LocalRepo
@@ -50,9 +53,10 @@ import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.SectionCard
 import com.superduperlover.finance.ui.components.expenseColor
 import com.superduperlover.finance.ui.components.incomeColor
+import com.superduperlover.finance.ui.components.thisLabel
+import com.superduperlover.finance.ui.theme.LocalAppPrefs
 import java.time.LocalDate
 import java.time.YearMonth
-import com.superduperlover.finance.ui.components.thisLabel
 
 private val FullWidth: (androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope.() -> GridItemSpan) =
     { GridItemSpan(maxLineSpan) }
@@ -61,13 +65,13 @@ private val FullWidth: (androidx.compose.foundation.lazy.grid.LazyGridItemSpanSc
  * "Tài khoản" page of the home tab (docs/ui-layout.md section 1): summary card, account tile grid,
  * "Ngân sách cần chú ý". Every number comes from `:core` (accountBalance, budgetUsage, txnTotals).
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AccountsPage(
     onOpenAccountTransactions: (Long) -> Unit,
     onOpenPlan: () -> Unit,
 ) {
     val repo = LocalRepo.current
+    val prefs = LocalAppPrefs.current
     val month = remember { YearMonth.now() }
     val today = remember { LocalDate.now() }
     val budgets by remember(repo) { repo.budgets() }.collectAsState(initial = emptyList())
@@ -79,14 +83,22 @@ fun AccountsPage(
     // null = sheet closed; id 0 = new account
     var editing by remember { mutableStateOf<Account?>(null) }
 
+    val availableCurrencies = CURRENCY_DISPLAY_ORDER.filter { currency ->
+        accounts.any { it.currency == currency }
+    }
+    val selectedCurrency = when {
+        prefs.summaryCurrency in availableCurrencies -> prefs.summaryCurrency!!
+        MAIN_CURRENCY in availableCurrencies -> MAIN_CURRENCY
+        availableCurrencies.isNotEmpty() -> availableCurrencies.first()
+        else -> MAIN_CURRENCY
+    }
+
     // budgets repeat every period: their usage needs every expense since the start date
     val usages = budgets.map { it to budgetUsage(it, allTxns, allAccounts, today) }
     val totalBudgets = usages.filter { (b, _) -> b.categoryId == null }
-    // Money left to spend, per currency (currencies are never added together).
-    val leftByCurrency = CURRENCY_DISPLAY_ORDER.mapNotNull { currency ->
-        val inCurrency = totalBudgets.filter { (b, _) -> b.currency == currency }
-        if (inCurrency.isEmpty()) null else currency to inCurrency.sumOf { (_, u) -> u.remaining }
-    }
+    val currencyTotalBudgets = totalBudgets.filter { (b, _) -> b.currency == selectedCurrency }
+    val periodLabel = currencyTotalBudgets.map { (b, _) -> b.period }.distinct().singleOrNull()?.thisLabel() ?: "kỳ này"
+
     val attention = usages
         .filter { (_, u) -> u.status != BudgetStatus.OK }
         .sortedWith(
@@ -94,7 +106,9 @@ fun AccountsPage(
                 .thenByDescending { it.second.ratio },
         )
     val totals = txnTotals(monthTxns, accounts)
+    val selectedTotals = totals[selectedCurrency] ?: TxnTotals(0L, 0L)
     val balanceByCurrency = balancesByCurrency(accounts, allTxns)
+    val selectedBalance = balanceByCurrency[selectedCurrency] ?: 0L
     val balances = accounts.map { it to accountBalance(it, allTxns) }
     val accountNames = allAccounts.associate { it.id to it.name }
     val categoryNames = categories.associate { it.id to it.name }
@@ -108,31 +122,46 @@ fun AccountsPage(
     ) {
         item(key = "summary", span = FullWidth) {
             SectionCard {
+                if (availableCurrencies.size > 1) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        availableCurrencies.forEach { currency ->
+                            FilterChip(
+                                selected = currency == selectedCurrency,
+                                onClick = { prefs.summaryCurrency = currency },
+                                label = {
+                                    OneLineText(
+                                        text = currency.name,
+                                        style = MaterialTheme.typography.labelLarge,
+                                    )
+                                },
+                                modifier = Modifier.heightIn(min = 48.dp),
+                            )
+                        }
+                    }
+                }
                 Text(
                     "Tổng số dư",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) {
-                    balanceByCurrency.forEach { (currency, total) ->
-                        OneLineText(
-                            text = formatMoney(total, currency),
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = if (total < 0) expenseColor() else MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                }
+                OneLineText(
+                    text = formatMoney(selectedBalance, selectedCurrency),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (selectedBalance < 0) expenseColor() else MaterialTheme.colorScheme.onSurface,
+                )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 OneLineText(
-                    text = "Còn được tiêu ${totalBudgets.map { (b, _) -> b.period }.distinct().singleOrNull()?.thisLabel() ?: "kỳ này"}",
+                    text = "Còn được tiêu $periodLabel",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                if (leftByCurrency.isEmpty()) {
+                if (currencyTotalBudgets.isEmpty()) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         OneLineText(
                             "Chưa có ngân sách tổng",
@@ -145,36 +174,46 @@ fun AccountsPage(
                         }
                     }
                 } else {
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                    ) {
-                        leftByCurrency.forEach { (currency, left) ->
-                            OneLineText(
-                                text = formatMoney(left, currency),
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = if (left < 0) expenseColor() else MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
-                    }
-                    if (leftByCurrency.any { it.second < 0 }) {
-                        Text("Đã vượt ngân sách", color = expenseColor(), style = MaterialTheme.typography.labelMedium)
+                    val left = currencyTotalBudgets.sumOf { (_, u) -> u.remaining }
+                    OneLineText(
+                        text = formatMoney(left, selectedCurrency),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = if (left < 0) expenseColor() else MaterialTheme.colorScheme.onSurface,
+                    )
+                    if (left < 0) {
+                        Text(
+                            "Đã vượt ngân sách",
+                            color = expenseColor(),
+                            style = MaterialTheme.typography.labelMedium,
+                        )
                     }
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Column(Modifier.weight(1f)) {
-                        OneLineText("Thu nhập", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        totals.forEach { (currency, t) ->
-                            OneLineText("+${formatMoney(t.income, currency)}", style = MaterialTheme.typography.titleSmall, color = incomeColor())
-                        }
+                        OneLineText(
+                            "Thu nhập",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        OneLineText(
+                            "+${formatMoney(selectedTotals.income, selectedCurrency)}",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = incomeColor(),
+                        )
                     }
                     Column(Modifier.weight(1f)) {
-                        OneLineText("Chi tiêu", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        totals.forEach { (currency, t) ->
-                            OneLineText("-${formatMoney(t.expense, currency)}", style = MaterialTheme.typography.titleSmall, color = expenseColor())
-                        }
+                        OneLineText(
+                            "Chi tiêu",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        OneLineText(
+                            "-${formatMoney(selectedTotals.expense, selectedCurrency)}",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = expenseColor(),
+                        )
                     }
                 }
             }

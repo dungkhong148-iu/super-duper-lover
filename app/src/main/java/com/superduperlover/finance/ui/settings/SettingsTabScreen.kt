@@ -22,10 +22,23 @@ import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.ui.components.ChiLiTopBar
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.SectionCard
+import com.superduperlover.finance.ui.theme.LocalAppPrefs
+import com.superduperlover.finance.ui.theme.ThemeMode
 
 /** "Cài đặt" tab: a list of settings entries (docs/ui-layout.md section 1). */
 @Composable
-fun SettingsTabScreen(onOpenCategories: () -> Unit, onOpenBackup: () -> Unit) {
+fun SettingsTabScreen(
+    onOpenCategories: () -> Unit,
+    onOpenBackup: () -> Unit,
+    onOpenAppearance: () -> Unit,
+) {
+    val prefs = LocalAppPrefs.current
+    val themeSubtitle = when (prefs.themeMode) {
+        ThemeMode.SYSTEM -> "Theo hệ thống"
+        ThemeMode.LIGHT -> "Sáng"
+        ThemeMode.DARK -> "Tối"
+    }
+
     Column(Modifier.fillMaxSize()) {
         ChiLiTopBar("Cài đặt")
         Column(
@@ -33,6 +46,8 @@ fun SettingsTabScreen(onOpenCategories: () -> Unit, onOpenBackup: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             SectionCard {
+                SettingsRow("Giao diện", themeSubtitle, onOpenAppearance)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 SettingsRow("Danh mục", "Thêm, đổi tên, lưu trữ danh mục chi tiêu và thu nhập", onOpenCategories)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 SettingsRow("Sao lưu và khôi phục", "Xuất hoặc nhập toàn bộ dữ liệu ra tệp", onOpenBackup)

@@ -289,7 +289,7 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
                                 Icon(
                                     imageVector = Icons.Filled.Check,
                                     contentDescription = null,
-                                    tint = Color.White,
+                                    tint = OnAccountTile,
                                     modifier = Modifier.size(20.dp),
                                 )
                             }

@@ -31,6 +31,7 @@ import com.superduperlover.finance.ui.components.ChiLiTopBar
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.goals.GoalDetailScreen
 import com.superduperlover.finance.ui.home.HomeScreen
+import com.superduperlover.finance.ui.settings.AppearanceScreen
 import com.superduperlover.finance.ui.settings.SettingsScreen
 import com.superduperlover.finance.ui.settings.SettingsTabScreen
 import com.superduperlover.finance.ui.transactions.TransactionsScreen
@@ -45,6 +46,7 @@ private enum class Tab(val route: String, val label: String, val icon: ImageVect
 private const val ADD_ROUTE = "add/{txnId}"
 private const val CATEGORIES_ROUTE = "categories"
 private const val BACKUP_ROUTE = "backup"
+private const val APPEARANCE_ROUTE = "appearance"
 
 // Transactions tab; the optional argument opens it already filtered to one account (tap on an account tile).
 private const val TRANSACTIONS_PATTERN = "transactions?accountId={accountId}"
@@ -135,8 +137,10 @@ fun FinanceApp() {
                 SettingsTabScreen(
                     onOpenCategories = { navController.navigate(CATEGORIES_ROUTE) },
                     onOpenBackup = { navController.navigate(BACKUP_ROUTE) },
+                    onOpenAppearance = { navController.navigate(APPEARANCE_ROUTE) },
                 )
             }
+            composable(APPEARANCE_ROUTE) { AppearanceScreen(onBack = { navController.popBackStack() }) }
             composable(BACKUP_ROUTE) { SettingsScreen(onBack = { navController.popBackStack() }) }
             composable(CATEGORIES_ROUTE) { CategoriesScreen(onBack = { navController.popBackStack() }) }
             composable(

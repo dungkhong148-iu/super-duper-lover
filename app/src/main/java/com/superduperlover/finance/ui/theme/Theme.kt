@@ -130,7 +130,11 @@ val OnAccountTile = Color.White
 
 @Composable
 fun FinanceTheme(content: @Composable () -> Unit) {
-    val dark = isSystemInDarkTheme()
+    val dark = when (LocalAppPrefs.current.themeMode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
     CompositionLocalProvider(LocalChiLiColors provides if (dark) DarkTokens else LightTokens) {
         MaterialTheme(colorScheme = if (dark) DarkScheme else LightScheme, content = content)
     }
