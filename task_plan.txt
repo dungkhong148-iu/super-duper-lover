@@ -31,6 +31,9 @@ Phase C — home, backup, release
   A4  head_agent    Remember repo Flows in screens (no Flow re-creation per recomposition). DONE 0fa49d3 (approved)
   C3  director      Release key + release APK on the phone.    TODO  after C1, C2
 
+Fixes from user testing
+  F1  test_fix      Bottom nav labels clipped at font_scale 1.25.   ASSIGNED 2026-11-08
+
 Phase D — widgets (own plan after C3)
 
 Milestones for user testing (debug APK on the phone over wireless ADB)
