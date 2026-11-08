@@ -72,16 +72,16 @@ private val AmberLight = Color(0xFFB26A00)
 private val AmberDark = Color(0xFFFFB74D)
 
 @Composable
-private fun amberColor(): Color = if (isSystemInDarkTheme()) AmberDark else AmberLight
+internal fun amberColor(): Color = if (isSystemInDarkTheme()) AmberDark else AmberLight
 
 @Composable
-private fun budgetStatusColor(status: BudgetStatus): Color = when (status) {
+internal fun budgetStatusColor(status: BudgetStatus): Color = when (status) {
     BudgetStatus.OK -> incomeColor()
     BudgetStatus.WARN -> amberColor()
     BudgetStatus.OVER -> expenseColor()
 }
 
-private fun BudgetStatus.label(): String = when (this) {
+internal fun BudgetStatus.statusLabel(): String = when (this) {
     BudgetStatus.OK -> "Ổn"
     BudgetStatus.WARN -> "Sắp hết"
     BudgetStatus.OVER -> "Vượt mức"
@@ -198,7 +198,7 @@ fun BudgetsScreen() {
                                         .heightIn(min = 8.dp),
                                 )
                                 Text(
-                                    text = usage.status.label(),
+                                    text = usage.status.statusLabel(),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = statusColor,
                                 )

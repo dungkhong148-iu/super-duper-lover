@@ -32,7 +32,7 @@ import com.superduperlover.finance.ui.budgets.BudgetsScreen
 import com.superduperlover.finance.ui.categories.CategoriesScreen
 import com.superduperlover.finance.ui.goals.GoalDetailScreen
 import com.superduperlover.finance.ui.goals.GoalsScreen
-import com.superduperlover.finance.ui.components.ComingSoon
+import com.superduperlover.finance.ui.home.HomeScreen
 import com.superduperlover.finance.ui.transactions.TransactionsScreen
 
 private enum class Tab(val route: String, val label: String, val icon: ImageVector) {
@@ -89,7 +89,13 @@ fun FinanceApp() {
             startDestination = Tab.HOME.route,
             modifier = Modifier.padding(padding),
         ) {
-            composable(Tab.HOME.route) { ComingSoon("Tổng quan") }
+            composable(Tab.HOME.route) {
+                HomeScreen(
+                    onOpenBudgets = { openTab(Tab.BUDGETS) },
+                    onOpenAccounts = { openTab(Tab.ACCOUNTS) },
+                    onOpenGoal = { id -> navController.navigate("goal/$id") },
+                )
+            }
             composable(Tab.ACCOUNTS.route) {
                 AccountsScreen(onOpenCategories = { navController.navigate(CATEGORIES_ROUTE) })
             }
