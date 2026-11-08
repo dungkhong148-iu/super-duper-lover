@@ -44,155 +44,191 @@ fun AmountPad(
     onClear: () -> Unit,
     onEquals: () -> Unit,
     modifier: Modifier = Modifier,
+    onSave: (() -> Unit)? = null,
 ) {
-    val decimalPoint = currency.decimals > 0
+    val keyK = when (currency) {
+        Currency.USD -> "."
+        Currency.VND -> "000"
+        Currency.TWD -> "00"
+    }
     val digitRows = listOf(
         listOf("7", "8", "9"),
         listOf("4", "5", "6"),
         listOf("1", "2", "3"),
-        listOf(if (decimalPoint) "." else "000", "0", "⌫"),
+        listOf(keyK, "0", "⌫"),
     )
 
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(306.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        // Left 3 columns: Digits (4 rows)
-        Column(
+        Row(
             modifier = Modifier
-                .weight(3f)
-                .fillMaxHeight(),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+                .fillMaxWidth()
+                .height(306.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            digitRows.forEach { row ->
-                Row(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    row.forEach { key ->
-                        when (key) {
-                            "⌫" -> {
-                                PadKey(
-                                    text = "⌫",
-                                    onClick = onBackspace,
-                                    onLongClick = onClear,
-                                    contentDescription = "Xóa số cuối",
-                                    fontSize = 20.sp,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxHeight(),
-                                )
-                            }
-                            "." -> {
-                                PadKey(
-                                    text = ".",
-                                    onClick = onDot,
-                                    fontSize = 22.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxHeight(),
-                                )
-                            }
-                            "000" -> {
-                                PadKey(
-                                    text = "000",
-                                    onClick = { onDigit("000") },
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxHeight(),
-                                )
-                            }
-                            else -> {
-                                PadKey(
-                                    text = key,
-                                    onClick = { onDigit(key) },
-                                    fontSize = 22.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxHeight(),
-                                )
+            // Left 3 columns: Digits (4 rows)
+            Column(
+                modifier = Modifier
+                    .weight(3f)
+                    .fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                digitRows.forEach { row ->
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        row.forEach { key ->
+                            when (key) {
+                                "⌫" -> {
+                                    PadKey(
+                                        text = "⌫",
+                                        onClick = onBackspace,
+                                        onLongClick = onClear,
+                                        contentDescription = "Xóa số cuối",
+                                        fontSize = 20.sp,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight(),
+                                    )
+                                }
+                                "." -> {
+                                    PadKey(
+                                        text = ".",
+                                        onClick = onDot,
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight(),
+                                    )
+                                }
+                                "000", "00" -> {
+                                    PadKey(
+                                        text = key,
+                                        onClick = { onDigit(key) },
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight(),
+                                    )
+                                }
+                                else -> {
+                                    PadKey(
+                                        text = key,
+                                        onClick = { onDigit(key) },
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight(),
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
+
+            // Right 1 column: Operators (5 keys)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                PadKey(
+                    text = "÷",
+                    onClick = { onOperator('/') },
+                    contentDescription = "Chia",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                )
+                PadKey(
+                    text = "×",
+                    onClick = { onOperator('*') },
+                    contentDescription = "Nhân",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                )
+                PadKey(
+                    text = "−",
+                    onClick = { onOperator('-') },
+                    contentDescription = "Trừ",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                )
+                PadKey(
+                    text = "+",
+                    onClick = { onOperator('+') },
+                    contentDescription = "Cộng",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                )
+                PadKey(
+                    text = "=",
+                    onClick = onEquals,
+                    contentDescription = "Bằng",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                )
+            }
         }
 
-        // Right 1 column: Operators (5 keys)
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            PadKey(
-                text = "÷",
-                onClick = { onOperator('/') },
-                contentDescription = "Chia",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                contentColor = MaterialTheme.colorScheme.primary,
+        if (onSave != null) {
+            Surface(
+                onClick = onSave,
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-            )
-            PadKey(
-                text = "×",
-                onClick = { onOperator('*') },
-                contentDescription = "Nhân",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                contentColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-            )
-            PadKey(
-                text = "−",
-                onClick = { onOperator('-') },
-                contentDescription = "Trừ",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                contentColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-            )
-            PadKey(
-                text = "+",
-                onClick = { onOperator('+') },
-                contentDescription = "Cộng",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                contentColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-            )
-            PadKey(
-                text = "=",
-                onClick = onEquals,
-                contentDescription = "Bằng",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                containerColor = MaterialTheme.colorScheme.primary,
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .semantics { contentDescription = "Lưu giao dịch" },
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-            )
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "Lưu",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        maxLines = 1,
+                    )
+                }
+            }
         }
     }
 }

@@ -2,7 +2,6 @@ package com.superduperlover.finance.ui.add
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,7 +32,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -57,6 +55,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -69,10 +69,12 @@ import com.superduperlover.finance.core.MAIN_CURRENCY
 import com.superduperlover.finance.core.Txn
 import com.superduperlover.finance.core.TxnKind
 import com.superduperlover.finance.core.amountToInput
+import com.superduperlover.finance.core.applyRate
 import com.superduperlover.finance.core.currencySymbol
 import com.superduperlover.finance.core.evalAmountExpr
 import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.core.parseAmount
+import com.superduperlover.finance.core.suggestRate
 import com.superduperlover.finance.core.validateTxn
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.CategoryIcons
@@ -139,10 +141,13 @@ fun AddTransactionScreen(
     var epochDay by rememberSaveable { mutableStateOf(LocalDate.now().toEpochDay()) }
     var note by rememberSaveable { mutableStateOf("") }
     var receivedText by rememberSaveable { mutableStateOf("") }
+    var receivedEdited by rememberSaveable { mutableStateOf(false) }
+    var rate by remember { mutableStateOf<Double?>(null) }
     var loaded by rememberSaveable { mutableStateOf(txnId == 0L) }
     var errors by remember { mutableStateOf(emptyList<String>()) }
     var showDate by remember { mutableStateOf(false) }
     var usage by remember { mutableStateOf(emptyMap<Long, Int>()) }
+    var recentUsage by remember { mutableStateOf(emptyMap<Long, Int>()) }
     var pickerSheet by remember { mutableStateOf<PickerSheetType?>(null) }
 
     val kind = TxnKind.valueOf(kindName)
@@ -154,7 +159,11 @@ fun AddTransactionScreen(
                 val accounts = repo.accounts(includeArchived = true).first().associateBy { it.id }
                 kindName = t.kind.name
                 expr = amountToInput(t.amount, accounts[t.accountId]?.currency ?: MAIN_CURRENCY)
-                receivedText = t.toAmount?.let { amountToInput(it, accounts[t.toAccountId]?.currency ?: MAIN_CURRENCY) } ?: ""
+                val toInput = t.toAmount?.let { amountToInput(it, accounts[t.toAccountId]?.currency ?: MAIN_CURRENCY) } ?: ""
+                receivedText = toInput
+                if (toInput.isNotEmpty()) {
+                    receivedEdited = true
+                }
                 accountId = t.accountId
                 toAccountId = t.toAccountId
                 categoryId = t.categoryId
@@ -181,7 +190,35 @@ fun AddTransactionScreen(
 
     LaunchedEffect(kind) {
         if (kind != TxnKind.TRANSFER) {
-            usage = repo.categoryUsage(CategoryKind.valueOf(kind.name))
+            val catKind = CategoryKind.valueOf(kind.name)
+            usage = repo.categoryUsage(catKind)
+            recentUsage = repo.categoryUsageRecent(catKind)
+        }
+    }
+
+    val sourceAccount = allAccounts.firstOrNull { it.id == accountId }
+    val targetAccount = allAccounts.firstOrNull { it.id == toAccountId }
+    val selectedCategory = allCategories.firstOrNull { it.id == categoryId }
+    val currency = sourceAccount?.currency ?: MAIN_CURRENCY
+    val crossCurrency = kind == TxnKind.TRANSFER && sourceAccount != null && targetAccount != null &&
+        sourceAccount.currency != targetAccount.currency
+
+    LaunchedEffect(accountId, toAccountId, crossCurrency) {
+        rate = if (crossCurrency && accountId != null && toAccountId != null) {
+            suggestRate(accountId!!, toAccountId!!, repo.txns().first())
+        } else {
+            null
+        }
+    }
+
+    LaunchedEffect(expr, rate, crossCurrency, receivedEdited) {
+        if (crossCurrency && !receivedEdited && rate != null) {
+            val amount = evalAmountExpr(expr, currency)
+            receivedText = if (amount != null && amount > 0) {
+                amountToInput(applyRate(amount, rate!!), targetAccount.currency)
+            } else {
+                ""
+            }
         }
     }
 
@@ -190,12 +227,34 @@ fun AddTransactionScreen(
         .filter { it.kind.name == kind.name && (!it.archived || it.id == categoryId) }
         .sortedWith(compareByDescending<Category> { usage[it.id] ?: 0 }.thenBy { it.id })
 
-    val sourceAccount = allAccounts.firstOrNull { it.id == accountId }
-    val targetAccount = allAccounts.firstOrNull { it.id == toAccountId }
-    val selectedCategory = allCategories.firstOrNull { it.id == categoryId }
-    val currency = sourceAccount?.currency ?: MAIN_CURRENCY
-    val crossCurrency = kind == TxnKind.TRANSFER && sourceAccount != null && targetAccount != null &&
-        sourceAccount.currency != targetAccount.currency
+    val baseCategoryIds = remember(kind, recentUsage, allCategories) {
+        if (kind == TxnKind.TRANSFER) emptyList()
+        else {
+            allCategories
+                .filter { it.kind.name == kind.name && !it.archived }
+                .sortedWith(compareByDescending<Category> { recentUsage[it.id] ?: 0 }.thenBy { it.id })
+                .take(7)
+                .map { it.id }
+        }
+    }
+
+    val displayedCategories = remember(baseCategoryIds, categoryId, allCategories) {
+        val baseList = baseCategoryIds.mapNotNull { id -> allCategories.firstOrNull { it.id == id } }
+        if (categoryId != null && categoryId !in baseCategoryIds) {
+            val selected = allCategories.firstOrNull { it.id == categoryId }
+            if (selected != null && selected.kind.name == kind.name) {
+                if (baseList.size >= 7) {
+                    baseList.take(6) + selected
+                } else {
+                    baseList + selected
+                }
+            } else {
+                baseList
+            }
+        } else {
+            baseList
+        }
+    }
 
     fun errorsAbout(vararg words: String) =
         errors.filter { e -> words.any { e.lowercase().contains(it) } }
@@ -339,11 +398,15 @@ fun AddTransactionScreen(
                     .weight(1f)
                     .padding(horizontal = 4.dp),
             )
-            IconButton(
-                onClick = ::save,
-                modifier = Modifier.size(48.dp),
-            ) {
-                Icon(Icons.Filled.Check, contentDescription = "Lưu")
+            if (txnId != 0L || WindowInsets.isImeVisible) {
+                IconButton(
+                    onClick = ::save,
+                    modifier = Modifier.size(48.dp),
+                ) {
+                    Icon(Icons.Filled.Check, contentDescription = "Lưu")
+                }
+            } else {
+                Spacer(modifier = Modifier.size(48.dp))
             }
         }
 
@@ -366,7 +429,13 @@ fun AddTransactionScreen(
                 selected = kind,
                 onPick = { picked ->
                     kindName = picked.name
-                    if (txnId == 0L) applyRememberedAccounts(picked)
+                    if (txnId == 0L) {
+                        applyRememberedAccounts(picked)
+                        if (picked == TxnKind.TRANSFER) {
+                            receivedEdited = false
+                            receivedText = ""
+                        }
+                    }
                     if (picked == TxnKind.TRANSFER) {
                         categoryId = null
                     } else if (allCategories.firstOrNull { it.id == categoryId }?.kind?.name != picked.name) {
@@ -430,51 +499,18 @@ fun AddTransactionScreen(
                 }
             }
 
-            // 5. Category chips row (hidden for transfer)
+            // 5. Fixed category grid (hidden for transfer)
             if (kind != TxnKind.TRANSFER) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    pickCategories.take(8).forEach { c ->
-                        val isSelected = c.id == categoryId
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = {
-                                categoryId = c.id
-                                errors = errors.filterNot { it.lowercase().contains("danh mục") }
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = CategoryIcons.get(c.icon),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                            },
-                            label = {
-                                OneLineText(c.name)
-                            },
-                            modifier = Modifier.heightIn(min = 48.dp),
-                        )
-                    }
-                    FilterChip(
-                        selected = false,
-                        onClick = { pickerSheet = PickerSheetType.CATEGORY },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Filled.MoreVert,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        },
-                        label = {
-                            OneLineText("Tất cả")
-                        },
-                        modifier = Modifier.heightIn(min = 48.dp),
-                    )
-                }
+                CategoryGrid(
+                    categories = displayedCategories,
+                    selectedId = categoryId,
+                    kindColor = kind.color(),
+                    onSelect = { id ->
+                        categoryId = id
+                        errors = errors.filterNot { it.lowercase().contains("danh mục") }
+                    },
+                    onMore = { pickerSheet = PickerSheetType.CATEGORY },
+                )
             }
 
             // 6. Compact row: Date button + Note field
@@ -515,6 +551,7 @@ fun AddTransactionScreen(
                     OutlinedTextField(
                         value = receivedText,
                         onValueChange = {
+                            receivedEdited = true
                             receivedText = it
                             errors = emptyList()
                         },
@@ -524,6 +561,15 @@ fun AddTransactionScreen(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    if (rate != null && !receivedEdited) {
+                        Text(
+                            text = "Tự điền theo lần chuyển gần nhất, bạn có thể sửa",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            modifier = Modifier.padding(start = 4.dp, top = 2.dp),
+                        )
+                    }
                     receivedErrors.forEach { ErrorText(it) }
                 }
             }
@@ -542,6 +588,7 @@ fun AddTransactionScreen(
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
                     .padding(bottom = 12.dp),
+                onSave = if (txnId == 0L) ::save else null,
             )
         }
     }
@@ -553,7 +600,13 @@ fun AddTransactionScreen(
                 accounts = pickAccounts,
                 selectedId = accountId,
                 onSelect = {
-                    accountId = it
+                    if (accountId != it) {
+                        accountId = it
+                        if (txnId == 0L) {
+                            receivedEdited = false
+                            receivedText = ""
+                        }
+                    }
                     errors = emptyList()
                 },
                 onDismiss = { pickerSheet = null },
@@ -564,7 +617,13 @@ fun AddTransactionScreen(
                 accounts = pickAccounts,
                 selectedId = toAccountId,
                 onSelect = {
-                    toAccountId = it
+                    if (toAccountId != it) {
+                        toAccountId = it
+                        if (txnId == 0L) {
+                            receivedEdited = false
+                            receivedText = ""
+                        }
+                    }
                     errors = emptyList()
                 },
                 onDismiss = { pickerSheet = null },
@@ -799,6 +858,181 @@ private fun NoAccounts(onGoAccounts: () -> Unit) {
             ) {
                 Text("Thêm tài khoản")
             }
+        }
+    }
+}
+
+@Composable
+private fun CategoryGrid(
+    categories: List<Category>,
+    selectedId: Long?,
+    kindColor: Color,
+    onSelect: (Long) -> Unit,
+    onMore: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val moreIndex = categories.size
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            for (i in 0 until 4) {
+                when {
+                    i < moreIndex -> {
+                        val c = categories[i]
+                        CategoryGridCell(
+                            category = c,
+                            selected = c.id == selectedId,
+                            kindColor = kindColor,
+                            onSelect = { onSelect(c.id) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    i == moreIndex -> {
+                        CategoryGridMoreCell(
+                            onClick = onMore,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    else -> {
+                        Spacer(
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 56.dp),
+                        )
+                    }
+                }
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            for (i in 4 until 8) {
+                when {
+                    i < moreIndex -> {
+                        val c = categories[i]
+                        CategoryGridCell(
+                            category = c,
+                            selected = c.id == selectedId,
+                            kindColor = kindColor,
+                            onSelect = { onSelect(c.id) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    i == moreIndex -> {
+                        CategoryGridMoreCell(
+                            onClick = onMore,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    else -> {
+                        Spacer(
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 56.dp),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryGridCell(
+    category: Category,
+    selected: Boolean,
+    kindColor: Color,
+    onSelect: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier
+            .heightIn(min = 56.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .selectable(
+                selected = selected,
+                role = Role.RadioButton,
+                onClick = onSelect,
+            )
+            .semantics {
+                contentDescription = category.name
+            },
+        shape = RoundedCornerShape(12.dp),
+        color = if (selected) kindColor.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surface,
+        border = BorderStroke(
+            width = if (selected) 2.dp else 1.dp,
+            color = if (selected) kindColor else MaterialTheme.colorScheme.outlineVariant,
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 4.dp, vertical = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Icon(
+                imageVector = CategoryIcons.get(category.icon),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = if (selected) kindColor else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(2.dp))
+            OneLineText(
+                text = category.name,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                color = if (selected) kindColor else MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun CategoryGridMoreCell(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier
+            .heightIn(min = 56.dp)
+            .semantics {
+                contentDescription = "Khác"
+            },
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 4.dp, vertical = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.MoreVert,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(2.dp))
+            OneLineText(
+                text = "Khác...",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
