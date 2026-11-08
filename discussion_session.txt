@@ -42,3 +42,6 @@
 [2026-11-08 11:57] agy_director -> director: C2 done. C2.1 (subagent1), C2.2 (subagent3 verifier). 05ca8ca. :core:test + assembleDebug OK (42 tests pass). None.
 [2026-11-08 10:57] director: ui-ux-pro-max skill copied to .agents/skills/ for agy (Antigravity does not read .claude/skills). Script paths in both SKILL.md fixed to absolute. AGENTS.md Project setup: UI skill line.
 [2026-11-08 11:00] director: F1 approved (7e2ac0f), verified by screenshot on the user's phone at font_scale 1.25. Phone build = 04c3d0c.
+[2026-11-08 11:00] test_fix: F1 done (7e2ac0f, FinanceApp.kt only). Nav labels wrapped at the space at font_scale 1.25; now one line + TextAutoSize 8-12 sp. :core:test + assembleDebug OK; director verified on phone at 1.25 and approved. Hand-off sent to back_agent.
+[2026-11-08 11:00] test_fix -> director: F1 asked before install, flagged corrupted f1.png (PowerShell > on binary); director re-took screenshot and approved 7e2ac0f.
+[2026-11-08 11:00] director: C2 approved (05ca8ca). Scope = 6 spec files; import validates, parses fully, then clears + restores in one Room transaction. Phone test of export/import pending with the user.
