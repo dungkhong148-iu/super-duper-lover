@@ -81,3 +81,23 @@ Visual style, icons, navigation layout (tabs vs stack), component library choice
 - Display: VND `1.250.000 ₫`; TWD `NT$1,250`; USD `$1,250.50`. Negative: sign before the symbol (`-NT$50`).
 - Input per currency: VND as before (`.` `,` space as 3-digit group separators, `k` suffix). TWD: `,` or space as group separators, `k` suffix, no decimals. USD: `,` group separator, `.` decimal point with at most 2 digits, `k` suffix (`1.5k` = $1,500.00).
 - Existing data (all VND before this change) migrates as VND.
+
+## After first phone test (user decided 2026-11-08)
+
+### Home summary with many currencies
+- The summary card shows ONE currency at a time. A horizontally scrolling row of currency chips sits at the top of the card (only currencies that have accounts). Default = main currency (TWD); the last choice is remembered. Everything in the card (Tổng số dư, Còn được tiêu, Thu nhập / Chi tiêu) follows the chosen currency. Works for any number of currencies.
+
+### Budget periods
+- A budget **repeats every period**: Ngày, Tuần, Tháng, Quý, Năm.
+- Periods are counted from the budget's **start date** chosen by the user: a week = 7 days from the start date; a month = from the start day of month to the day before it next month (start 25 -> 25/11-24/12); a quarter = 3 such months; a year = 12. Start day 29-31 in a shorter month falls on that month's last day.
+- Optional **rollover** (per budget, off by default): what is left at the end of a period is added to the next period's limit; an overspend is subtracted from it. It chains from the start date.
+- The budget screen shows the current period's dates, its limit (with the carried amount if any), spent, remaining, status.
+- Home "Còn được tiêu" = remaining of the current period of the overall budgets (category "Tất cả") in the chosen currency, labelled with the period ("tuần này", "tháng này", ...).
+- Existing month budgets migrate to repeating monthly budgets starting on the 1st, rollover off.
+
+### Goal completion
+- A goal becomes **completed** automatically when a contribution brings the saved amount to the target (the date is recorded). The user can also mark a goal completed early, and reopen a completed goal (a reopened goal is not auto-completed again until a new contribution crosses the target).
+- The goal list has two sections: Đang thực hiện / Đã hoàn thành (with the completion date).
+
+### Light mode
+- Cài đặt -> Giao diện: Theo hệ thống (default) / Sáng / Tối. Light colours from `docs/ui-layout.md` §3.

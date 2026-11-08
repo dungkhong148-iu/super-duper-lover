@@ -43,6 +43,12 @@ Phase U — UI redesign (rules: docs/ui-layout.md)
   U4  agy_director  Top bars + empty states + Cài đặt.  DONE ff0ce68 (approved)
   C3  (release) moves after Phase U.
 
+Phase V — after first phone test (spec: 'After first phone test')
+  V1  head_agent    Budget periods + rollover + goal completion in core (TDD), DB v3, backup v3. Then specs V2-V4.  ASSIGNED 2026-11-08
+  V2  agy_director  Budgets UI (periods, start date, rollover).  TODO after V1
+  V3  agy_director  Goals UI (completed section, complete/reopen).  TODO after V1
+  V4  agy_director  Light mode setting + Home currency chips.  TODO after V1
+
 Phase D — widgets (own plan after C3)
 
 Milestones for user testing (debug APK on the phone over wireless ADB)

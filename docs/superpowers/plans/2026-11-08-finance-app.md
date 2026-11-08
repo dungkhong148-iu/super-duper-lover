@@ -223,3 +223,37 @@ Keep `parseVndInput`/`formatVnd` as thin wrappers (VND) until U2-U4 move the scr
 - Backup: version 2 exports `currency`, `colorKey`, `toAmount`; a version 1 file imports with currency VND, default colour, `toAmount` null.
 
 **DB:** v2 migration adds `accounts.currency` (default `'VND'` for existing rows), `accounts.colorKey`, `txns.toAmount` (null), `budgets.currency` (`'VND'`), `goals.currency` (`'VND'`). New rows default to TWD. Commit `app/schemas/.../2.json`. The user's debug data on the phone must survive.
+
+## Phase V — after first phone test (spec section "After first phone test")
+
+### Task V1: Budget periods + rollover + goal completion in :core, DB v3, backup v3 (head_agent, TDD)
+
+**Interfaces — Produces:**
+
+```kotlin
+enum class BudgetPeriod { DAY, WEEK, MONTH, QUARTER, YEAR }
+// Budget: replaces `month` with  period: BudgetPeriod, startDate: LocalDate, rollover: Boolean (keeps id, accountId, categoryId, currency, limit)
+data class PeriodRange(val start: LocalDate, val endInclusive: LocalDate)
+fun periodRange(period: BudgetPeriod, startDate: LocalDate, index: Int): PeriodRange      // index 0 = first period
+fun periodIndexAt(period: BudgetPeriod, startDate: LocalDate, day: LocalDate): Int?       // null before startDate
+// BudgetUsage += range: PeriodRange, carried: Long (0 when rollover off), effectiveLimit = limit + carried
+fun budgetUsage(budget: Budget, txns: List<Txn>, accounts: List<Account>, today: LocalDate): BudgetUsage
+// Goal += completedAt: LocalDate?
+fun shouldAutoComplete(goal: Goal, savedBefore: Long, savedAfter: Long): Boolean          // true only when crossing target and completedAt == null
+```
+
+**Tests (values):**
+- MONTH from 2026-11-25: index 0 = 25/11–24/12, index 1 = 25/12–24/01; from 2026-01-31: index 1 = 28/02–30/03 (2026 not leap), index 2 = 31/03–30/04.
+- WEEK from 2026-11-05 (Thu): index 0 = 05/11–11/11, index 1 = 12/11–18/11. DAY index 3 from 2026-11-05 = 08/11–08/11. QUARTER from 2026-11-15: index 0 = 15/11–14/02. YEAR from 2026-03-01: index 0 = 01/03/2026–28/02/2027.
+- `periodIndexAt` before startDate → null; on endInclusive → same index; next day → index + 1.
+- Rollover: MONTH limit 1000, spent 700 in period 0, 1200 in period 1, today in period 2 → period 1 carried +300 (limit 1300, remaining 100), period 2 carried +100 (effective 1100). Overspend: period 0 spent 1500 → period 1 carried −500. Rollover off → carried 0 always.
+- Status rules unchanged, but against `effectiveLimit` (WARN at ≥ 80 %, OVER above; effectiveLimit ≤ 0 with any spend → OVER).
+- `shouldAutoComplete`: 900→1000 of 1000 → true; 1000→1100 when completedAt set → false; 500→800 → false.
+
+**DB v3:** budgets: drop `month`, add `period` ('MONTH'), `startDate` (first day of the old month), `rollover` (0); goals add `completedAt` (null). Manual Migration(2,3) for the budgets table (rebuild), schema 3.json committed; existing rows survive. **Backup v3**; v1/v2 files import (old month budgets -> MONTH from the 1st, rollover off).
+**Repo:** `addContribution` sets `completedAt = today` when `shouldAutoComplete`; `completeGoal(id, date)`, `reopenGoal(id)`.
+Then write specs V2–V4 for agy.
+
+### Task V2 (agy): Budgets UI — period picker (Ngày/Tuần/Tháng/Quý/Năm), start date, rollover switch with one-line explanation, card shows date range + carried amount; budgets page lists current periods (month switcher removed).
+### Task V3 (agy): Goals UI — sections Đang thực hiện / Đã hoàn thành, "Đánh dấu hoàn thành" and "Mở lại" actions, completion date.
+### Task V4 (agy): Light mode setting (SharedPreferences, no new library) + Home summary card with currency chips; check every screen in light mode against ui-layout §3/§7.
