@@ -51,3 +51,8 @@
 [2026-11-08 14:10] head_agent: U1 + U1b done. Theme tokens + components, 3-tab nav + home pager + account tiles (196c8e0, 6bb05b5, eb48620), currencies VND/TWD/USD + account colour + DB v2 + backup v2 (ee4724a), specs U2-U4 written. core 75 tests, assembleDebug + assembleRelease OK. Reported to director, hand-off sent to back_agent.
 [2026-11-08 11:44] director: U1 + U1b approved (eb48620..ee4724a, specs 3c6f8c2); rebuilt OK. Debug DB v1 backed up to D:\android-tools\tmp\dbbackup before installing v2.
 [2026-11-08 11:44] director -> agy_director: U2, U3, U4 sent via deck_inject (disjoint files, base 3c6f8c2).
+[2026-11-08 14:15] agy_director: U2 started with subagent1-U2. Add transaction redesign & calculator pad per specs/U2.txt.
+[2026-11-08 14:15] agy_director: U3 started with subagent1-U3. Full-screen forms per specs/U3.txt.
+[2026-11-08 14:15] agy_director: U4 started with subagent1-U4. Top bars, cards, empty states per specs/U4.txt.
+[2026-11-08 11:46] director: U1 debug build (704b0cd tree) installed on the phone; DB v1->v2 migration ran, app running, no crash in logcat.
+[2026-11-08 11:47] director: U1c approved (3acf1bd). Next phone install batched with U2-U4.

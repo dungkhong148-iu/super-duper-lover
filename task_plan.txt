@@ -37,6 +37,7 @@ Fixes from user testing
 Phase U — UI redesign (rules: docs/ui-layout.md)
   U1  head_agent    Theme, components, 3-tab nav + Home pager, account tiles + colour (DB v2), core evalAmountExpr. Then specs U2-U4.  DONE eb48620 6bb05b5 196c8e0 (approved)
   U1b head_agent    Currencies VND/TWD/USD in core (TDD), DB v2 (colour + currency), backup v2.  DONE ee4724a (approved, 75 tests)
+  U1c head_agent    Home gap, add-account tile label, tab colours (from phone screenshot).  DONE 3acf1bd (approved)
   U2  agy_director  Add transaction redesign + calculator pad.  ASSIGNED 2026-11-08 (specs/U2.txt)
   U3  agy_director  Full-screen forms (account, budget, goal, category).  ASSIGNED 2026-11-08 (specs/U3.txt)
   U4  agy_director  Top bars + empty states + Cài đặt.  ASSIGNED 2026-11-08 (specs/U4.txt)
