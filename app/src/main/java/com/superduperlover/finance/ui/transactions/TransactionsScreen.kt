@@ -70,14 +70,14 @@ import kotlinx.coroutines.launch
 /** Current month, newest first, grouped by day. Tap edits, long-press deletes (after a confirm). */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun TransactionsScreen(onEdit: (Long) -> Unit) {
+fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
     val repo = LocalRepo.current
     val scope = rememberCoroutineScope()
 
     var monthStr by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
     val month = remember(monthStr) { YearMonth.parse(monthStr) }
 
-    var filterAccountId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var filterAccountId by rememberSaveable(initialAccountId) { mutableStateOf(initialAccountId) }
     var filterCategoryId by rememberSaveable { mutableStateOf<Long?>(null) }
     var searchText by rememberSaveable { mutableStateOf("") }
     var isSearchOpen by rememberSaveable { mutableStateOf(false) }

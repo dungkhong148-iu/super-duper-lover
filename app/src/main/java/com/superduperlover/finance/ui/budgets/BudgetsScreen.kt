@@ -61,7 +61,10 @@ import com.superduperlover.finance.core.CategoryKind
 import com.superduperlover.finance.core.budgetUsage
 import com.superduperlover.finance.core.formatVnd
 import com.superduperlover.finance.core.parseVndInput
+import androidx.compose.ui.res.painterResource
+import com.superduperlover.finance.R
 import com.superduperlover.finance.ui.LocalRepo
+import com.superduperlover.finance.ui.components.EmptyState
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 import com.superduperlover.finance.ui.components.expenseColor
 import com.superduperlover.finance.ui.components.incomeColor
@@ -108,7 +111,7 @@ fun BudgetsScreen() {
         copyMessage = null
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -141,30 +144,24 @@ fun BudgetsScreen() {
             }
         }
 
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (budgets.isEmpty()) {
-                item(key = "empty") {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 32.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "Chưa có ngân sách cho tháng này",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+                EmptyState(
+                    icon = painterResource(R.drawable.ic_savings),
+                    title = "Hãy tạo ngân sách đầu tiên",
+                    message = "Đặt hạn mức để biết mỗi tháng còn được tiêu bao nhiêu.",
+                    actionLabel = "Tạo ngân sách",
+                    onAction = {
+                        editingBudget = Budget(id = 0L, month = month, accountId = null, categoryId = null, limit = 0L)
+                    },
+                )
             } else {
-                items(budgets, key = { it.id }) { budget ->
+                for (budget in budgets) {
                     val usage = budgetUsage(budget, txns)
                     val statusColor = budgetStatusColor(usage.status)
                     val accountName = budget.accountId?.let { accountsById[it]?.name ?: "?" } ?: "Tất cả tài khoản"
@@ -220,7 +217,7 @@ fun BudgetsScreen() {
                 }
             }
 
-            item(key = "add_budget") {
+            run {
                 Button(
                     onClick = {
                         editingBudget = Budget(
@@ -239,7 +236,7 @@ fun BudgetsScreen() {
                 }
             }
 
-            item(key = "copy_previous") {
+            run {
                 OutlinedButton(
                     onClick = {
                         scope.launch {
@@ -274,7 +271,7 @@ fun BudgetsScreen() {
             }
 
             copyMessage?.let { msg ->
-                item(key = "copy_message") {
+                run {
                     Text(
                         text = msg,
                         style = MaterialTheme.typography.bodyMedium,

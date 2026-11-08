@@ -25,7 +25,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.core.Goal
 import com.superduperlover.finance.core.goalProgress
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.res.painterResource
+import com.superduperlover.finance.R
 import com.superduperlover.finance.ui.LocalRepo
+import com.superduperlover.finance.ui.components.EmptyState
 import java.time.LocalDate
 
 @Composable
@@ -34,32 +38,26 @@ fun GoalsScreen(onOpenGoal: (Long) -> Unit) {
     val goals by remember(repo) { repo.goals() }.collectAsState(initial = emptyList())
     var editingGoal by remember { mutableStateOf<Goal?>(null) }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (goals.isEmpty()) {
-            item(key = "empty") {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 32.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "Chưa có mục tiêu nào",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
+            EmptyState(
+                icon = painterResource(R.drawable.ic_flag),
+                title = "Hãy đặt mục tiêu đầu tiên",
+                message = "Chọn một khoản cần để dành và theo dõi tiến độ mỗi tháng.",
+                actionLabel = "Tạo mục tiêu",
+                onAction = { editingGoal = Goal(0L, "", 0L, null) },
+            )
         } else {
-            items(goals, key = { it.id }) { goal ->
+            for (goal in goals) {
                 GoalCard(goal = goal, onOpen = { onOpenGoal(goal.id) })
             }
         }
-        item(key = "add_goal") {
+        run {
             OutlinedButton(
                 onClick = { editingGoal = Goal(0L, "", 0L, null) },
                 modifier = Modifier
