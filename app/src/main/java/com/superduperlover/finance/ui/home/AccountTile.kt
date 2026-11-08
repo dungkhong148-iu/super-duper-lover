@@ -27,20 +27,12 @@ import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.R
 import com.superduperlover.finance.core.Account
 import com.superduperlover.finance.core.AccountType
-import com.superduperlover.finance.core.formatVnd
+import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.theme.OnAccountTile
 import com.superduperlover.finance.ui.theme.accountTileColor
 
 private val TileShape = RoundedCornerShape(16.dp)
-
-/** Placeholder until accounts carry their own colour: one colour per account type. */
-private fun colorKeyOf(account: Account): String = when (account.type) {
-    AccountType.CASH -> "emerald"
-    AccountType.BANK -> "sky"
-    AccountType.CARD -> "indigo"
-    AccountType.EWALLET -> "violet"
-}
 
 private fun iconOf(type: AccountType): Int = when (type) {
     AccountType.CASH -> R.drawable.ic_account_cash
@@ -67,7 +59,7 @@ fun AccountTile(
             .fillMaxWidth()
             .heightIn(min = 104.dp)
             .clip(TileShape)
-            .background(accountTileColor(colorKeyOf(account)))
+            .background(accountTileColor(account.colorKey))
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(12.dp),
         verticalArrangement = Arrangement.SpaceBetween,
@@ -85,7 +77,7 @@ fun AccountTile(
                 color = OnAccountTile,
             )
             OneLineText(
-                text = formatVnd(balance),
+                text = formatMoney(balance, account.currency),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = OnAccountTile,

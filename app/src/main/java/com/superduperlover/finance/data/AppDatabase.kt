@@ -1,10 +1,14 @@
 package com.superduperlover.finance.data
 
 import android.content.Context
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.AutoMigrationSpec
+import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.execSQL
 
 @Database(
     entities = [
@@ -15,8 +19,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         GoalEntity::class,
         ContributionEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
+    autoMigrations = [AutoMigration(from = 1, to = 2, spec = Migration1To2::class)],
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun dao(): AppDao
@@ -57,6 +62,19 @@ private object SeedCallback : RoomDatabase.Callback() {
         db.execSQL(
             "INSERT INTO categories (name, kind, icon, archived) VALUES (?, ?, ?, 0)",
             arrayOf<Any>(name, kind, icon),
+        )
+    }
+}
+
+/**
+ * v1 -> v2 (currencies + account colour). Room adds the columns itself (currency 'VND', colorKey 'emerald',
+ * toAmount NULL); this picks the default colour of each existing account by its type. No data is lost.
+ */
+class Migration1To2 : AutoMigrationSpec {
+    override fun onPostMigrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            "UPDATE accounts SET colorKey = CASE type " +
+                "WHEN 'BANK' THEN 'sky' WHEN 'CARD' THEN 'indigo' WHEN 'EWALLET' THEN 'violet' ELSE 'emerald' END",
         )
     }
 }

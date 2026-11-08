@@ -59,8 +59,8 @@ class BackupTest {
     }
 
     @Test
-    fun version2Fails() {
-        val errors = validateBackup(minimalValidBackup(version = 2))
+    fun version3Fails() {
+        val errors = validateBackup(minimalValidBackup(version = 3))
         assertTrue(errors.isNotEmpty())
         assertTrue(errors.any { it.contains("Phiên bản") })
     }
@@ -135,5 +135,46 @@ class BackupTest {
         assertEquals(2, errors.size)
         assertTrue(errors.any { it.contains("txns.id") })
         assertTrue(errors.any { it.contains("txns.amount") })
+    }
+
+    @Test
+    fun accountRowWithOrWithoutColourKeyIsValid() {
+        val withColour = minimalValidBackup().apply {
+            put("accounts", listOf(mapOf("id" to 1L, "name" to "Cash", "type" to "CASH", "openingBalance" to 0L, "colorKey" to "rose")))
+        }
+        val withoutColour = minimalValidBackup().apply {
+            put("accounts", listOf(mapOf("id" to 1L, "name" to "Cash", "type" to "CASH", "openingBalance" to 0L)))
+        }
+        assertEquals(emptyList<String>(), validateBackup(withColour))
+        assertEquals(emptyList<String>(), validateBackup(withoutColour))
+    }
+
+    @Test
+    fun versionOneAndTwoAreAccepted() {
+        assertEquals(emptyList<String>(), validateBackup(minimalValidBackup(version = 1L)))
+        assertEquals(emptyList<String>(), validateBackup(minimalValidBackup(version = 2L)))
+    }
+
+    @Test
+    fun version2RowsWithCurrencyAndReceivedAmountAreValid() {
+        val backup = minimalValidBackup(version = 2L).apply {
+            put("accounts", listOf(mapOf("id" to 1L, "name" to "A", "type" to "BANK", "openingBalance" to 0L, "currency" to "TWD", "colorKey" to "sky")))
+            put("txns", listOf(mapOf("id" to 1L, "kind" to "TRANSFER", "amount" to 1_000_000L, "accountId" to 1L, "toAccountId" to 2L, "toAmount" to 1_250L, "categoryId" to null)))
+            put("budgets", listOf(mapOf("id" to 1L, "limit" to 5L, "accountId" to null, "categoryId" to null, "currency" to "USD")))
+            put("goals", listOf(mapOf("id" to 1L, "target" to 5L, "currency" to "VND")))
+        }
+        assertEquals(emptyList<String>(), validateBackup(backup))
+    }
+
+    @Test
+    fun unknownCurrencyOrNonIntegerReceivedAmountFails() {
+        val badCurrency = minimalValidBackup(version = 2L).apply {
+            put("accounts", listOf(mapOf("id" to 1L, "openingBalance" to 0L, "currency" to "EUR")))
+        }
+        assertTrue(validateBackup(badCurrency).any { it.contains("accounts.currency") })
+        val badReceived = minimalValidBackup(version = 2L).apply {
+            put("txns", listOf(mapOf("id" to 1L, "amount" to 5L, "toAmount" to 12.5)))
+        }
+        assertTrue(validateBackup(badReceived).any { it.contains("txns.toAmount") })
     }
 }

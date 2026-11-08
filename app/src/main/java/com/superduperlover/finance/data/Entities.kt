@@ -1,5 +1,6 @@
 package com.superduperlover.finance.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -8,6 +9,7 @@ import com.superduperlover.finance.core.AccountType
 import com.superduperlover.finance.core.Budget
 import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
+import com.superduperlover.finance.core.Currency
 import com.superduperlover.finance.core.Goal
 import com.superduperlover.finance.core.GoalContribution
 import com.superduperlover.finance.core.Txn
@@ -24,6 +26,9 @@ data class AccountEntity(
     val type: String,
     val openingBalance: Long,
     val archived: Boolean,
+    // Added in DB v2; existing rows are VND and get a colour by type in Migration1To2.
+    @ColumnInfo(defaultValue = "emerald") val colorKey: String,
+    @ColumnInfo(defaultValue = "VND") val currency: String,
 )
 
 @Entity(tableName = "categories")
@@ -48,6 +53,8 @@ data class TxnEntity(
     val categoryId: Long?,
     val date: String,
     val note: String,
+    /** Transfers only: amount received in the target account's currency (null = same as amount). DB v2. */
+    val toAmount: Long?,
 )
 
 @Entity(tableName = "budgets", indices = [Index("month")])
@@ -58,6 +65,7 @@ data class BudgetEntity(
     val categoryId: Long?,
     // "limit" is an SQL keyword, so the column is named differently.
     val limitAmount: Long,
+    @ColumnInfo(defaultValue = "VND") val currency: String,
 )
 
 @Entity(tableName = "goals")
@@ -67,6 +75,7 @@ data class GoalEntity(
     val target: Long,
     val deadline: String?,
     val archived: Boolean,
+    @ColumnInfo(defaultValue = "VND") val currency: String,
 )
 
 @Entity(tableName = "goal_contributions", indices = [Index("goalId")])
@@ -77,22 +86,29 @@ data class ContributionEntity(
     val date: String,
 )
 
-fun AccountEntity.toCore() = Account(id, name, AccountType.valueOf(type), openingBalance, archived)
-fun Account.toEntity() = AccountEntity(id, name, type.name, openingBalance, archived)
+fun AccountEntity.toCore() =
+    Account(id, name, AccountType.valueOf(type), openingBalance, archived, colorKey, Currency.valueOf(currency))
+
+fun Account.toEntity() = AccountEntity(id, name, type.name, openingBalance, archived, colorKey, currency.name)
 
 fun CategoryEntity.toCore() = Category(id, name, CategoryKind.valueOf(kind), icon, archived)
 fun Category.toEntity() = CategoryEntity(id, name, kind.name, icon, archived)
 
 fun TxnEntity.toCore() =
-    Txn(id, TxnKind.valueOf(kind), amount, accountId, toAccountId, categoryId, LocalDate.parse(date), note)
+    Txn(id, TxnKind.valueOf(kind), amount, accountId, toAccountId, categoryId, LocalDate.parse(date), note, toAmount)
 
-fun Txn.toEntity() = TxnEntity(id, kind.name, amount, accountId, toAccountId, categoryId, date.toString(), note)
+fun Txn.toEntity() =
+    TxnEntity(id, kind.name, amount, accountId, toAccountId, categoryId, date.toString(), note, toAmount)
 
-fun BudgetEntity.toCore() = Budget(id, YearMonth.parse(month), accountId, categoryId, limitAmount)
-fun Budget.toEntity() = BudgetEntity(id, month.toString(), accountId, categoryId, limit)
+fun BudgetEntity.toCore() =
+    Budget(id, YearMonth.parse(month), accountId, categoryId, limitAmount, Currency.valueOf(currency))
 
-fun GoalEntity.toCore() = Goal(id, name, target, deadline?.let(LocalDate::parse), archived)
-fun Goal.toEntity() = GoalEntity(id, name, target, deadline?.toString(), archived)
+fun Budget.toEntity() = BudgetEntity(id, month.toString(), accountId, categoryId, limit, currency.name)
+
+fun GoalEntity.toCore() =
+    Goal(id, name, target, deadline?.let(LocalDate::parse), archived, Currency.valueOf(currency))
+
+fun Goal.toEntity() = GoalEntity(id, name, target, deadline?.toString(), archived, currency.name)
 
 fun ContributionEntity.toCore() = GoalContribution(id, goalId, amount, LocalDate.parse(date))
 fun GoalContribution.toEntity() = ContributionEntity(id, goalId, amount, date.toString())

@@ -54,7 +54,8 @@ import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
 import com.superduperlover.finance.core.Txn
 import com.superduperlover.finance.core.TxnKind
-import com.superduperlover.finance.core.formatVnd
+import com.superduperlover.finance.core.Currency
+import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.core.txnTotals
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.CategoryIcons
@@ -97,7 +98,8 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
             rawTxns.filter { it.note.lowercase().contains(q) }
         }
     }
-    val totals = remember(txns) { txnTotals(txns) }
+    val totals = remember(txns, accounts) { txnTotals(txns, accounts) }
+    val currencyOfAccount = remember(accounts) { accounts.associate { it.id to it.currency } }
 
     val accountNames = accounts.associate { it.id to it.name }
     val categoryById = categories.associateBy { it.id }
@@ -285,11 +287,13 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(Modifier.height(4.dp))
-                        Text(
-                            "+${formatVnd(totals.income)}",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = incomeColor(),
-                        )
+                        totals.forEach { (currency, t) ->
+                            Text(
+                                "+${formatMoney(t.income, currency)}",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = incomeColor(),
+                            )
+                        }
                     }
                     Column(
                         modifier = Modifier.weight(1f),
@@ -301,11 +305,13 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(Modifier.height(4.dp))
-                        Text(
-                            "-${formatVnd(totals.expense)}",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = expenseColor(),
-                        )
+                        totals.forEach { (currency, t) ->
+                            Text(
+                                "-${formatMoney(t.expense, currency)}",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = expenseColor(),
+                            )
+                        }
                     }
                 }
             }
@@ -343,8 +349,12 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                     val category = t.categoryId?.let { categoryById[it] }
                     val title = if (t.kind == TxnKind.TRANSFER) t.kind.label() else category?.name ?: "Không rõ"
                     val account = accountNames[t.accountId] ?: "?"
+                    val currency = currencyOfAccount[t.accountId] ?: Currency.VND
                     val where = if (t.kind == TxnKind.TRANSFER) {
-                        "$account → ${accountNames[t.toAccountId] ?: "?"}"
+                        val received = t.toAmount?.let { amount ->
+                            currencyOfAccount[t.toAccountId]?.let { " (+${formatMoney(amount, it)})" }
+                        } ?: ""
+                        "$account → ${accountNames[t.toAccountId] ?: "?"}$received"
                     } else {
                         account
                     }
@@ -386,7 +396,7 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                             )
                         }
                         Text(
-                            sign + formatVnd(t.amount),
+                            sign + formatMoney(t.amount, currency),
                             style = MaterialTheme.typography.titleMedium,
                             color = t.kind.color(),
                         )
@@ -400,7 +410,7 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
         AlertDialog(
             onDismissRequest = { toDelete = null },
             title = { Text("Xóa giao dịch?") },
-            text = { Text("${t.kind.label()} ${formatVnd(t.amount)} sẽ bị xóa.") },
+            text = { Text("${t.kind.label()} ${formatMoney(t.amount, currencyOfAccount[t.accountId] ?: Currency.VND)} sẽ bị xóa.") },
             confirmButton = {
                 TextButton(onClick = { scope.launch { repo.deleteTxn(t.id); toDelete = null } }) { Text("Xóa") }
             },

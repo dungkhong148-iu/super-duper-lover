@@ -57,4 +57,29 @@ class ValidateTest {
         assertTrue(errors(validExpense.copy(kind = TxnKind.INCOME, categoryId = 10)).isNotEmpty())
         assertTrue(errors(validExpense.copy(categoryId = 11)).isNotEmpty())
     }
+
+    @Test
+    fun crossCurrencyTransferNeedsReceivedAmount() {
+        val withCurrencies = listOf(
+            Account(1, "Ví", AccountType.CASH, 0, currency = Currency.VND),
+            Account(2, "Đài", AccountType.BANK, 0, currency = Currency.TWD),
+        )
+        val base = Txn(2, TxnKind.TRANSFER, 1_000_000, 1, 2, null, day)
+        assertTrue(validateTxn(base, withCurrencies, categories).isNotEmpty())
+        assertTrue(validateTxn(base.copy(toAmount = 0), withCurrencies, categories).isNotEmpty())
+        assertTrue(validateTxn(base.copy(toAmount = 1_250), withCurrencies, categories).isEmpty())
+    }
+
+    @Test
+    fun sameCurrencyTransferReceivedAmountMustBeNullOrEqual() {
+        val base = Txn(2, TxnKind.TRANSFER, 50_000, 1, 2, null, day)
+        assertTrue(validateTxn(base, accounts, categories).isEmpty())
+        assertTrue(validateTxn(base.copy(toAmount = 50_000), accounts, categories).isEmpty())
+        assertTrue(validateTxn(base.copy(toAmount = 40_000), accounts, categories).isNotEmpty())
+    }
+
+    @Test
+    fun receivedAmountOnlyForTransfers() {
+        assertTrue(validateTxn(validExpense.copy(toAmount = 5), accounts, categories).isNotEmpty())
+    }
 }

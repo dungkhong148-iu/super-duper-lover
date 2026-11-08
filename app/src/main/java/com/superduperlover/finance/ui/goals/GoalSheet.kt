@@ -40,8 +40,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.core.Goal
 import com.superduperlover.finance.core.GoalProgress
-import com.superduperlover.finance.core.formatVnd
-import com.superduperlover.finance.core.parseVndInput
+import com.superduperlover.finance.core.parseAmount
+import com.superduperlover.finance.core.amountToInput
+import com.superduperlover.finance.core.currencySymbol
+import com.superduperlover.finance.ui.components.CurrencyChips
 import com.superduperlover.finance.ui.LocalRepo
 import java.time.LocalDate
 import kotlinx.coroutines.launch
@@ -57,8 +59,9 @@ fun GoalSheet(
     val isNew = goal.id == 0L
 
     var name by remember { mutableStateOf(goal.name) }
+    var currency by remember { mutableStateOf(goal.currency) }
     var targetText by remember {
-        mutableStateOf(if (isNew || goal.target == 0L) "" else goal.target.toString())
+        mutableStateOf(if (isNew || goal.target == 0L) "" else amountToInput(goal.target, goal.currency))
     }
     var deadline by remember { mutableStateOf(goal.deadline) }
     var nameError by remember { mutableStateOf<String?>(null) }
@@ -93,13 +96,16 @@ fun GoalSheet(
                 supportingText = nameError?.let { { Text(it) } },
                 modifier = Modifier.fillMaxWidth(),
             )
+            if (isNew) {
+                CurrencyChips(selected = currency, onSelect = { currency = it; targetError = null })
+            }
             OutlinedTextField(
                 value = targetText,
                 onValueChange = {
                     targetText = it
                     targetError = null
                 },
-                label = { Text("Số tiền mục tiêu (₫)") },
+                label = { Text("Số tiền mục tiêu (${currencySymbol(currency)})") },
                 placeholder = { Text("0") },
                 singleLine = true,
                 isError = targetError != null,
@@ -128,7 +134,7 @@ fun GoalSheet(
             Button(
                 onClick = {
                     val trimmed = name.trim()
-                    val parsedTarget = parseVndInput(targetText)
+                    val parsedTarget = parseAmount(targetText, currency)
                     if (trimmed.isEmpty()) nameError = "Nhập tên mục tiêu"
                     if (parsedTarget == null) targetError = "Số tiền không hợp lệ"
                     if (trimmed.isNotEmpty() && parsedTarget != null) {
@@ -140,6 +146,7 @@ fun GoalSheet(
                                     target = parsedTarget,
                                     deadline = deadline,
                                     archived = false,
+                                    currency = currency,
                                 )
                             )
                             onDismiss()

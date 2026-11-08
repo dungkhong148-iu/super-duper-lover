@@ -20,10 +20,19 @@ fun validateTxn(txn: Txn, accounts: List<Account>, categories: List<Category>): 
                 val to = accounts.firstOrNull { it.id == txn.toAccountId }
                 if (to == null) errors += "Tài khoản nhận không tồn tại"
                 else if (to.archived) errors += "Tài khoản nhận đã được lưu trữ"
+                if (to != null && account != null) {
+                    if (to.currency != account.currency) {
+                        // different currencies: both amounts are recorded
+                        if (txn.toAmount == null || txn.toAmount <= 0) errors += "Nhập số tiền nhận (khác loại tiền)"
+                    } else if (txn.toAmount != null && txn.toAmount != txn.amount) {
+                        errors += "Số tiền nhận phải bằng số tiền gửi (cùng loại tiền)"
+                    }
+                }
             }
             if (txn.categoryId != null) errors += "Chuyển khoản không có danh mục"
         }
         TxnKind.EXPENSE, TxnKind.INCOME -> {
+            if (txn.toAmount != null) errors += "Số tiền nhận chỉ dùng cho chuyển khoản"
             val wanted = if (txn.kind == TxnKind.EXPENSE) CategoryKind.EXPENSE else CategoryKind.INCOME
             if (txn.categoryId == null) {
                 errors += "Chưa chọn danh mục"

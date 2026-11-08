@@ -40,8 +40,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.core.Goal
 import com.superduperlover.finance.core.GoalProgress
-import com.superduperlover.finance.core.formatVnd
-import com.superduperlover.finance.core.parseVndInput
+import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.ui.LocalRepo
 import java.time.LocalDate
 import kotlinx.coroutines.launch
@@ -58,7 +57,7 @@ fun GoalProgressContent(goal: Goal, progress: GoalProgress) {
             .heightIn(min = 8.dp),
     )
     Text(
-        text = "Đã để dành ${formatVnd(progress.saved)} / ${formatVnd(goal.target)}",
+        text = "Đã để dành ${formatMoney(progress.saved, goal.currency)} / ${formatMoney(goal.target, goal.currency)}",
         style = MaterialTheme.typography.bodyMedium,
     )
     if (progress.done) {
@@ -80,7 +79,7 @@ fun GoalProgressContent(goal: Goal, progress: GoalProgress) {
         }
     } else if (progress.perMonth != null) {
         Text(
-            text = "Cần để dành ${formatVnd(progress.perMonth!!)}/tháng",
+            text = "Cần để dành ${formatMoney(progress.perMonth!!, goal.currency)}/tháng",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

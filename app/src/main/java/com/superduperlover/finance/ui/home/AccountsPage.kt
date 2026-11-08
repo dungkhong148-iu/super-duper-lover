@@ -3,6 +3,8 @@ package com.superduperlover.finance.ui.home
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -34,7 +36,9 @@ import com.superduperlover.finance.core.BudgetStatus
 import com.superduperlover.finance.core.BudgetUsage
 import com.superduperlover.finance.core.accountBalance
 import com.superduperlover.finance.core.budgetUsage
-import com.superduperlover.finance.core.formatVnd
+import com.superduperlover.finance.core.CURRENCY_DISPLAY_ORDER
+import com.superduperlover.finance.core.balancesByCurrency
+import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.core.txnTotals
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.accounts.AccountSheet
@@ -54,6 +58,7 @@ private val FullWidth: (androidx.compose.foundation.lazy.grid.LazyGridItemSpanSc
  * "Tài khoản" page of the home tab (docs/ui-layout.md section 1): summary card, account tile grid,
  * "Ngân sách cần chú ý". Every number comes from `:core` (accountBalance, budgetUsage, txnTotals).
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AccountsPage(
     onOpenAccountTransactions: (Long) -> Unit,
@@ -70,16 +75,21 @@ fun AccountsPage(
     // null = sheet closed; id 0 = new account
     var editing by remember { mutableStateOf<Account?>(null) }
 
-    val usages = budgets.map { it to budgetUsage(it, monthTxns) }
+    val usages = budgets.map { it to budgetUsage(it, monthTxns, allAccounts) }
     val totalBudgets = usages.filter { (b, _) -> b.categoryId == null }
-    val left = totalBudgets.sumOf { (_, u) -> u.remaining }
+    // Money left to spend, per currency (currencies are never added together).
+    val leftByCurrency = CURRENCY_DISPLAY_ORDER.mapNotNull { currency ->
+        val inCurrency = totalBudgets.filter { (b, _) -> b.currency == currency }
+        if (inCurrency.isEmpty()) null else currency to inCurrency.sumOf { (_, u) -> u.remaining }
+    }
     val attention = usages
         .filter { (_, u) -> u.status != BudgetStatus.OK }
         .sortedWith(
             compareByDescending<Pair<Budget, BudgetUsage>> { it.second.status.ordinal }
                 .thenByDescending { it.second.ratio },
         )
-    val totals = txnTotals(monthTxns)
+    val totals = txnTotals(monthTxns, accounts)
+    val balanceByCurrency = balancesByCurrency(accounts, allTxns)
     val balances = accounts.map { it to accountBalance(it, allTxns) }
     val accountNames = allAccounts.associate { it.id to it.name }
     val categoryNames = categories.associate { it.id to it.name }
@@ -98,18 +108,26 @@ fun AccountsPage(
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                OneLineText(
-                    text = formatVnd(balances.sumOf { it.second }),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    balanceByCurrency.forEach { (currency, total) ->
+                        OneLineText(
+                            text = formatMoney(total, currency),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = if (total < 0) expenseColor() else MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 OneLineText(
                     text = "Còn được tiêu tháng này (${month.monthValue}/${month.year})",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                if (totalBudgets.isEmpty()) {
+                if (leftByCurrency.isEmpty()) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             "Chưa có ngân sách tổng",
@@ -122,13 +140,20 @@ fun AccountsPage(
                         }
                     }
                 } else {
-                    OneLineText(
-                        text = formatVnd(left),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = if (left < 0) expenseColor() else MaterialTheme.colorScheme.onSurface,
-                    )
-                    if (left < 0) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        leftByCurrency.forEach { (currency, left) ->
+                            OneLineText(
+                                text = formatMoney(left, currency),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = if (left < 0) expenseColor() else MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+                    if (leftByCurrency.any { it.second < 0 }) {
                         Text("Đã vượt ngân sách", color = expenseColor(), style = MaterialTheme.typography.labelMedium)
                     }
                 }
@@ -136,11 +161,15 @@ fun AccountsPage(
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Column(Modifier.weight(1f)) {
                         OneLineText("Thu nhập", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        OneLineText("+${formatVnd(totals.income)}", style = MaterialTheme.typography.titleSmall, color = incomeColor())
+                        totals.forEach { (currency, t) ->
+                            OneLineText("+${formatMoney(t.income, currency)}", style = MaterialTheme.typography.titleSmall, color = incomeColor())
+                        }
                     }
                     Column(Modifier.weight(1f)) {
                         OneLineText("Chi tiêu", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        OneLineText("-${formatVnd(totals.expense)}", style = MaterialTheme.typography.titleSmall, color = expenseColor())
+                        totals.forEach { (currency, t) ->
+                            OneLineText("-${formatMoney(t.expense, currency)}", style = MaterialTheme.typography.titleSmall, color = expenseColor())
+                        }
                     }
                 }
             }
@@ -174,7 +203,7 @@ fun AccountsPage(
             item(key = "attention", span = FullWidth) {
                 SectionCard(title = "Ngân sách cần chú ý", onAction = onOpenPlan) {
                     attention.forEach { (budget, usage) ->
-                        val account = budget.accountId?.let { accountNames[it] ?: "?" } ?: "Tất cả tài khoản"
+                        val account = budget.accountId?.let { accountNames[it] ?: "?" } ?: "Tất cả tài khoản (${budget.currency.name})"
                         val category = budget.categoryId?.let { categoryNames[it] ?: "?" } ?: "Tất cả danh mục"
                         val color = budgetStatusColor(usage.status)
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -193,9 +222,9 @@ fun AccountsPage(
                             )
                             OneLineText(
                                 text = if (usage.remaining >= 0) {
-                                    "Đã chi ${formatVnd(usage.spent)} / ${formatVnd(usage.limit)}"
+                                    "Đã chi ${formatMoney(usage.spent, budget.currency)} / ${formatMoney(usage.limit, budget.currency)}"
                                 } else {
-                                    "Vượt ${formatVnd(-usage.remaining)}"
+                                    "Vượt ${formatMoney(-usage.remaining, budget.currency)}"
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,

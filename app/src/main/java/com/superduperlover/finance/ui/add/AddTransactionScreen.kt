@@ -22,6 +22,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -61,10 +63,13 @@ import androidx.compose.ui.unit.sp
 import com.superduperlover.finance.core.Account
 import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
+import com.superduperlover.finance.core.MAIN_CURRENCY
+import com.superduperlover.finance.core.amountToInput
+import com.superduperlover.finance.core.currencySymbol
+import com.superduperlover.finance.core.formatMoney
+import com.superduperlover.finance.core.parseAmount
 import com.superduperlover.finance.core.Txn
 import com.superduperlover.finance.core.TxnKind
-import com.superduperlover.finance.core.formatVnd
-import com.superduperlover.finance.core.parseVndInput
 import com.superduperlover.finance.core.validateTxn
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.CategoryIcons
@@ -99,6 +104,7 @@ fun AddTransactionScreen(txnId: Long, onClose: () -> Unit, onGoAccounts: () -> U
     var categoryId by rememberSaveable { mutableStateOf<Long?>(null) }
     var epochDay by rememberSaveable { mutableStateOf(LocalDate.now().toEpochDay()) }
     var note by rememberSaveable { mutableStateOf("") }
+    var receivedText by rememberSaveable { mutableStateOf("") }
     var loaded by rememberSaveable { mutableStateOf(txnId == 0L) }
     var errors by remember { mutableStateOf(emptyList<String>()) }
     var showDate by remember { mutableStateOf(false) }
@@ -110,8 +116,10 @@ fun AddTransactionScreen(txnId: Long, onClose: () -> Unit, onGoAccounts: () -> U
     LaunchedEffect(txnId) {
         if (!loaded) {
             repo.txns().first().firstOrNull { it.id == txnId }?.let { t ->
+                val accounts = repo.accounts(includeArchived = true).first().associateBy { it.id }
                 kindName = t.kind.name
-                digits = t.amount.toString()
+                digits = amountToInput(t.amount, accounts[t.accountId]?.currency ?: MAIN_CURRENCY)
+                receivedText = t.toAmount?.let { amountToInput(it, accounts[t.toAccountId]?.currency ?: MAIN_CURRENCY) } ?: ""
                 accountId = t.accountId
                 toAccountId = t.toAccountId
                 categoryId = t.categoryId
@@ -136,7 +144,14 @@ fun AddTransactionScreen(txnId: Long, onClose: () -> Unit, onGoAccounts: () -> U
         .filter { it.kind.name == kind.name && (!it.archived || it.id == categoryId) }
         .sortedWith(compareByDescending<Category> { usage[it.id] ?: 0 }.thenBy { it.id })
 
-    val amount = parseVndInput(digits)
+    // The amount is in the currency of the (source) account; a transfer between two currencies also takes
+    // the amount received, in the target account's currency.
+    val sourceAccount = allAccounts.firstOrNull { it.id == accountId }
+    val targetAccount = allAccounts.firstOrNull { it.id == toAccountId }
+    val currency = sourceAccount?.currency ?: MAIN_CURRENCY
+    val crossCurrency = kind == TxnKind.TRANSFER && sourceAccount != null && targetAccount != null &&
+        sourceAccount.currency != targetAccount.currency
+    val amount = parseAmount(digits, currency)
     val kindColor = kind.color()
 
     // validateTxn returns plain messages; show each one next to the field it is about.
@@ -147,7 +162,16 @@ fun AddTransactionScreen(txnId: Long, onClose: () -> Unit, onGoAccounts: () -> U
     val categoryErrors = errorsAbout("danh mục")
 
     fun typeDigits(d: String) {
+        if (d == ".") {
+            // decimal point: only for currencies with decimals (USD), once
+            if (currency.decimals == 0 || digits.contains('.')) return
+            digits = if (digits.isEmpty()) "0." else "$digits."
+            errors = emptyList()
+            return
+        }
         if (digits.isEmpty() && d.startsWith("0")) return
+        val fraction = digits.substringAfter('.', "")
+        if (digits.contains('.') && fraction.length + d.length > currency.decimals) return
         if (digits.length + d.length <= MAX_DIGITS) {
             digits += d
             errors = emptyList()
@@ -164,6 +188,7 @@ fun AddTransactionScreen(txnId: Long, onClose: () -> Unit, onGoAccounts: () -> U
             categoryId = if (kind == TxnKind.TRANSFER) null else categoryId,
             date = date,
             note = note.trim(),
+            toAmount = if (crossCurrency) targetAccount?.let { parseAmount(receivedText, it.currency) } else null,
         )
         val found = validateTxn(txn, allAccounts, allCategories)
         if (found.isEmpty()) {
@@ -208,7 +233,7 @@ fun AddTransactionScreen(txnId: Long, onClose: () -> Unit, onGoAccounts: () -> U
 
             Column {
                 Text(
-                    if (amount != null) formatVnd(amount) else "0 ₫",
+                    formatMoney(amount ?: 0L, currency),
                     style = MaterialTheme.typography.displaySmall,
                     color = if (amount != null) kindColor else MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.End,
@@ -232,6 +257,16 @@ fun AddTransactionScreen(txnId: Long, onClose: () -> Unit, onGoAccounts: () -> U
                 )
             }
             accountErrors.forEach { ErrorText(it) }
+            if (crossCurrency && targetAccount != null) {
+                OutlinedTextField(
+                    value = receivedText,
+                    onValueChange = { receivedText = it; errors = emptyList() },
+                    label = { Text("Số tiền nhận (${currencySymbol(targetAccount.currency)})") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
 
             if (kind != TxnKind.TRANSFER) {
                 Text("Danh mục", style = MaterialTheme.typography.labelLarge)
@@ -262,7 +297,7 @@ fun AddTransactionScreen(txnId: Long, onClose: () -> Unit, onGoAccounts: () -> U
             Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            NumberPad(onDigits = ::typeDigits, onBackspace = { digits = digits.dropLast(1); errors = emptyList() })
+            NumberPad(decimalPoint = currency.decimals > 0, onDigits = ::typeDigits, onBackspace = { digits = digits.dropLast(1); errors = emptyList() })
             Button(
                 onClick = ::save,
                 colors = ButtonDefaults.buttonColors(containerColor = kindColor, contentColor = MaterialTheme.colorScheme.surface),
@@ -347,7 +382,7 @@ private fun AccountPicker(label: String, accounts: List<Account>, selectedId: Lo
                 FilterChip(
                     selected = a.id == selectedId,
                     onClick = { onPick(a.id) },
-                    label = { Text(a.name) },
+                    label = { Text("${a.name} · ${a.currency.name}") },
                 )
             }
         }
@@ -394,12 +429,12 @@ private fun CategoryGrid(categories: List<Category>, selectedId: Long?, onPick: 
 }
 
 @Composable
-private fun NumberPad(onDigits: (String) -> Unit, onBackspace: () -> Unit) {
+private fun NumberPad(decimalPoint: Boolean, onDigits: (String) -> Unit, onBackspace: () -> Unit) {
     val rows = listOf(
         listOf("7", "8", "9"),
         listOf("4", "5", "6"),
         listOf("1", "2", "3"),
-        listOf("000", "0", DELETE_KEY),
+        listOf(if (decimalPoint) "." else "000", "0", DELETE_KEY),
     )
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         rows.forEach { row ->

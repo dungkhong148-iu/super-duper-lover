@@ -59,8 +59,10 @@ import com.superduperlover.finance.core.BudgetStatus
 import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
 import com.superduperlover.finance.core.budgetUsage
-import com.superduperlover.finance.core.formatVnd
-import com.superduperlover.finance.core.parseVndInput
+import com.superduperlover.finance.core.parseAmount
+import com.superduperlover.finance.core.amountToInput
+import com.superduperlover.finance.core.currencySymbol
+import com.superduperlover.finance.ui.components.CurrencyChips
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.expenseColor
 import com.superduperlover.finance.ui.components.incomeColor
@@ -83,8 +85,11 @@ internal fun BudgetSheet(
 
     var selectedAccountId by remember { mutableStateOf(budget.accountId) }
     var selectedCategoryId by remember { mutableStateOf(budget.categoryId) }
+    var pickedCurrency by remember { mutableStateOf(budget.currency) }
+    // One account: its currency. "Tất cả": the currency chosen below.
+    val currency = accounts.firstOrNull { it.id == selectedAccountId }?.currency ?: pickedCurrency
     var limitInput by remember {
-        mutableStateOf(if (isNew) "" else budget.limit.toString())
+        mutableStateOf(if (isNew) "" else amountToInput(budget.limit, budget.currency))
     }
     var limitError by remember { mutableStateOf<String?>(null) }
     var duplicateError by remember { mutableStateOf<String?>(null) }
@@ -130,7 +135,7 @@ internal fun BudgetSheet(
                             selectedAccountId = acc.id
                             duplicateError = null
                         },
-                        label = { Text(acc.name) },
+                        label = { Text("${acc.name} · ${acc.currency.name}") },
                     )
                 }
             }
@@ -163,6 +168,13 @@ internal fun BudgetSheet(
                 }
             }
 
+            if (selectedAccountId == null) {
+                CurrencyChips(
+                    selected = pickedCurrency,
+                    onSelect = { pickedCurrency = it; duplicateError = null },
+                    label = "Loại tiền (các tài khoản cùng loại)",
+                )
+            }
             OutlinedTextField(
                 value = limitInput,
                 onValueChange = {
@@ -170,7 +182,7 @@ internal fun BudgetSheet(
                     limitError = null
                     duplicateError = null
                 },
-                label = { Text("Hạn mức (₫)") },
+                label = { Text("Hạn mức (${currencySymbol(currency)})") },
                 singleLine = true,
                 isError = limitError != null,
                 supportingText = limitError?.let { { Text(it) } },
@@ -188,12 +200,13 @@ internal fun BudgetSheet(
 
             Button(
                 onClick = {
-                    val parsedLimit = parseVndInput(limitInput)
+                    val parsedLimit = parseAmount(limitInput, currency)
                     if (parsedLimit == null) {
                         limitError = "Số tiền không hợp lệ"
                     }
                     val isDuplicate = existingBudgets.any {
-                        it.id != budget.id && it.accountId == selectedAccountId && it.categoryId == selectedCategoryId
+                        it.id != budget.id && it.accountId == selectedAccountId && it.categoryId == selectedCategoryId &&
+                            (selectedAccountId != null || it.currency == currency)
                     }
                     if (isDuplicate) {
                         duplicateError = "Ngân sách này đã tồn tại"
@@ -207,6 +220,7 @@ internal fun BudgetSheet(
                                     accountId = selectedAccountId,
                                     categoryId = selectedCategoryId,
                                     limit = parsedLimit,
+                                    currency = currency,
                                 )
                             )
                             onDismiss()

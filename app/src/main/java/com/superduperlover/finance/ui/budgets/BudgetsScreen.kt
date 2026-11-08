@@ -59,8 +59,7 @@ import com.superduperlover.finance.core.BudgetStatus
 import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
 import com.superduperlover.finance.core.budgetUsage
-import com.superduperlover.finance.core.formatVnd
-import com.superduperlover.finance.core.parseVndInput
+import com.superduperlover.finance.core.formatMoney
 import androidx.compose.ui.res.painterResource
 import com.superduperlover.finance.R
 import com.superduperlover.finance.ui.LocalRepo
@@ -162,9 +161,9 @@ fun BudgetsScreen() {
                 )
             } else {
                 for (budget in budgets) {
-                    val usage = budgetUsage(budget, txns)
+                    val usage = budgetUsage(budget, txns, accounts)
                     val statusColor = budgetStatusColor(usage.status)
-                    val accountName = budget.accountId?.let { accountsById[it]?.name ?: "?" } ?: "Tất cả tài khoản"
+                    val accountName = budget.accountId?.let { accountsById[it]?.name ?: "?" } ?: "Tất cả tài khoản (${budget.currency.name})"
                     val categoryName = budget.categoryId?.let { categoriesById[it]?.name ?: "?" } ?: "Tất cả danh mục"
 
                     Card(
@@ -199,15 +198,15 @@ fun BudgetsScreen() {
                                 )
                             }
                             Text(
-                                text = "Đã chi ${formatVnd(usage.spent)} / ${formatVnd(usage.limit)}",
+                                text = "Đã chi ${formatMoney(usage.spent, budget.currency)} / ${formatMoney(usage.limit, budget.currency)}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Text(
                                 text = if (usage.remaining >= 0) {
-                                    "Còn lại ${formatVnd(usage.remaining)}"
+                                    "Còn lại ${formatMoney(usage.remaining, budget.currency)}"
                                 } else {
-                                    "Vượt ${formatVnd(-usage.remaining)}"
+                                    "Vượt ${formatMoney(-usage.remaining, budget.currency)}"
                                 },
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = if (usage.remaining >= 0) MaterialTheme.colorScheme.onSurfaceVariant else expenseColor(),

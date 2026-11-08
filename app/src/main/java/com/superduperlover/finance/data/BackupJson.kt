@@ -1,6 +1,9 @@
 package com.superduperlover.finance.data
 
+import com.superduperlover.finance.core.AccountType
 import com.superduperlover.finance.core.BACKUP_VERSION
+import com.superduperlover.finance.core.accountColorKeyOrDefault
+import com.superduperlover.finance.core.currencyFromBackup
 import com.superduperlover.finance.core.validateBackup
 import org.json.JSONArray
 import org.json.JSONException
@@ -31,6 +34,8 @@ fun BackupData.toJson(exportedAt: String): String {
         obj.put("type", a.type)
         obj.put("openingBalance", a.openingBalance)
         obj.put("archived", a.archived)
+        obj.put("colorKey", a.colorKey)
+        obj.put("currency", a.currency)
         accountsArr.put(obj)
     }
     root.put("accounts", accountsArr)
@@ -53,6 +58,7 @@ fun BackupData.toJson(exportedAt: String): String {
         obj.put("id", t.id)
         obj.put("kind", t.kind)
         obj.put("amount", t.amount)
+        obj.put("toAmount", jsonNull(t.toAmount))
         obj.put("accountId", t.accountId)
         obj.put("toAccountId", jsonNull(t.toAccountId))
         obj.put("categoryId", jsonNull(t.categoryId))
@@ -70,6 +76,7 @@ fun BackupData.toJson(exportedAt: String): String {
         obj.put("accountId", jsonNull(b.accountId))
         obj.put("categoryId", jsonNull(b.categoryId))
         obj.put("limit", b.limitAmount)
+        obj.put("currency", b.currency)
         budgetsArr.put(obj)
     }
     root.put("budgets", budgetsArr)
@@ -82,6 +89,7 @@ fun BackupData.toJson(exportedAt: String): String {
         obj.put("target", g.target)
         obj.put("deadline", jsonNull(g.deadline))
         obj.put("archived", g.archived)
+        obj.put("currency", g.currency)
         goalsArr.put(obj)
     }
     root.put("goals", goalsArr)
@@ -160,6 +168,9 @@ fun parseBackup(root: Map<String, Any?>): BackupData {
             type = toStr(r["type"]),
             openingBalance = toLong(r["openingBalance"]),
             archived = toBool(r["archived"]),
+            // version 1 files have neither: default colour of the type, VND
+            colorKey = accountColorKeyOrDefault(r["colorKey"], AccountType.valueOf(toStr(r["type"]))),
+            currency = currencyFromBackup(r["currency"]).name,
         )
     }
     val categories = (root["categories"] as List<*>).map {
@@ -183,6 +194,7 @@ fun parseBackup(root: Map<String, Any?>): BackupData {
             categoryId = toLongOrNull(r["categoryId"]),
             date = toStr(r["date"]),
             note = toStr(r["note"]),
+            toAmount = toLongOrNull(r["toAmount"]),
         )
     }
     val budgets = (root["budgets"] as List<*>).map {
@@ -193,6 +205,7 @@ fun parseBackup(root: Map<String, Any?>): BackupData {
             accountId = toLongOrNull(r["accountId"]),
             categoryId = toLongOrNull(r["categoryId"]),
             limitAmount = toLong(r["limit"]),
+            currency = currencyFromBackup(r["currency"]).name,
         )
     }
     val goals = (root["goals"] as List<*>).map {
@@ -203,6 +216,7 @@ fun parseBackup(root: Map<String, Any?>): BackupData {
             target = toLong(r["target"]),
             deadline = toStrOrNull(r["deadline"]),
             archived = toBool(r["archived"]),
+            currency = currencyFromBackup(r["currency"]).name,
         )
     }
     val contributions = (root["goalContributions"] as List<*>).map {

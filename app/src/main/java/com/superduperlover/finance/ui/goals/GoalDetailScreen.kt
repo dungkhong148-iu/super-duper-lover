@@ -51,9 +51,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.core.Goal
 import com.superduperlover.finance.core.GoalContribution
-import com.superduperlover.finance.core.formatVnd
+import com.superduperlover.finance.core.Currency
+import com.superduperlover.finance.core.amountToInput
+import com.superduperlover.finance.core.currencySymbol
+import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.core.goalProgress
-import com.superduperlover.finance.core.parseVndInput
+import com.superduperlover.finance.core.parseAmount
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.incomeColor
 import java.time.LocalDate
@@ -201,7 +204,7 @@ fun GoalDetailScreen(goalId: Long, onBack: () -> Unit) {
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         Text(
-                            text = formatVnd(contribution.amount),
+                            text = formatMoney(contribution.amount, goal.currency),
                             style = MaterialTheme.typography.titleMedium,
                             color = incomeColor(),
                         )
@@ -243,6 +246,7 @@ fun GoalDetailScreen(goalId: Long, onBack: () -> Unit) {
     editingContribution?.let { c ->
         ContributionSheet(
             goalId = goal.id,
+            currency = goal.currency,
             contribution = c,
             onDismiss = { editingContribution = null },
         )
@@ -253,6 +257,7 @@ fun GoalDetailScreen(goalId: Long, onBack: () -> Unit) {
 @Composable
 private fun ContributionSheet(
     goalId: Long,
+    currency: Currency,
     contribution: GoalContribution,
     onDismiss: () -> Unit,
 ) {
@@ -261,7 +266,7 @@ private fun ContributionSheet(
     val isNew = contribution.id == 0L
 
     var amountText by remember {
-        mutableStateOf(if (isNew || contribution.amount == 0L) "" else contribution.amount.toString())
+        mutableStateOf(if (isNew || contribution.amount == 0L) "" else amountToInput(contribution.amount, currency))
     }
     var selectedDate by remember { mutableStateOf(contribution.date) }
     var amountError by remember { mutableStateOf<String?>(null) }
@@ -290,7 +295,7 @@ private fun ContributionSheet(
                     amountText = it
                     amountError = null
                 },
-                label = { Text("Số tiền (₫)") },
+                label = { Text("Số tiền (${currencySymbol(currency)})") },
                 placeholder = { Text("0") },
                 singleLine = true,
                 isError = amountError != null,
@@ -309,7 +314,7 @@ private fun ContributionSheet(
             }
             Button(
                 onClick = {
-                    val parsedAmount = parseVndInput(amountText)
+                    val parsedAmount = parseAmount(amountText, currency)
                     if (parsedAmount == null) {
                         amountError = "Số tiền không hợp lệ"
                     } else {

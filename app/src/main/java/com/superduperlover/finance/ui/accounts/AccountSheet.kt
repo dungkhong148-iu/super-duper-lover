@@ -40,8 +40,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import com.superduperlover.finance.core.Account
 import com.superduperlover.finance.core.AccountType
 import com.superduperlover.finance.core.accountBalance
-import com.superduperlover.finance.core.formatVnd
-import com.superduperlover.finance.core.parseVndInput
+import com.superduperlover.finance.core.amountToInput
+import com.superduperlover.finance.core.currencySymbol
+import com.superduperlover.finance.core.defaultAccountColorKey
+import com.superduperlover.finance.core.parseAmount
+import com.superduperlover.finance.ui.components.CurrencyChips
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.flow.first
 import com.superduperlover.finance.data.DeleteResult
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.expenseColor
@@ -57,8 +62,14 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
 
     var name by remember { mutableStateOf(account.name) }
     var type by remember { mutableStateOf(account.type) }
+    var currency by remember { mutableStateOf(account.currency) }
+    // The currency cannot change once the account has transactions.
+    var hasTxns by remember { mutableStateOf(false) }
+    LaunchedEffect(account.id) {
+        if (!isNew) hasTxns = repo.txns(accountId = account.id).first().isNotEmpty()
+    }
     var opening by remember {
-        mutableStateOf(if (isNew || account.openingBalance == 0L) "" else account.openingBalance.toString())
+        mutableStateOf(if (isNew || account.openingBalance == 0L) "" else amountToInput(account.openingBalance, account.currency))
     }
     var nameError by remember { mutableStateOf<String?>(null) }
     var openingError by remember { mutableStateOf<String?>(null) }
@@ -102,10 +113,22 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
                     )
                 }
             }
+            CurrencyChips(
+                selected = currency,
+                onSelect = { currency = it; openingError = null },
+                enabled = isNew || !hasTxns,
+            )
+            if (!isNew && hasTxns) {
+                Text(
+                    "Không đổi được loại tiền vì tài khoản đã có giao dịch",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             OutlinedTextField(
                 value = opening,
                 onValueChange = { opening = it; openingError = null },
-                label = { Text("Số dư ban đầu") },
+                label = { Text("Số dư ban đầu (${currencySymbol(currency)})") },
                 placeholder = { Text("0") },
                 singleLine = true,
                 isError = openingError != null,
@@ -120,12 +143,26 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
                 onClick = {
                     val trimmed = name.trim()
                     // Empty or "0" opening balance means 0; anything else must parse.
-                    val openingValue = if (opening.isBlank() || opening.trim() == "0") 0L else parseVndInput(opening)
+                    val openingValue = if (opening.isBlank() || opening.trim() == "0") 0L else parseAmount(opening, currency)
                     if (trimmed.isEmpty()) nameError = "Nhập tên tài khoản"
                     if (openingValue == null) openingError = "Số tiền không hợp lệ"
                     if (trimmed.isNotEmpty() && openingValue != null) {
                         scope.launch {
-                            repo.saveAccount(account.copy(name = trimmed, type = type, openingBalance = openingValue))
+                            // A new account keeps following the default colour of its type until the user picks one.
+                            val colorKey = if (isNew && account.colorKey == defaultAccountColorKey(account.type)) {
+                                defaultAccountColorKey(type)
+                            } else {
+                                account.colorKey
+                            }
+                            repo.saveAccount(
+                                account.copy(
+                                    name = trimmed,
+                                    type = type,
+                                    openingBalance = openingValue,
+                                    currency = currency,
+                                    colorKey = colorKey,
+                                ),
+                            )
                             onDismiss()
                         }
                     }
