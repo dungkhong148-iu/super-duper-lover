@@ -3,31 +3,21 @@ package com.superduperlover.finance.ui.goals
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,12 +29,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.core.Goal
-import com.superduperlover.finance.core.GoalProgress
-import com.superduperlover.finance.core.parseAmount
 import com.superduperlover.finance.core.amountToInput
 import com.superduperlover.finance.core.currencySymbol
-import com.superduperlover.finance.ui.components.CurrencyChips
+import com.superduperlover.finance.core.parseAmount
 import com.superduperlover.finance.ui.LocalRepo
+import com.superduperlover.finance.ui.components.CurrencyChips
+import com.superduperlover.finance.ui.components.FormDialog
+import com.superduperlover.finance.ui.components.OneLineText
+import com.superduperlover.finance.ui.components.SectionHeaderBand
 import java.time.LocalDate
 import kotlinx.coroutines.launch
 
@@ -60,30 +52,59 @@ fun GoalSheet(
 
     var name by remember { mutableStateOf(goal.name) }
     var currency by remember { mutableStateOf(goal.currency) }
-    var targetText by remember {
-        mutableStateOf(if (isNew || goal.target == 0L) "" else amountToInput(goal.target, goal.currency))
+    val initialTargetText = remember(goal) {
+        if (isNew || goal.target == 0L) "" else amountToInput(goal.target, goal.currency)
     }
+    var targetText by remember { mutableStateOf(initialTargetText) }
     var deadline by remember { mutableStateOf(goal.deadline) }
+
     var nameError by remember { mutableStateOf<String?>(null) }
     var targetError by remember { mutableStateOf<String?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    val hasChanges = name != goal.name ||
+        currency != goal.currency ||
+        targetText != initialTargetText ||
+        deadline != goal.deadline
+
+    val saveEnabled = name.isNotBlank() && targetText.isNotBlank()
+
+    val onSave: () -> Unit = {
+        val trimmed = name.trim()
+        val parsedTarget = parseAmount(targetText, currency)
+        if (trimmed.isEmpty()) nameError = "Nhập tên mục tiêu"
+        if (parsedTarget == null) targetError = "Số tiền không hợp lệ"
+        if (trimmed.isNotEmpty() && parsedTarget != null) {
+            scope.launch {
+                repo.saveGoal(
+                    Goal(
+                        id = goal.id,
+                        name = trimmed,
+                        target = parsedTarget,
+                        deadline = deadline,
+                        archived = false,
+                        currency = currency,
+                    )
+                )
+                onDismiss()
+            }
+        }
+    }
+
+    FormDialog(
+        title = if (isNew) "Thêm mục tiêu" else "Sửa mục tiêu",
+        onClose = onDismiss,
+        onSave = onSave,
+        saveEnabled = saveEnabled,
+        hasChanges = hasChanges,
     ) {
+        SectionHeaderBand("Mục tiêu")
         Column(
             modifier = Modifier
-                .verticalScroll(rememberScrollState())
-                .navigationBarsPadding()
-                .imePadding()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = if (isNew) "Thêm mục tiêu" else "Sửa mục tiêu",
-                style = MaterialTheme.typography.titleLarge,
-            )
             OutlinedTextField(
                 value = name,
                 onValueChange = {
@@ -96,9 +117,17 @@ fun GoalSheet(
                 supportingText = nameError?.let { { Text(it) } },
                 modifier = Modifier.fillMaxWidth(),
             )
+
             if (isNew) {
-                CurrencyChips(selected = currency, onSelect = { currency = it; targetError = null })
+                CurrencyChips(
+                    selected = currency,
+                    onSelect = {
+                        currency = it
+                        targetError = null
+                    },
+                )
             }
+
             OutlinedTextField(
                 value = targetText,
                 onValueChange = {
@@ -113,7 +142,16 @@ fun GoalSheet(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
             )
-            Text("Hạn hoàn thành (không bắt buộc)", style = MaterialTheme.typography.labelLarge)
+        }
+
+        SectionHeaderBand("Thời hạn")
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            OneLineText("Hạn hoàn thành (không bắt buộc)", style = MaterialTheme.typography.labelLarge)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -121,43 +159,24 @@ fun GoalSheet(
             ) {
                 OutlinedButton(
                     onClick = { showDatePicker = true },
-                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp),
                 ) {
-                    Text(deadline?.let { formatGoalDate(it) } ?: "Chưa đặt hạn")
+                    OneLineText(deadline?.let { formatGoalDate(it) } ?: "Chưa đặt hạn")
                 }
                 if (deadline != null) {
-                    TextButton(onClick = { deadline = null }) {
-                        Text("Bỏ hạn")
+                    TextButton(
+                        onClick = { deadline = null },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    ) {
+                        OneLineText("Bỏ hạn")
                     }
                 }
             }
-            Button(
-                onClick = {
-                    val trimmed = name.trim()
-                    val parsedTarget = parseAmount(targetText, currency)
-                    if (trimmed.isEmpty()) nameError = "Nhập tên mục tiêu"
-                    if (parsedTarget == null) targetError = "Số tiền không hợp lệ"
-                    if (trimmed.isNotEmpty() && parsedTarget != null) {
-                        scope.launch {
-                            repo.saveGoal(
-                                Goal(
-                                    id = goal.id,
-                                    name = trimmed,
-                                    target = parsedTarget,
-                                    deadline = deadline,
-                                    archived = false,
-                                    currency = currency,
-                                )
-                            )
-                            onDismiss()
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-            ) {
-                Text("Lưu")
-            }
         }
+
+        Spacer(Modifier.height(24.dp))
     }
 
     if (showDatePicker) {

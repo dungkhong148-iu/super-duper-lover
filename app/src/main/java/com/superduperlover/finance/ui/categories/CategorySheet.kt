@@ -1,44 +1,24 @@
 package com.superduperlover.finance.ui.categories
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,7 +26,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -56,12 +35,12 @@ import com.superduperlover.finance.core.TxnKind
 import com.superduperlover.finance.data.DeleteResult
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.CategoryIcons
-import com.superduperlover.finance.ui.components.expenseColor
-import com.superduperlover.finance.ui.components.incomeColor
+import com.superduperlover.finance.ui.components.FormDialog
+import com.superduperlover.finance.ui.components.OneLineText
+import com.superduperlover.finance.ui.components.SectionHeaderBand
 import com.superduperlover.finance.ui.components.label
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun CategorySheet(
     category: Category,
@@ -74,35 +53,63 @@ internal fun CategorySheet(
 
     var name by remember { mutableStateOf(category.name) }
     var kind by remember { mutableStateOf(category.kind) }
-    var selectedIcon by remember {
-        mutableStateOf(
-            if (category.icon.isNotBlank()) category.icon
-            else if (category.kind == CategoryKind.EXPENSE) "food"
-            else "salary"
-        )
+    val initialIcon = remember(category) {
+        if (category.icon.isNotBlank()) category.icon
+        else if (category.kind == CategoryKind.EXPENSE) "food"
+        else "salary"
     }
+    var selectedIcon by remember { mutableStateOf(initialIcon) }
+
     var nameError by remember { mutableStateOf<String?>(null) }
     var deleteError by remember { mutableStateOf<String?>(null) }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    val hasChanges = name != category.name ||
+        (isNew && kind != category.kind) ||
+        selectedIcon != initialIcon
+
+    val saveEnabled = name.isNotBlank()
+
+    val onSave: () -> Unit = {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) {
+            nameError = "Nhập tên danh mục"
+        } else if (allCategories.any { other ->
+                other.id != category.id &&
+                    other.kind == kind &&
+                    other.name.trim().equals(trimmed, ignoreCase = true)
+            }
+        ) {
+            nameError = "Tên danh mục đã tồn tại"
+        } else {
+            scope.launch {
+                repo.saveCategory(
+                    category.copy(
+                        name = trimmed,
+                        kind = kind,
+                        icon = selectedIcon,
+                    )
+                )
+                onDismiss()
+            }
+        }
+    }
+
+    FormDialog(
+        title = if (isNew) "Thêm danh mục" else "Sửa danh mục",
+        onClose = onDismiss,
+        onSave = onSave,
+        saveEnabled = saveEnabled,
+        hasChanges = hasChanges,
     ) {
+        SectionHeaderBand("Thông tin")
         Column(
-            Modifier
-                .verticalScroll(rememberScrollState())
-                .navigationBarsPadding()
-                .imePadding()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = if (isNew) "Thêm danh mục" else "Sửa danh mục",
-                style = MaterialTheme.typography.titleLarge,
-            )
-
             if (isNew) {
-                Text("Loại", style = MaterialTheme.typography.labelLarge)
+                OneLineText("Loại", style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
                         selected = kind == CategoryKind.EXPENSE,
@@ -127,7 +134,7 @@ internal fun CategorySheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("Loại:", style = MaterialTheme.typography.labelLarge)
+                    OneLineText("Loại:", style = MaterialTheme.typography.labelLarge)
                     Text(
                         text = if (category.kind == CategoryKind.EXPENSE) TxnKind.EXPENSE.label() else TxnKind.INCOME.label(),
                         style = MaterialTheme.typography.bodyMedium,
@@ -148,81 +155,62 @@ internal fun CategorySheet(
                 supportingText = nameError?.let { { Text(it) } },
                 modifier = Modifier.fillMaxWidth(),
             )
+        }
 
-            Text("Biểu tượng", style = MaterialTheme.typography.labelLarge)
+        SectionHeaderBand("Biểu tượng")
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             val iconEntries = remember { CategoryIcons.all.entries.toList() }
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                iconEntries.chunked(5).forEach { rowEntries ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        rowEntries.forEach { (key, vector) ->
-                            val on = key == selectedIcon
-                            Surface(
-                                onClick = { selectedIcon = key },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .heightIn(min = 48.dp)
-                                    .semantics { this.selected = on },
-                                shape = RoundedCornerShape(8.dp),
-                                color = if (on) MaterialTheme.colorScheme.primaryContainer
-                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                border = if (on) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+            iconEntries.chunked(5).forEach { rowEntries ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    rowEntries.forEach { (key, vector) ->
+                        val on = key == selectedIcon
+                        Surface(
+                            onClick = { selectedIcon = key },
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 48.dp)
+                                .semantics { this.selected = on },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (on) MaterialTheme.colorScheme.primaryContainer
+                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            border = if (on) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+                        ) {
+                            Box(
+                                modifier = Modifier.padding(8.dp),
+                                contentAlignment = Alignment.Center,
                             ) {
-                                Box(
-                                    modifier = Modifier.padding(8.dp),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(
-                                        imageVector = vector,
-                                        contentDescription = key,
-                                        tint = if (on) MaterialTheme.colorScheme.onPrimaryContainer
-                                        else MaterialTheme.colorScheme.onSurface,
-                                    )
-                                }
+                                Icon(
+                                    imageVector = vector,
+                                    contentDescription = key,
+                                    tint = if (on) MaterialTheme.colorScheme.onPrimaryContainer
+                                    else MaterialTheme.colorScheme.onSurface,
+                                )
                             }
                         }
-                        repeat(5 - rowEntries.size) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
+                    }
+                    repeat(5 - rowEntries.size) {
+                        Spacer(modifier = Modifier.weight(1f))
                     }
                 }
             }
+        }
 
-            Button(
-                onClick = {
-                    val trimmed = name.trim()
-                    if (trimmed.isEmpty()) {
-                        nameError = "Nhập tên danh mục"
-                    } else if (allCategories.any { other ->
-                            other.id != category.id &&
-                                other.kind == kind &&
-                                other.name.trim().equals(trimmed, ignoreCase = true)
-                        }
-                    ) {
-                        nameError = "Tên danh mục đã tồn tại"
-                    } else {
-                        scope.launch {
-                            repo.saveCategory(
-                                category.copy(
-                                    name = trimmed,
-                                    kind = kind,
-                                    icon = selectedIcon,
-                                )
-                            )
-                            onDismiss()
-                        }
-                    }
-                },
+        if (!isNew) {
+            SectionHeaderBand("Khác")
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 48.dp),
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text("Lưu")
-            }
-
-            if (!isNew) {
                 OutlinedButton(
                     onClick = {
                         scope.launch {
@@ -234,7 +222,7 @@ internal fun CategorySheet(
                         .fillMaxWidth()
                         .heightIn(min = 48.dp),
                 ) {
-                    Text("Lưu trữ")
+                    OneLineText("Lưu trữ")
                 }
 
                 OutlinedButton(
@@ -251,17 +239,19 @@ internal fun CategorySheet(
                         .fillMaxWidth()
                         .heightIn(min = 48.dp),
                 ) {
-                    Text("Xóa danh mục", color = MaterialTheme.colorScheme.error)
+                    OneLineText("Xóa danh mục", color = MaterialTheme.colorScheme.error)
+                }
+
+                deleteError?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
                 }
             }
-
-            deleteError?.let {
-                Text(
-                    text = it,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
         }
+
+        Spacer(Modifier.height(24.dp))
     }
 }
