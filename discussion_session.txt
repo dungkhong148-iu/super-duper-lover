@@ -47,3 +47,4 @@
 [2026-11-08 11:00] director: C2 approved (05ca8ca). Scope = 6 spec files; import validates, parses fully, then clears + restores in one Room transaction. Phone test of export/import pending with the user.
 [2026-11-08 11:09] director: phone unplugged by the user. No adb install/screenshot until the user says it is plugged in again. UI redesign (layout guide from user's reference screenshots) waiting for user answers.
 [2026-11-08 11:25] director: phone plugged in again. Wrote docs/ui-layout.md (user's reference app structure + ui-ux-pro-max, green theme, 3-tab nav, calculator pad). Phase U added to plan; U1 assigned to head_agent.
+[2026-11-08 11:32] director: user decided currencies: VND/TWD/USD, one per account, main TWD, no conversion (totals per currency), USD cents, TWD/VND whole. Spec + plan (U1b) updated; U1b assigned to head_agent.

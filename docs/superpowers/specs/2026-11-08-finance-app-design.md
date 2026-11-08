@@ -20,7 +20,7 @@ A personal finance app for the user's own Android phone. It answers one question
 ## Non-goals (v1)
 
 - No login, no server, no sync between devices.
-- No multi-currency. Everything is VND, whole đồng (no decimals).
+- No exchange rates and no conversion between currencies (see Currencies).
 - No charts, no recurring transactions, no reading bank SMS, no OCR. (Phase 2 candidates.)
 - No iOS. Android only.
 
@@ -68,3 +68,16 @@ Director's call (user may override):
 ## Left to the builder
 
 Visual style, icons, navigation layout (tabs vs stack), component library choice within Expo defaults.
+
+## Currencies (user decided 2026-11-08)
+
+- Three currencies: VND, TWD, USD. Main (default) currency: **TWD**.
+- **One currency per account**, chosen when the account is created. It cannot change once the account has transactions. Every transaction uses its account's currency.
+- **No conversion, no exchange rates.** Totals are shown per currency side by side, e.g. `NT$3,500 · 12.000.000 ₫ · $120.00`. A currency with no accounts is not shown.
+- Budgets have a currency. A budget for one account uses that account's currency; a budget for "Tất cả" counts only accounts of the budget's currency. Goals have a currency.
+- Transfer between accounts of different currencies records both amounts: sent (source currency) and received (target currency).
+- Decimals: VND and TWD whole units only; USD has cents (2 decimals).
+- Stored amounts are `Long` in minor units: đồng, NT dollars, US cents. Never floating point.
+- Display: VND `1.250.000 ₫`; TWD `NT$1,250`; USD `$1,250.50`. Negative: sign before the symbol (`-NT$50`).
+- Input per currency: VND as before (`.` `,` space as 3-digit group separators, `k` suffix). TWD: `,` or space as group separators, `k` suffix, no decimals. USD: `,` group separator, `.` decimal point with at most 2 digits, `k` suffix (`1.5k` = $1,500.00).
+- Existing data (all VND before this change) migrates as VND.

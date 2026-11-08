@@ -187,3 +187,39 @@ User decisions: bottom navigation is the director's call; green tone; calculator
 ### Task U2: Add transaction redesign (agy, spec by head_agent) — §2 "Add transaction", uses `evalAmountExpr`.
 ### Task U3: Full-screen forms (agy) — account (with colour picker), budget, goal, category; contribution stays a sheet.
 ### Task U4: Top bars + empty states everywhere + Cài đặt screen polish (agy).
+
+### Task U1b: Currencies in :core, DB v2, backup v2 (head_agent, TDD) — spec section "Currencies"
+
+Replaces U1 parts 3 and 5. One Room migration v1 -> v2 covers colour and currency.
+
+**Interfaces — Produces (package `com.superduperlover.finance.core`):**
+
+```kotlin
+enum class Currency(val decimals: Int) { VND(0), TWD(0), USD(2) }   // main = TWD
+// Account += currency: Currency, colorKey: String
+// Txn += toAmount: Long?   (TRANSFER only; amount received in the target account's currency; null = same as amount)
+// Budget += currency: Currency
+// Goal += currency: Currency
+fun parseAmount(text: String, currency: Currency): Long?          // minor units; replaces parseVndInput
+fun formatMoney(amount: Long, currency: Currency): String         // replaces formatVnd
+fun evalAmountExpr(text: String, currency: Currency): Long?       // + − × ÷ (also - * /), × ÷ first, ÷ rounds half up to the minor unit, result > 0
+fun accountBalance(account: Account, txns: List<Txn>): Long       // transfer in adds toAmount ?: amount
+fun budgetUsage(budget: Budget, txns: List<Txn>, accounts: List<Account>): BudgetUsage   // accountId null -> only accounts with budget.currency
+fun txnTotals(txns: List<Txn>, accounts: List<Account>): Map<Currency, TxnTotals>
+fun balancesByCurrency(accounts: List<Account>, txns: List<Txn>): Map<Currency, Long>
+// validateTxn: TRANSFER between different currencies needs toAmount > 0; same currency -> toAmount must be null or == amount
+```
+
+Keep `parseVndInput`/`formatVnd` as thin wrappers (VND) until U2-U4 move the screens, then delete them.
+
+**Tests (add to the existing ones):**
+- `parseAmount`: VND keeps all old cases. TWD `"1,250"`→1250, `"1 250"`→1250, `"5k"`→5000, `"12.5"`→null. USD `"12.50"`→1250, `"12.5"`→1250, `"12"`→1200, `"1,250.75"`→125075, `"1.5k"`→150000, `"12.345"`→null, `"0.00"`→null.
+- `formatMoney`: `(1250000, VND)`→`"1.250.000 ₫"`, `(1250, TWD)`→`"NT$1,250"`, `(125075, USD)`→`"$1,250.75"`, `(5, USD)`→`"$0.05"`, `(-50, TWD)`→`"-NT$50"`.
+- `evalAmountExpr`: VND `"50k+30k"`→80000, `"100000/3"`→33333, `"200000/3"`→66667, `"10+2*3"`→16, `"5-10"`→null, `"+5"`→null, `"5+"`→null, `"5/0"`→null, `"1.250.000+50k"`→1300000; USD `"10.50+2.25"`→1275, `"10/3"`→333; TWD `"100/3"`→33.
+- Balance: TRANSFER 1000000 VND from A (VND) to B (TWD) with `toAmount=1250` → A −1000000, B +1250.
+- Budget: `accountId=null, currency=TWD` ignores EXPENSEs on VND accounts.
+- `balancesByCurrency` / `txnTotals`: one entry per currency in use; transfers never in totals.
+- Validate: cross-currency TRANSFER without `toAmount` → error.
+- Backup: version 2 exports `currency`, `colorKey`, `toAmount`; a version 1 file imports with currency VND, default colour, `toAmount` null.
+
+**DB:** v2 migration adds `accounts.currency` (default `'VND'` for existing rows), `accounts.colorKey`, `txns.toAmount` (null), `budgets.currency` (`'VND'`), `goals.currency` (`'VND'`). New rows default to TWD. Commit `app/schemas/.../2.json`. The user's debug data on the phone must survive.
