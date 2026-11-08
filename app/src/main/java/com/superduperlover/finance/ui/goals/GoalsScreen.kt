@@ -32,6 +32,22 @@ fun GoalsScreen(onOpenGoal: (Long) -> Unit) {
     val goals by remember(repo) { repo.goals() }.collectAsState(initial = emptyList())
     var editingGoal by remember { mutableStateOf<Goal?>(null) }
 
+    val inProgress = remember(goals) {
+        goals.filter { it.completedAt == null }
+            .sortedWith(
+                compareBy<Goal, LocalDate?>(nullsLast(naturalOrder())) { it.deadline }
+                    .thenBy { it.id }
+            )
+    }
+
+    val completed = remember(goals) {
+        goals.filter { it.completedAt != null }
+            .sortedWith(
+                compareByDescending<Goal> { it.completedAt }
+                    .thenByDescending { it.id }
+            )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -47,8 +63,33 @@ fun GoalsScreen(onOpenGoal: (Long) -> Unit) {
                 onAction = { editingGoal = Goal(0L, "", 0L, null) },
             )
         } else {
-            for (goal in goals) {
-                GoalCard(goal = goal, onOpen = { onOpenGoal(goal.id) })
+            OneLineText(
+                text = "Đang thực hiện",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+
+            if (inProgress.isEmpty()) {
+                OneLineText(
+                    text = "Chưa có mục tiêu đang thực hiện",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                for (goal in inProgress) {
+                    GoalCard(goal = goal, onOpen = { onOpenGoal(goal.id) })
+                }
+            }
+
+            if (completed.isNotEmpty()) {
+                OneLineText(
+                    text = "Đã hoàn thành (${completed.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                for (goal in completed) {
+                    GoalCard(goal = goal, onOpen = { onOpenGoal(goal.id) })
+                }
             }
         }
 

@@ -124,6 +124,33 @@ fun GoalDetailScreen(goalId: Long, onBack: () -> Unit) {
                     ) {
                         OneLineText("Thêm khoản để dành", style = MaterialTheme.typography.labelLarge)
                     }
+                    if (goal.completedAt == null) {
+                        OutlinedButton(
+                            onClick = {
+                                scope.launch {
+                                    repo.completeGoal(goal.id)
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp),
+                        ) {
+                            OneLineText("Đánh dấu hoàn thành", style = MaterialTheme.typography.labelLarge)
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = {
+                                scope.launch {
+                                    repo.reopenGoal(goal.id)
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp),
+                        ) {
+                            OneLineText("Mở lại", style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
                     OutlinedButton(
                         onClick = { editingGoal = goal },
                         modifier = Modifier

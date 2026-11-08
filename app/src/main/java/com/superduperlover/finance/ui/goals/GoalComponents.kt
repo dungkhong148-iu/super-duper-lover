@@ -19,6 +19,7 @@ import com.superduperlover.finance.core.Goal
 import com.superduperlover.finance.core.GoalProgress
 import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.ui.components.OneLineText
+import com.superduperlover.finance.ui.theme.ChiLiTheme
 import java.time.LocalDate
 
 fun formatGoalDate(date: LocalDate): String =
@@ -26,9 +27,10 @@ fun formatGoalDate(date: LocalDate): String =
 
 @Composable
 fun GoalProgressContent(goal: Goal, progress: GoalProgress) {
+    val completedAt = goal.completedAt
     LinearProgressIndicator(
         progress = { progress.ratio.toFloat().coerceIn(0f, 1f) },
-        color = MaterialTheme.colorScheme.primary,
+        color = if (completedAt != null) ChiLiTheme.colors.income else MaterialTheme.colorScheme.primary,
         trackColor = MaterialTheme.colorScheme.surfaceVariant,
         strokeCap = StrokeCap.Round,
         modifier = Modifier
@@ -40,7 +42,24 @@ fun GoalProgressContent(goal: Goal, progress: GoalProgress) {
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurface,
     )
-    if (progress.done) {
+    if (completedAt != null) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Check,
+                contentDescription = null,
+                tint = ChiLiTheme.colors.income,
+                modifier = Modifier.size(16.dp),
+            )
+            OneLineText(
+                text = "Hoàn thành ngày ${formatGoalDate(completedAt)}",
+                color = ChiLiTheme.colors.income,
+                style = MaterialTheme.typography.labelMedium,
+            )
+        }
+    } else if (progress.done) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
