@@ -32,7 +32,7 @@ Phase C — home, backup, release
   C3  director      Release key + release APK on the phone.    TODO  after C1, C2
 
 Fixes from user testing
-  F1  test_fix      Bottom nav labels clipped at font_scale 1.25.   ASSIGNED 2026-11-08
+  F1  test_fix      Bottom nav labels clipped at font_scale 1.25.   DONE 7e2ac0f (approved, checked on phone)
 
 Phase D — widgets (own plan after C3)
 
