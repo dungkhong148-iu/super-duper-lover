@@ -1,3 +1,7 @@
 AFTERWORK - summaries by back_agent (readable by director, back_agent, subagent1, subagent2; not head_agent)
 Format per task: task ID | agent | what was built | files/commits | build/test | open issues
 
+[2026-11-08 11:35] B2 | subagent1-B2 | Budgets tab with month switcher, budget cards with status/progress, add/edit/delete sheet, copy last month | app/src/main/java/com/superduperlover/finance/ui/budgets/BudgetsScreen.kt (5566a2c) | :core:test + assembleDebug OK | None
+[2026-11-08 11:36] B1 | subagent1-B1 | Categories screen: active sections by kind, add/edit sheet with icon grid and uniqueness check, archive/restore, delete guard | app/src/main/java/com/superduperlover/finance/ui/categories/CategoriesScreen.kt (404f081) | :core:test + assembleDebug OK | None
+[2026-11-08 11:36] B3 | subagent1-B3 | Goals tab: goal cards with progress & per-month calculation, detail screen with contributions, add/edit/archive goal | app/src/main/java/com/superduperlover/finance/ui/goals/* (cd1fe49) | :core:test + assembleDebug OK | None
+[2026-11-08 11:37] B4 | subagent1-B4 | Transactions tab: month switcher, account & category filters, search in notes, core Totals calculation | core/.../Totals*, app/.../TransactionsScreen.kt (66b0780) | :core:test + assembleDebug OK (30 tests) | None

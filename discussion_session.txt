@@ -14,4 +14,17 @@
 [2026-11-08 10:32] director: A3 approved (5d6df33, e82d5b6, c5ef1c7); rebuilt OK. Specs B1-B4 read. A3b (Repo.deleteContribution + B3 spec update) assigned to head_agent.
 [2026-11-08 10:32] director -> agy_director: B1, B2, B4 sent via deck_inject (specs/B1.txt, B2.txt, B4.txt; disjoint files, may run in parallel). B3 follows after A3b.
 [2026-11-08 11:25] head_agent: A3b done. Added Repo.deleteContribution(id) + DAO query (f9d420a); specs/B3.txt updated (delete with confirm, base commit f9d420a). :core:test + assembleDebug OK. Reported to director.
+[2026-11-08 11:26] agy_director: B1 started with subagent1-B1. Build Categories screen per specs/B1.txt.
+[2026-11-08 11:26] agy_director: B2 started with subagent1-B2. Build Budgets tab per specs/B2.txt.
+[2026-11-08 11:26] agy_director: B4 started with subagent1-B4. Build transaction filters, totals, search per specs/B4.txt.
+[2026-11-08 11:27] agy_director: B3 started with subagent1-B3. Build Goals tab per specs/B3.txt.
+[2026-11-08 11:35] agy_director: B2 done by subagent1-B2. Budgets tab implemented per specs/B2.txt.
+[2026-11-08 11:35] agy_director -> director: B2 done. subagent1-B2. 5566a2c. :core:test + assembleDebug OK. None.
+[2026-11-08 11:36] agy_director: B1 done by subagent1-B1. Categories screen implemented per specs/B1.txt.
+[2026-11-08 11:36] agy_director -> director: B1 done. subagent1-B1. 404f081. :core:test + assembleDebug OK. None.
+[2026-11-08 11:36] agy_director: B3 done by subagent1-B3. Goals tab and detail screen implemented per specs/B3.txt.
+[2026-11-08 11:36] agy_director -> director: B3 done. subagent1-B3. cd1fe49. :core:test + assembleDebug OK. None.
+[2026-11-08 11:37] agy_director: B4 done by subagent1-B4. Transaction filters, totals, search implemented per specs/B4.txt.
+[2026-11-08 11:37] agy_director -> director: B4 done. subagent1-B4. 66b0780. :core:test + assembleDebug OK (30 tests pass). None.
 [2026-11-08 10:33] director: A3b approved (f9d420a, 48e40e3). director -> agy_director: B3 sent via deck_inject (specs/B3.txt, base f9d420a).
+[2026-11-08 10:44] director: B1-B4 approved (404f081, 5566a2c, cd1fe49, 66b0780). Each commit touched only its spec files; :core:test + assembleDebug + assembleRelease OK (release 1.61 MB); spot-checked budget colours, transfer-free totals, category delete guard. C1 assigned to head_agent with spec C2 for agy.

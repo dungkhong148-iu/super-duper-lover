@@ -20,14 +20,14 @@ Phase A — foundation
   A3b head_agent    Repo.deleteContribution + B3 spec update.                               DONE f9d420a 48e40e3 (approved)
 
 Phase B — screens (agy_director, specs by head_agent)
-  B1  agy_director  Categories screen.                         ASSIGNED 2026-11-08
-  B2  agy_director  Budgets tab.                               ASSIGNED 2026-11-08
-  B3  agy_director  Goals tab.                                 ASSIGNED 2026-11-08
-  B4  agy_director  Transaction filters, totals, search.       ASSIGNED 2026-11-08
+  B1  agy_director  Categories screen.                         DONE 404f081 (approved)
+  B2  agy_director  Budgets tab.                               DONE 5566a2c (approved)
+  B3  agy_director  Goals tab.                                 DONE cd1fe49 (approved)
+  B4  agy_director  Transaction filters, totals, search.       DONE 66b0780 (approved)
 
 Phase C — home, backup, release
-  C1  head_agent    Home dashboard.                            TODO  after B2, B3
-  C2  agy_director  Backup export/import (JSON).               TODO  after A3
+  C1  head_agent    Home dashboard.                            ASSIGNED 2026-11-08
+  C2  agy_director  Backup export/import (JSON).               TODO  spec specs/C2.txt by head_agent
   C3  director      Release key + release APK on the phone.    TODO  after C1, C2
 
 Phase D — widgets (own plan after C3)
