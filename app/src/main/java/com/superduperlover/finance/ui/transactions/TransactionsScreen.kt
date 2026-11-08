@@ -26,7 +26,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,18 +46,23 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.superduperlover.finance.R
 import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
+import com.superduperlover.finance.core.Currency
 import com.superduperlover.finance.core.Txn
 import com.superduperlover.finance.core.TxnKind
-import com.superduperlover.finance.core.Currency
 import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.core.txnTotals
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.CategoryIcons
+import com.superduperlover.finance.ui.components.EmptyState
+import com.superduperlover.finance.ui.components.OneLineText
+import com.superduperlover.finance.ui.components.SectionCard
 import com.superduperlover.finance.ui.components.color
 import com.superduperlover.finance.ui.components.display
 import com.superduperlover.finance.ui.components.expenseColor
@@ -134,8 +138,8 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                 ) {
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Tháng trước")
                 }
-                Text(
-                    "Tháng ${month.monthValue}/${month.year}",
+                OneLineText(
+                    text = "Tháng ${month.monthValue}/${month.year}",
                     style = MaterialTheme.typography.titleLarge,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.weight(1f),
@@ -245,8 +249,9 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                                 searchText = ""
                                 isSearchOpen = false
                             },
+                            modifier = Modifier.heightIn(min = 48.dp),
                         ) {
-                            Text("Xóa bộ lọc")
+                            OneLineText("Xóa bộ lọc", style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 }
@@ -266,30 +271,28 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
         }
 
         item(key = "totals") {
-            Card(
+            SectionCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = 4.dp),
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                 ) {
                     Column(
                         modifier = Modifier.weight(1f),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Text(
-                            "Thu nhập",
+                        OneLineText(
+                            text = "Thu nhập",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(Modifier.height(4.dp))
                         totals.forEach { (currency, t) ->
-                            Text(
-                                "+${formatMoney(t.income, currency)}",
+                            OneLineText(
+                                text = "+${formatMoney(t.income, currency)}",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = incomeColor(),
                             )
@@ -299,15 +302,15 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                         modifier = Modifier.weight(1f),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Text(
-                            "Chi tiêu",
+                        OneLineText(
+                            text = "Chi tiêu",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(Modifier.height(4.dp))
                         totals.forEach { (currency, t) ->
-                            Text(
-                                "-${formatMoney(t.expense, currency)}",
+                            OneLineText(
+                                text = "-${formatMoney(t.expense, currency)}",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = expenseColor(),
                             )
@@ -319,19 +322,29 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
 
         if (txns.isEmpty()) {
             item(key = "empty") {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 48.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        if (filterAccountId != null || filterCategoryId != null || searchText.isNotBlank()) {
-                            "Không có giao dịch phù hợp"
-                        } else {
-                            "Chưa có giao dịch trong tháng ${month.monthValue}/${month.year}"
+                val hasFilter = filterAccountId != null || filterCategoryId != null || searchText.isNotBlank()
+                if (hasFilter) {
+                    EmptyState(
+                        icon = painterResource(R.drawable.ic_wallet),
+                        title = "Không có giao dịch phù hợp",
+                        message = "Thử thay đổi hoặc xóa bộ lọc để xem các giao dịch khác.",
+                        actionLabel = "Xóa bộ lọc",
+                        onAction = {
+                            filterAccountId = null
+                            filterCategoryId = null
+                            searchText = ""
+                            isSearchOpen = false
                         },
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                } else {
+                    EmptyState(
+                        icon = painterResource(R.drawable.ic_wallet),
+                        title = "Chưa có giao dịch",
+                        message = "Ghi lại khoản thu chi đầu tiên của tháng này.",
+                        actionLabel = "Thêm giao dịch",
+                        onAction = { onEdit(0L) },
+                        modifier = Modifier.padding(top = 8.dp),
                     )
                 }
             }
@@ -339,7 +352,7 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
             byDay.forEach { (date, dayTxns) ->
                 item(key = "day-$date") {
                     Text(
-                        date.display(),
+                        text = date.display(),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
@@ -365,7 +378,7 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                         TxnKind.TRANSFER -> ""
                     }
                     Row(
-                        Modifier
+                        modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 56.dp)
                             .combinedClickable(onClick = { onEdit(t.id) }, onLongClick = { toDelete = t })
@@ -374,29 +387,33 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Box(
-                            Modifier
+                            modifier = Modifier
                                 .size(40.dp)
                                 .background(t.kind.color().copy(alpha = 0.15f), CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
-                                if (category != null) CategoryIcons.get(category.icon) else t.kind.icon(),
+                                imageVector = if (category != null) CategoryIcons.get(category.icon) else t.kind.icon(),
                                 contentDescription = null,
                                 tint = t.kind.color(),
                             )
                         }
-                        Column(Modifier.weight(1f)) {
-                            Text(title, style = MaterialTheme.typography.bodyLarge)
+                        Column(modifier = Modifier.weight(1f)) {
+                            OneLineText(
+                                text = title,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
                             Text(
-                                subtitle,
+                                text = subtitle,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                         }
-                        Text(
-                            sign + formatMoney(t.amount, currency),
+                        OneLineText(
+                            text = sign + formatMoney(t.amount, currency),
                             style = MaterialTheme.typography.titleMedium,
                             color = t.kind.color(),
                         )

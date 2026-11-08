@@ -1,43 +1,26 @@
 package com.superduperlover.finance.ui.budgets
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -50,23 +33,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.superduperlover.finance.core.Account
+import com.superduperlover.finance.R
 import com.superduperlover.finance.core.Budget
 import com.superduperlover.finance.core.BudgetStatus
-import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
 import com.superduperlover.finance.core.budgetUsage
 import com.superduperlover.finance.core.formatMoney
-import androidx.compose.ui.res.painterResource
-import com.superduperlover.finance.R
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.EmptyState
-import com.superduperlover.finance.ui.theme.ChiLiTheme
+import com.superduperlover.finance.ui.components.OneLineText
+import com.superduperlover.finance.ui.components.SectionCard
 import com.superduperlover.finance.ui.components.expenseColor
 import com.superduperlover.finance.ui.components.incomeColor
+import com.superduperlover.finance.ui.theme.ChiLiTheme
 import java.time.YearMonth
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -119,14 +102,14 @@ fun BudgetsScreen() {
         ) {
             IconButton(
                 onClick = { monthStr = month.minusMonths(1).toString() },
-                modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
+                modifier = Modifier.size(48.dp),
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                     contentDescription = "Tháng trước",
                 )
             }
-            Text(
+            OneLineText(
                 text = "Tháng ${month.monthValue}/${month.year}",
                 style = MaterialTheme.typography.titleLarge,
                 textAlign = TextAlign.Center,
@@ -134,7 +117,7 @@ fun BudgetsScreen() {
             )
             IconButton(
                 onClick = { monthStr = month.plusMonths(1).toString() },
-                modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
+                modifier = Modifier.size(48.dp),
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -147,7 +130,7 @@ fun BudgetsScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp, top = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (budgets.isEmpty()) {
                 EmptyState(
@@ -166,121 +149,115 @@ fun BudgetsScreen() {
                     val accountName = budget.accountId?.let { accountsById[it]?.name ?: "?" } ?: "Tất cả tài khoản (${budget.currency.name})"
                     val categoryName = budget.categoryId?.let { categoriesById[it]?.name ?: "?" } ?: "Tất cả danh mục"
 
-                    Card(
+                    SectionCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { editingBudget = budget },
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
-                            Text(
+                            OneLineText(
                                 text = "$accountName · $categoryName",
                                 style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f, fill = false),
                             )
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                LinearProgressIndicator(
-                                    progress = { usage.ratio.toFloat().coerceIn(0f, 1f) },
-                                    color = statusColor,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .heightIn(min = 8.dp),
-                                )
-                                Text(
-                                    text = usage.status.statusLabel(),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = statusColor,
-                                )
-                            }
-                            Text(
-                                text = "Đã chi ${formatMoney(usage.spent, budget.currency)} / ${formatMoney(usage.limit, budget.currency)}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Text(
-                                text = if (usage.remaining >= 0) {
-                                    "Còn lại ${formatMoney(usage.remaining, budget.currency)}"
-                                } else {
-                                    "Vượt ${formatMoney(-usage.remaining, budget.currency)}"
-                                },
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = if (usage.remaining >= 0) MaterialTheme.colorScheme.onSurfaceVariant else expenseColor(),
+                            Spacer(Modifier.width(8.dp))
+                            OneLineText(
+                                text = usage.status.statusLabel(),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = statusColor,
                             )
                         }
+                        LinearProgressIndicator(
+                            progress = { usage.ratio.toFloat().coerceIn(0f, 1f) },
+                            color = statusColor,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            strokeCap = StrokeCap.Round,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp),
+                        )
+                        OneLineText(
+                            text = "Đã chi ${formatMoney(usage.spent, budget.currency)} / ${formatMoney(usage.limit, budget.currency)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        OneLineText(
+                            text = if (usage.remaining >= 0) {
+                                "Còn lại ${formatMoney(usage.remaining, budget.currency)}"
+                            } else {
+                                "Vượt ${formatMoney(-usage.remaining, budget.currency)}"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (usage.remaining >= 0) MaterialTheme.colorScheme.onSurfaceVariant else expenseColor(),
+                        )
                     }
                 }
             }
 
-            run {
-                Button(
-                    onClick = {
-                        editingBudget = Budget(
-                            id = 0L,
-                            month = month,
-                            accountId = null,
-                            categoryId = null,
-                            limit = 0L,
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp),
-                ) {
-                    Text("Thêm ngân sách")
-                }
+            Button(
+                onClick = {
+                    editingBudget = Budget(
+                        id = 0L,
+                        month = month,
+                        accountId = null,
+                        categoryId = null,
+                        limit = 0L,
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp),
+            ) {
+                OneLineText("Thêm ngân sách", style = MaterialTheme.typography.labelLarge)
             }
 
-            run {
-                OutlinedButton(
-                    onClick = {
-                        scope.launch {
-                            val lastMonth = month.minusMonths(1)
-                            val lastMonthBudgets = repo.budgets(lastMonth).first()
-                            if (lastMonthBudgets.isEmpty()) {
-                                copyMessage = "Tháng trước chưa có ngân sách"
-                                return@launch
-                            }
-                            val currentBudgets = repo.budgets(month).first()
-                            val toCopy = lastMonthBudgets.filter { last ->
-                                currentBudgets.none { curr ->
-                                    curr.accountId == last.accountId && curr.categoryId == last.categoryId
-                                }
-                            }
-                            if (toCopy.isEmpty()) {
-                                copyMessage = "Đã có đủ ngân sách"
-                            } else {
-                                copyMessage = null
-                                for (b in toCopy) {
-                                    repo.saveBudget(b.copy(id = 0L, month = month))
-                                }
+            OutlinedButton(
+                onClick = {
+                    scope.launch {
+                        val lastMonth = month.minusMonths(1)
+                        val lastMonthBudgets = repo.budgets(lastMonth).first()
+                        if (lastMonthBudgets.isEmpty()) {
+                            copyMessage = "Tháng trước chưa có ngân sách"
+                            return@launch
+                        }
+                        val currentBudgets = repo.budgets(month).first()
+                        val toCopy = lastMonthBudgets.filter { last ->
+                            currentBudgets.none { curr ->
+                                curr.accountId == last.accountId && curr.categoryId == last.categoryId
                             }
                         }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp),
-                ) {
-                    Text("Sao chép từ tháng trước")
-                }
+                        if (toCopy.isEmpty()) {
+                            copyMessage = "Đã có đủ ngân sách"
+                        } else {
+                            copyMessage = null
+                            for (b in toCopy) {
+                                repo.saveBudget(b.copy(id = 0L, month = month))
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp),
+            ) {
+                OneLineText("Sao chép từ tháng trước", style = MaterialTheme.typography.labelLarge)
             }
 
             copyMessage?.let { msg ->
-                run {
-                    Text(
-                        text = msg,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp),
-                    )
-                }
+                Text(
+                    text = msg,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                )
             }
         }
     }

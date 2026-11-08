@@ -1,6 +1,5 @@
 package com.superduperlover.finance.ui.categories
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -8,35 +7,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -47,18 +30,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.superduperlover.finance.R
 import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
-import com.superduperlover.finance.core.TxnKind
-import com.superduperlover.finance.data.DeleteResult
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.CategoryIcons
+import com.superduperlover.finance.ui.components.ChiLiTopBar
+import com.superduperlover.finance.ui.components.EmptyState
+import com.superduperlover.finance.ui.components.OneLineText
+import com.superduperlover.finance.ui.components.SectionCard
 import com.superduperlover.finance.ui.components.expenseColor
 import com.superduperlover.finance.ui.components.incomeColor
-import com.superduperlover.finance.ui.components.label
 import kotlinx.coroutines.launch
 
 @Composable
@@ -85,45 +69,24 @@ fun CategoriesScreen(onBack: () -> Unit) {
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
-            }
-            Text(
-                text = "Danh mục",
-                style = MaterialTheme.typography.titleLarge,
-            )
-        }
+        ChiLiTopBar(
+            title = "Danh mục",
+            onBack = onBack,
+        )
 
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            item(key = "header_expense") {
-                Text(
-                    text = TxnKind.EXPENSE.label(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
-                )
-            }
-            items(expenseCategories, key = { it.id }) { category ->
-                CategoryRow(
-                    category = category,
-                    onClick = { editing = category },
-                )
-            }
-            item(key = "add_expense") {
-                OutlinedButton(
-                    onClick = {
+        if (allCategories.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.TopCenter,
+            ) {
+                EmptyState(
+                    icon = painterResource(R.drawable.ic_wallet),
+                    title = "Chưa có danh mục",
+                    message = "Tạo danh mục đầu tiên để phân loại các khoản thu chi.",
+                    actionLabel = "Thêm danh mục",
+                    onAction = {
                         editing = Category(
                             id = 0L,
                             name = "",
@@ -132,65 +95,110 @@ fun CategoriesScreen(onBack: () -> Unit) {
                             archived = false,
                         )
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp),
-                ) {
-                    Text("Thêm danh mục")
-                }
-            }
-
-            item(key = "header_income") {
-                Text(
-                    text = TxnKind.INCOME.label(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
                 )
             }
-            items(incomeCategories, key = { it.id }) { category ->
-                CategoryRow(
-                    category = category,
-                    onClick = { editing = category },
-                )
-            }
-            item(key = "add_income") {
-                OutlinedButton(
-                    onClick = {
-                        editing = Category(
-                            id = 0L,
-                            name = "",
-                            kind = CategoryKind.INCOME,
-                            icon = "salary",
-                            archived = false,
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp),
-                ) {
-                    Text("Thêm danh mục")
-                }
-            }
-
-            if (archivedCategories.isNotEmpty()) {
-                item(key = "header_archived") {
-                    Text(
-                        text = "Đã lưu trữ",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
-                    )
-                }
-                items(archivedCategories, key = { it.id }) { category ->
-                    ArchivedCategoryRow(
-                        category = category,
-                        onRestore = {
-                            scope.launch {
-                                repo.saveCategory(category.copy(archived = false))
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                item(key = "card_expense") {
+                    SectionCard(title = "Chi tiêu") {
+                        if (expenseCategories.isEmpty()) {
+                            Text(
+                                text = "Chưa có danh mục chi tiêu",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        } else {
+                            expenseCategories.forEachIndexed { index, category ->
+                                if (index > 0) {
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                }
+                                CategoryRow(
+                                    category = category,
+                                    onClick = { editing = category },
+                                )
                             }
-                        },
-                    )
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                editing = Category(
+                                    id = 0L,
+                                    name = "",
+                                    kind = CategoryKind.EXPENSE,
+                                    icon = "food",
+                                    archived = false,
+                                )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp),
+                        ) {
+                            OneLineText("Thêm danh mục", style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
+                }
+
+                item(key = "card_income") {
+                    SectionCard(title = "Thu nhập") {
+                        if (incomeCategories.isEmpty()) {
+                            Text(
+                                text = "Chưa có danh mục thu nhập",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        } else {
+                            incomeCategories.forEachIndexed { index, category ->
+                                if (index > 0) {
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                }
+                                CategoryRow(
+                                    category = category,
+                                    onClick = { editing = category },
+                                )
+                            }
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                editing = Category(
+                                    id = 0L,
+                                    name = "",
+                                    kind = CategoryKind.INCOME,
+                                    icon = "salary",
+                                    archived = false,
+                                )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp),
+                        ) {
+                            OneLineText("Thêm danh mục", style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
+                }
+
+                if (archivedCategories.isNotEmpty()) {
+                    item(key = "card_archived") {
+                        SectionCard(title = "Đã lưu trữ") {
+                            archivedCategories.forEachIndexed { index, category ->
+                                if (index > 0) {
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                }
+                                ArchivedCategoryRow(
+                                    category = category,
+                                    onRestore = {
+                                        scope.launch {
+                                            repo.saveCategory(category.copy(archived = false))
+                                        }
+                                    },
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -231,9 +239,10 @@ private fun CategoryRow(
                 tint = category.kind.color(),
             )
         }
-        Text(
+        OneLineText(
             text = category.name,
             style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
     }
@@ -264,7 +273,7 @@ private fun ArchivedCategoryRow(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Text(
+        OneLineText(
             text = category.name,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -274,7 +283,7 @@ private fun ArchivedCategoryRow(
             onClick = onRestore,
             modifier = Modifier.heightIn(min = 48.dp),
         ) {
-            Text("Khôi phục")
+            OneLineText("Khôi phục", style = MaterialTheme.typography.labelLarge)
         }
     }
 }

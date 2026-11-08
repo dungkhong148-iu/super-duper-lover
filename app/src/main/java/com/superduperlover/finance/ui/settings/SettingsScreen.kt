@@ -4,18 +4,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -25,12 +21,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.data.validateBackupJson
 import com.superduperlover.finance.ui.LocalRepo
+import com.superduperlover.finance.ui.components.ChiLiTopBar
+import com.superduperlover.finance.ui.components.OneLineText
+import com.superduperlover.finance.ui.components.SectionCard
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.Dispatchers
@@ -99,72 +97,79 @@ fun SettingsScreen(onBack: () -> Unit) {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
-            }
-            Text(
-                text = "Cài đặt và sao lưu",
-                style = MaterialTheme.typography.titleLarge,
-            )
-        }
-
-        Text(
-            text = "Sao lưu lưu toàn bộ tài khoản, danh mục, giao dịch, ngân sách và mục tiêu vào một tệp JSON.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+    Column(modifier = Modifier.fillMaxSize()) {
+        ChiLiTopBar(
+            title = "Sao lưu và khôi phục",
+            onBack = onBack,
         )
 
-        Button(
-            onClick = {
-                val defaultName = "chili-backup-%s.json".format(
-                    LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            SectionCard(title = "Xuất dữ liệu") {
+                Text(
+                    text = "Lưu toàn bộ tài khoản, danh mục, giao dịch, ngân sách và mục tiêu vào một tệp JSON.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                exportLauncher.launch(defaultName)
-            },
-            enabled = !isWorking,
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 48.dp),
-        ) {
-            Text("Xuất dữ liệu")
-        }
+                Button(
+                    onClick = {
+                        val defaultName = "chili-backup-%s.json".format(
+                            LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)
+                        )
+                        exportLauncher.launch(defaultName)
+                    },
+                    enabled = !isWorking,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                ) {
+                    OneLineText("Xuất dữ liệu", style = MaterialTheme.typography.labelLarge)
+                }
+            }
 
-        Button(
-            onClick = {
-                importLauncher.launch(arrayOf("application/json", "text/plain"))
-            },
-            enabled = !isWorking,
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 48.dp),
-        ) {
-            Text("Nhập dữ liệu")
-        }
+            SectionCard(title = "Nhập dữ liệu") {
+                Text(
+                    text = "Khôi phục dữ liệu từ tệp JSON đã sao lưu trước đó. Dữ liệu hiện tại sẽ bị thay thế.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(
+                    onClick = {
+                        importLauncher.launch(arrayOf("application/json", "text/plain"))
+                    },
+                    enabled = !isWorking,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                ) {
+                    OneLineText("Nhập dữ liệu", style = MaterialTheme.typography.labelLarge)
+                }
+            }
 
-        statusMessage?.let { msg ->
-            Text(
-                text = msg,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-
-        for (err in errorMessages) {
-            Text(
-                text = err,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-            )
+            if (statusMessage != null || errorMessages.isNotEmpty()) {
+                SectionCard {
+                    statusMessage?.let { msg ->
+                        OneLineText(
+                            text = msg,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    for (err in errorMessages) {
+                        Text(
+                            text = err,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            }
         }
     }
 

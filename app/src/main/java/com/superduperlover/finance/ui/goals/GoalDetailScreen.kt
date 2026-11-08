@@ -3,32 +3,26 @@ package com.superduperlover.finance.ui.goals
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -47,17 +41,23 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.superduperlover.finance.R
+import com.superduperlover.finance.core.Currency
 import com.superduperlover.finance.core.Goal
 import com.superduperlover.finance.core.GoalContribution
-import com.superduperlover.finance.core.Currency
 import com.superduperlover.finance.core.amountToInput
 import com.superduperlover.finance.core.currencySymbol
 import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.core.goalProgress
 import com.superduperlover.finance.core.parseAmount
 import com.superduperlover.finance.ui.LocalRepo
+import com.superduperlover.finance.ui.components.ChiLiTopBar
+import com.superduperlover.finance.ui.components.EmptyState
+import com.superduperlover.finance.ui.components.OneLineText
+import com.superduperlover.finance.ui.components.SectionCard
 import com.superduperlover.finance.ui.components.incomeColor
 import java.time.LocalDate
 import kotlinx.coroutines.launch
@@ -88,126 +88,113 @@ fun GoalDetailScreen(goalId: Long, onBack: () -> Unit) {
     var editingContribution by remember { mutableStateOf<GoalContribution?>(null) }
     var showArchiveConfirm by remember { mutableStateOf(false) }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item(key = "top_bar") {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
-                }
-                Text(
-                    text = goal.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
+    Column(modifier = Modifier.fillMaxSize()) {
+        ChiLiTopBar(
+            title = goal.name,
+            onBack = onBack,
+        )
 
-        item(key = "summary_card") {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            item(key = "summary_card") {
+                SectionCard {
                     GoalProgressContent(goal = goal, progress = progress)
                 }
             }
-        }
 
-        item(key = "action_buttons") {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = {
-                        editingContribution = GoalContribution(
-                            id = 0L,
-                            goalId = goal.id,
-                            amount = 0L,
-                            date = LocalDate.now(),
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp),
-                ) {
-                    Text("Thêm khoản để dành")
-                }
-                OutlinedButton(
-                    onClick = { editingGoal = goal },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp),
-                ) {
-                    Text("Sửa mục tiêu")
-                }
-                OutlinedButton(
-                    onClick = { showArchiveConfirm = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error,
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
-                ) {
-                    Text("Lưu trữ mục tiêu")
-                }
-            }
-        }
-
-        item(key = "contributions_header") {
-            Text(
-                text = "Các khoản đã để dành",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-        }
-
-        if (contributions.isEmpty()) {
-            item(key = "empty_contributions") {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 24.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "Chưa có khoản nào",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        } else {
-            items(contributions, key = { it.id }) { contribution ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { editingContribution = contribution },
-                ) {
-                    Row(
+            item(key = "action_buttons") {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            editingContribution = GoalContribution(
+                                id = 0L,
+                                goalId = goal.id,
+                                amount = 0L,
+                                date = LocalDate.now(),
+                            )
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
+                            .heightIn(min = 48.dp),
                     ) {
-                        Text(
-                            text = formatGoalDate(contribution.date),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        Text(
-                            text = formatMoney(contribution.amount, goal.currency),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = incomeColor(),
-                        )
+                        OneLineText("Thêm khoản để dành", style = MaterialTheme.typography.labelLarge)
+                    }
+                    OutlinedButton(
+                        onClick = { editingGoal = goal },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
+                    ) {
+                        OneLineText("Sửa mục tiêu", style = MaterialTheme.typography.labelLarge)
+                    }
+                    OutlinedButton(
+                        onClick = { showArchiveConfirm = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+                    ) {
+                        OneLineText("Lưu trữ mục tiêu", style = MaterialTheme.typography.labelLarge)
+                    }
+                }
+            }
+
+            item(key = "contributions_header") {
+                Text(
+                    text = "Các khoản đã để dành",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+
+            if (contributions.isEmpty()) {
+                item(key = "empty_contributions") {
+                    EmptyState(
+                        icon = painterResource(R.drawable.ic_savings),
+                        title = "Hãy thêm khoản đầu tiên",
+                        message = "Chưa có khoản nào",
+                        actionLabel = "Thêm khoản để dành",
+                        onAction = {
+                            editingContribution = GoalContribution(
+                                id = 0L,
+                                goalId = goal.id,
+                                amount = 0L,
+                                date = LocalDate.now(),
+                            )
+                        },
+                    )
+                }
+            } else {
+                items(contributions, key = { it.id }) { contribution ->
+                    SectionCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { editingContribution = contribution },
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            OneLineText(
+                                text = formatGoalDate(contribution.date),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            OneLineText(
+                                text = formatMoney(contribution.amount, goal.currency),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = incomeColor(),
+                            )
+                        }
                     }
                 }
             }
@@ -310,7 +297,7 @@ private fun ContributionSheet(
                     .fillMaxWidth()
                     .heightIn(min = 48.dp),
             ) {
-                Text(formatGoalDate(selectedDate))
+                OneLineText(formatGoalDate(selectedDate), style = MaterialTheme.typography.labelLarge)
             }
             Button(
                 onClick = {
@@ -335,7 +322,7 @@ private fun ContributionSheet(
                     .fillMaxWidth()
                     .heightIn(min = 48.dp),
             ) {
-                Text("Lưu")
+                OneLineText("Lưu", style = MaterialTheme.typography.labelLarge)
             }
             if (!isNew) {
                 TextButton(
@@ -344,7 +331,7 @@ private fun ContributionSheet(
                         .fillMaxWidth()
                         .heightIn(min = 48.dp),
                 ) {
-                    Text("Xóa", color = MaterialTheme.colorScheme.error)
+                    OneLineText("Xóa", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelLarge)
                 }
             }
         }
@@ -363,12 +350,12 @@ private fun ContributionSheet(
                     }
                     showDatePicker = false
                 }) {
-                    Text("Chọn")
+                    OneLineText("Chọn", style = MaterialTheme.typography.labelLarge)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Hủy")
+                    OneLineText("Hủy", style = MaterialTheme.typography.labelLarge)
                 }
             },
         ) {
