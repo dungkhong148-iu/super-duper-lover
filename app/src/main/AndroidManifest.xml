@@ -14,6 +14,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
 
         <!-- Quick add from widgets and shortcuts: own task, not in recents, keyboard stays hidden (the pad is ours). -->

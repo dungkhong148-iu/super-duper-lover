@@ -7,4 +7,10 @@
     <string name="kind_expense">Chi tiêu</string>
     <string name="kind_income">Thu nhập</string>
     <string name="kind_transfer">Chuyển khoản</string>
+    <string name="shortcut_expense_short">Chi tiêu</string>
+    <string name="shortcut_expense_long">Thêm khoản chi tiêu</string>
+    <string name="shortcut_income_short">Thu nhập</string>
+    <string name="shortcut_income_long">Thêm khoản thu nhập</string>
+    <string name="shortcut_transfer_short">Chuyển khoản</string>
+    <string name="shortcut_transfer_long">Thêm chuyển khoản</string>
 </resources>

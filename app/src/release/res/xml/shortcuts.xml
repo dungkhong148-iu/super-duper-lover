@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="quick_expense"
+        android:enabled="true"
+        android:icon="@drawable/ic_wallet"
+        android:shortcutShortLabel="@string/shortcut_expense_short"
+        android:shortcutLongLabel="@string/shortcut_expense_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.chili.app"
+            android:targetClass="com.superduperlover.finance.quickadd.QuickAddActivity">
+            <extra
+                android:name="com.superduperlover.finance.KIND"
+                android:value="EXPENSE" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="quick_income"
+        android:enabled="true"
+        android:icon="@drawable/ic_wallet"
+        android:shortcutShortLabel="@string/shortcut_income_short"
+        android:shortcutLongLabel="@string/shortcut_income_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.chili.app"
+            android:targetClass="com.superduperlover.finance.quickadd.QuickAddActivity">
+            <extra
+                android:name="com.superduperlover.finance.KIND"
+                android:value="INCOME" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="quick_transfer"
+        android:enabled="true"
+        android:icon="@drawable/ic_wallet"
+        android:shortcutShortLabel="@string/shortcut_transfer_short"
+        android:shortcutLongLabel="@string/shortcut_transfer_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.chili.app"
+            android:targetClass="com.superduperlover.finance.quickadd.QuickAddActivity">
+            <extra
+                android:name="com.superduperlover.finance.KIND"
+                android:value="TRANSFER" />
+        </intent>
+    </shortcut>
+</shortcuts>
