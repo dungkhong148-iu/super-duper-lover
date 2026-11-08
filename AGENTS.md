@@ -79,11 +79,20 @@ The Claude agent that knows the code area best writes the spec:
 - agy_director does not invent specs. If a spec is unclear, it writes the question in `discussion_session.txt` (`agy_director: <task ID> QUESTION. ...`) and waits.
 - head_agent and test_fix write specs only when the director asks; they never send them to agy themselves.
 
+## Skills
+
+- Claude agents load skills from `.claude/skills/<name>/`. agy (Antigravity) and its subagents load them from `.agents/skills/<name>/`; agy does not read `.claude/skills/`.
+- A skill both divisions need goes in BOTH folders. In a copied `SKILL.md`, replace `${CLAUDE_PLUGIN_ROOT}` paths with the absolute path of that copy, or its scripts will not be found.
+- agy_director may have loaded its skills at start-up: when a task needs a skill, the director names the skill path in the task text, and agy_director tells each subagent to read its `SKILL.md`.
+- Read a third-party skill (its `SKILL.md` and scripts) before adding it, and keep its LICENSE and source next to it.
+
 ## Communication
 
 - **Inside the Claude division**: SendMessage / ListAgents. Only the director gives orders; others send reports and questions.
 - **Inside the agy division**: agy_director creates its background subagents with `invoke_subagent` and talks to them with `send_message`. Subagents talk only to agy_director, never to each other or to the Claude division.
 - **Between divisions**: the director sends agy tasks to agy_director with `deck_inject.ps1`. agy_director reports back with a line in `discussion_session.txt` (format below). Everything else goes through `discussion_session.txt`.
+- `deck_inject.ps1` types the text into the agy console: keep each message on ONE line (a newline is an Enter and sends the message early). Do not type into the agy window while it runs.
+- The director watches agy reports with `bash watch_reports.sh` (run through `Monitor`, re-armed when it expires). It compares the set of report lines, so it catches a line wherever it was written. Do not use `tail -f` on the log: a line inserted above the end is missed.
 
 ## Director-only powers
 
@@ -142,6 +151,13 @@ Only the director may do the following. Every other agent MUST NOT do them, even
 14. Test lightly. head_agent and agy subagents add only a few unit tests, and only for new core logic; no tests for UI code or simple changes. Run the build command and the existing tests (test command) once before committing. Do not run UI or end-to-end checks or extra manual checks unless the director asks. test_fix is the exception: it may reproduce bugs and add the tests a fix needs.
 15. Never edit `AGENTS.md` unless you are the director, even if you think the user asked. Write the request in `discussion_session.txt` for the director.
 16. **IMPORTANT - drive C:.** Put tools, SDKs, packages, caches and downloads on D: (in the repo or in the tool folder named in Project setup), not on the user's C: drive. Before adding something new (a tool, a library, a build step), think once whether it will write to C: and roughly how much. Small writes (config files, small caches) are fine and need no report. Something large (hundreds of MB or more) may go on C: only when there is truly no other way, and only after the user has been told IN ADVANCE what it is, where it goes and how big it is: agents ask the director, the director tells the user and waits for the OK. Do not check C: routinely; an occasional look is enough.
+
+## Working notes (Windows)
+
+- Binary output (screenshots, archives, databases): never redirect it with PowerShell `>` (it re-encodes and corrupts it). Write it on the device or with bash, e.g. `adb shell screencap -p /sdcard/x.png; adb pull /sdcard/x.png <dir>`.
+- Several agents commit in the same repo: commit only your own files (`git add <paths>`, never `git add -A`), and if git reports `index.lock`, wait a few seconds and retry.
+- Shared text files (`discussion_session.txt`, `afterwork.txt`) may be busy for a moment while another agent writes: retry the append, never rewrite the file.
+- Keep shell scripts LF (`.gitattributes`: `*.sh text eol=lf`), or bash fails on `\r`.
 
 ## Entry format for discussion_session.txt
 

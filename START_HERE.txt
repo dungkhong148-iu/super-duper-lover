@@ -1,16 +1,23 @@
 VIBE DECK TEMPLATE - how to start a new project
 
 1. Copy this whole folder to the new project folder.
-2. In AGENTS.md, fill the agy session IDs under "Agy session IDs" (open each agy agent once,
-   then the director can read its ID from the agy conversation list).
-3. Rename the Claude sessions to match the roles: /rename [director], [head_agent], [back_agent].
-4. Put reference material in raw/.
-5. The director writes task_plan.txt (structure + task split) before any build work starts.
-6. Ask the director before git init, installs or anything that changes the machine.
+2. Open the agy_director window once, then put its session ID in AGENTS.md under
+   "Agy session ID" (the director can read it from the agy conversation list).
+   The window must run with:  agy --conversation <id> --dangerously-skip-permissions
+3. Rename the Claude sessions to match the roles: /rename [director], [head_agent], [back_agent], [test_fix].
+4. The director fills "Project setup" in AGENTS.md (product, stack, toolchain off C:, build/test
+   commands, real vs test data, UI rules) before any build work starts.
+5. Skills: Claude reads .claude/skills/, agy reads .agents/skills/. Put shared skills in both (AGENTS.md "Skills").
+6. Put reference material in raw/.
+7. The director writes task_plan.txt (structure + task split) before any build work starts.
+8. Ask the director before git init, installs or anything that changes the machine (rule 16: big things stay off C:).
 
 Files
-- AGENTS.md              team, director-only powers, permissions, workflow, rules
-- discussion_session.txt shared log for every agent (append only)
-- afterwork.txt          back_agent summaries (back_agent + director only)
+- AGENTS.md              team, director-only powers, permissions, workflow, rules, skills, working notes
+- discussion_session.txt shared log for every agent (append at the very end only)
+- afterwork.txt          result summaries (back_agent, agy_director; director reads)
 - raw/                   raw materials (designated agents only)
-- deck_inject.ps1        director-only: type a task into an open agy window
+- deck_inject.ps1        director-only: type a one-line task into the open agy_director window
+- watch_reports.sh       director-only: report watcher for agy lines (run with Monitor: bash watch_reports.sh)
+- .gitattributes         keeps *.sh and gradlew LF
+- .claude/skills/        Claude skills (agy-open: open an agy session from its ID)

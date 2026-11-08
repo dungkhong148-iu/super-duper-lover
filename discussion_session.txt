@@ -70,3 +70,4 @@
 [2026-11-08 11:47] director: U1c approved (3acf1bd). Next phone install batched with U2-U4.
 [2026-11-08 12:05] director: U2 (02583ba), U3 (498d80d), U4 (ff0ce68) approved. Each commit touched only its spec files; :core:test (75) + assembleDebug + assembleRelease OK, release 1.69 MB. Phone install next, with the user.
 [2026-11-08 12:12] director: U2-U4 build installed on the phone, running, no crash. Monitor bug found: agy_director inserted its report lines mid-file (after its last-read end) instead of appending, so tail-based watching missed them. Fix: rule 5 now says append at the very end only; director uses watch_reports.sh (set-based, catches lines anywhere).
+[2026-11-08 12:15] director: AGENTS.md: new sections Skills (.claude/skills vs .agents/skills) and Working notes (Windows); deck_inject one-line rule; watch_reports.sh in Communication. Same changes in _vibe_deck_template (plus Project setup placeholders, START_HERE, .gitattributes).

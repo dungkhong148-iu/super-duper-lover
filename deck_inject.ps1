@@ -8,6 +8,7 @@ The agent name is looked up in AGENTS.md ("- agy_director: `<agy session id>`"),
 started with "--conversation <id>" is found. Fails if that window is not open.
 
 Do not type into the target window while this runs, or the two inputs mix.
+Keep -Text on ONE line: a newline is typed as Enter and sends the message early.
 #>
 param(
     [string]$Agent,
