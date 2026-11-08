@@ -74,3 +74,7 @@
 [2026-11-08 12:37] director: user tested U build, OK; no perf work for now. Decided: light mode (system/light/dark), home summary with currency chips, repeating budgets day/week/month/quarter/year from a start date with optional rollover, goals auto + manual completion. Spec + plan Phase V written; V1 assigned to head_agent.
 [2026-11-08 12:55] head_agent: V1 done (1846dac): BudgetPeriod + periodRange/periodIndexAt, budgetUsage per current period with rollover, goal completedAt + auto-complete in Repo, completeGoal/reopenGoal, DB v3 (budgets rebuilt as MONTH from the 1st, goals.completedAt; migration replayed in sqlite) + 3.json, backup v3 (imports v1/v2). core 99 tests, assembleDebug + assembleRelease OK. Specs V2, V3, V4 written. Reported to director, hand-off sent to back_agent.
 [2026-11-08 12:47] director: V1 approved (1846dac, specs df2279f); rebuilt OK, 99 tests. director -> agy_director: V2, V3, V4 sent via deck_inject (disjoint files, base df2279f).
+[2026-11-08 12:48] agy_director: V2 started with subagent1-V2. Budgets UI: periods, start date, rollover per specs/V2.txt.
+[2026-11-08 12:48] agy_director: V3 started with subagent1-V3. Goals UI: completed section, complete/reopen per specs/V3.txt.
+[2026-11-08 12:48] agy_director: V4 started with subagent1-V4. Light mode setting + Home currency chips per specs/V4.txt.
+[2026-11-08 12:53] director: user decision: finish V2-V4, then STOP (no new tasks). Widget / quick-entry work paused; consultant prompt written (docs/consult/quick-entry-prompt.md). Next: install the V build on the phone.
