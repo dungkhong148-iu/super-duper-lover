@@ -17,12 +17,12 @@ Phase A — foundation
   A1  head_agent    Gradle skeleton, 5 empty tabs, debug + release build.                   DONE 369fda9 (approved)
   A2  head_agent    Core logic: money, months, balance, budget, goal, validate (TDD).       DONE 2f487ab (approved, 27 tests)
   A3  head_agent    Room + Repo + Accounts + Add transaction + list. Then specs B1-B4.      DONE 5d6df33 e82d5b6 c5ef1c7 (approved)
-  A3b head_agent    Repo.deleteContribution + B3 spec update.                               ASSIGNED 2026-11-08
+  A3b head_agent    Repo.deleteContribution + B3 spec update.                               DONE f9d420a 48e40e3 (approved)
 
 Phase B — screens (agy_director, specs by head_agent)
   B1  agy_director  Categories screen.                         ASSIGNED 2026-11-08
   B2  agy_director  Budgets tab.                               ASSIGNED 2026-11-08
-  B3  agy_director  Goals tab.                                 TODO  after A3 + specs/B3.txt
+  B3  agy_director  Goals tab.                                 ASSIGNED 2026-11-08
   B4  agy_director  Transaction filters, totals, search.       ASSIGNED 2026-11-08
 
 Phase C — home, backup, release
