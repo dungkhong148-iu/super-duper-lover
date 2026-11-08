@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.superduperlover.finance.core.AccountType
 import com.superduperlover.finance.core.TxnKind
+import com.superduperlover.finance.ui.theme.ChiLiTheme
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -55,23 +56,18 @@ object CategoryIcons {
     fun get(key: String): ImageVector = all[key] ?: Icons.Filled.Star
 }
 
-private val ExpenseLight = Color(0xFFC62828)
-private val ExpenseDark = Color(0xFFEF9A9A)
-private val IncomeLight = Color(0xFF2E7D32)
-private val IncomeDark = Color(0xFFA5D6A7)
+@Composable
+fun expenseColor(): Color = ChiLiTheme.colors.expense
 
 @Composable
-fun expenseColor(): Color = if (isSystemInDarkTheme()) ExpenseDark else ExpenseLight
-
-@Composable
-fun incomeColor(): Color = if (isSystemInDarkTheme()) IncomeDark else IncomeLight
+fun incomeColor(): Color = ChiLiTheme.colors.income
 
 /** Red for expense, green for income, neutral for transfer. Never the only cue: icon and label go with it. */
 @Composable
 fun TxnKind.color(): Color = when (this) {
     TxnKind.EXPENSE -> expenseColor()
     TxnKind.INCOME -> incomeColor()
-    TxnKind.TRANSFER -> MaterialTheme.colorScheme.onSurfaceVariant
+    TxnKind.TRANSFER -> ChiLiTheme.colors.transfer
 }
 
 fun TxnKind.label(): String = when (this) {

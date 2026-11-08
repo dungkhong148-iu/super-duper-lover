@@ -62,17 +62,15 @@ import com.superduperlover.finance.core.budgetUsage
 import com.superduperlover.finance.core.formatVnd
 import com.superduperlover.finance.core.parseVndInput
 import com.superduperlover.finance.ui.LocalRepo
+import com.superduperlover.finance.ui.theme.ChiLiTheme
 import com.superduperlover.finance.ui.components.expenseColor
 import com.superduperlover.finance.ui.components.incomeColor
 import java.time.YearMonth
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-private val AmberLight = Color(0xFFB26A00)
-private val AmberDark = Color(0xFFFFB74D)
-
 @Composable
-internal fun amberColor(): Color = if (isSystemInDarkTheme()) AmberDark else AmberLight
+internal fun amberColor(): Color = ChiLiTheme.colors.warn
 
 @Composable
 internal fun budgetStatusColor(status: BudgetStatus): Color = when (status) {
