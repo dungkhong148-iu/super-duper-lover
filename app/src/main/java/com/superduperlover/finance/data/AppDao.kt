@@ -98,4 +98,40 @@ interface AppDao {
 
     @Query("DELETE FROM goal_contributions WHERE id = :id")
     suspend fun deleteContribution(id: Long)
+
+    @Query("SELECT * FROM accounts ORDER BY id")
+    suspend fun allAccounts(): List<AccountEntity>
+
+    @Query("SELECT * FROM categories ORDER BY id")
+    suspend fun allCategories(): List<CategoryEntity>
+
+    @Query("SELECT * FROM txns ORDER BY id")
+    suspend fun allTxns(): List<TxnEntity>
+
+    @Query("SELECT * FROM budgets ORDER BY id")
+    suspend fun allBudgets(): List<BudgetEntity>
+
+    @Query("SELECT * FROM goals ORDER BY id")
+    suspend fun allGoals(): List<GoalEntity>
+
+    @Query("SELECT * FROM goal_contributions ORDER BY id")
+    suspend fun allContributions(): List<ContributionEntity>
+
+    @Query("DELETE FROM accounts")
+    suspend fun clearAccounts()
+
+    @Query("DELETE FROM categories")
+    suspend fun clearCategories()
+
+    @Query("DELETE FROM txns")
+    suspend fun clearTxns()
+
+    @Query("DELETE FROM budgets")
+    suspend fun clearBudgets()
+
+    @Query("DELETE FROM goals")
+    suspend fun clearGoals()
+
+    @Query("DELETE FROM goal_contributions")
+    suspend fun clearContributions()
 }

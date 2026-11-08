@@ -102,4 +102,42 @@ class Repo(private val db: AppDatabase) {
     suspend fun addContribution(c: GoalContribution): Long = idOf(c.id, dao.upsertContribution(c.toEntity()))
 
     suspend fun deleteContribution(id: Long) = dao.deleteContribution(id)
+
+    suspend fun exportBackupJson(): String = db.withTransaction {
+        val data = BackupData(
+            accounts = dao.allAccounts(),
+            categories = dao.allCategories(),
+            txns = dao.allTxns(),
+            budgets = dao.allBudgets(),
+            goals = dao.allGoals(),
+            contributions = dao.allContributions(),
+        )
+        data.toJson(exportedAt = java.time.LocalDateTime.now().withNano(0).toString())
+    }
+
+    suspend fun importBackupJson(json: String): List<String> {
+        val errors = validateBackupJson(json)
+        if (errors.isNotEmpty()) return errors
+        val data = try {
+            parseBackup(jsonToTree(json))
+        } catch (e: Exception) {
+            return listOf("Tệp sao lưu bị lỗi: ${e.message}")
+        }
+        db.withTransaction {
+            dao.clearContributions()
+            dao.clearGoals()
+            dao.clearBudgets()
+            dao.clearTxns()
+            dao.clearCategories()
+            dao.clearAccounts()
+
+            for (a in data.accounts) dao.upsertAccount(a)
+            for (c in data.categories) dao.upsertCategory(c)
+            for (t in data.txns) dao.upsertTxn(t)
+            for (b in data.budgets) dao.upsertBudget(b)
+            for (g in data.goals) dao.upsertGoal(g)
+            for (c in data.contributions) dao.upsertContribution(c)
+        }
+        return emptyList()
+    }
 }
