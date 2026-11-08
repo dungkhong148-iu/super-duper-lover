@@ -1,14 +1,13 @@
 package com.superduperlover.finance.ui
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -16,14 +15,21 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.padding
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.superduperlover.finance.ui.accounts.AccountsScreen
+import com.superduperlover.finance.ui.add.AddTransactionScreen
+import com.superduperlover.finance.ui.components.ComingSoon
+import com.superduperlover.finance.ui.transactions.TransactionsScreen
 
 private enum class Tab(val route: String, val label: String, val icon: ImageVector) {
     HOME("home", "Tổng quan", Icons.Filled.Home),
@@ -33,28 +39,42 @@ private enum class Tab(val route: String, val label: String, val icon: ImageVect
     GOALS("goals", "Mục tiêu", Icons.Filled.Star),
 }
 
+private const val ADD_ROUTE = "add/{txnId}"
+
 @Composable
 fun FinanceApp() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    val onTab = Tab.entries.any { it.route == currentRoute }
+
+    fun openTab(tab: Tab) {
+        navController.navigate(tab.route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                Tab.entries.forEach { tab ->
-                    NavigationBarItem(
-                        selected = currentRoute == tab.route,
-                        onClick = {
-                            navController.navigate(tab.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(tab.icon, contentDescription = null) },
-                        label = { Text(tab.label) },
-                    )
+            if (onTab) {
+                NavigationBar {
+                    Tab.entries.forEach { tab ->
+                        NavigationBarItem(
+                            selected = currentRoute == tab.route,
+                            onClick = { openTab(tab) },
+                            icon = { Icon(tab.icon, contentDescription = null) },
+                            label = { Text(tab.label, maxLines = 1) },
+                        )
+                    }
+                }
+            }
+        },
+        floatingActionButton = {
+            if (onTab) {
+                FloatingActionButton(onClick = { navController.navigate("add/0") }) {
+                    Icon(Icons.Filled.Add, contentDescription = "Thêm giao dịch")
                 }
             }
         },
@@ -64,16 +84,26 @@ fun FinanceApp() {
             startDestination = Tab.HOME.route,
             modifier = Modifier.padding(padding),
         ) {
-            Tab.entries.forEach { tab ->
-                composable(tab.route) { EmptyTab(tab.label) }
+            composable(Tab.HOME.route) { ComingSoon("Tổng quan") }
+            composable(Tab.ACCOUNTS.route) { AccountsScreen() }
+            composable(Tab.TRANSACTIONS.route) {
+                TransactionsScreen(onEdit = { id -> navController.navigate("add/$id") })
+            }
+            composable(Tab.BUDGETS.route) { ComingSoon("Ngân sách") }
+            composable(Tab.GOALS.route) { ComingSoon("Mục tiêu") }
+            composable(
+                ADD_ROUTE,
+                arguments = listOf(navArgument("txnId") { type = NavType.LongType }),
+            ) { entry ->
+                AddTransactionScreen(
+                    txnId = entry.arguments?.getLong("txnId") ?: 0L,
+                    onClose = { navController.popBackStack() },
+                    onGoAccounts = {
+                        navController.popBackStack()
+                        openTab(Tab.ACCOUNTS)
+                    },
+                )
             }
         }
-    }
-}
-
-@Composable
-private fun EmptyTab(title: String) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(title)
     }
 }

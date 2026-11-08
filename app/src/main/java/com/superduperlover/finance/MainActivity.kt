@@ -4,7 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.CompositionLocalProvider
 import com.superduperlover.finance.ui.FinanceApp
+import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.theme.FinanceTheme
 
 class MainActivity : ComponentActivity() {
@@ -12,8 +14,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            FinanceTheme {
-                FinanceApp()
+            val repo = (application as FinanceApplication).container.repo
+            CompositionLocalProvider(LocalRepo provides repo) {
+                FinanceTheme {
+                    FinanceApp()
+                }
             }
         }
     }
