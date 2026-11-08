@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +30,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,10 +50,16 @@ import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.core.ACCOUNT_COLOR_KEYS
 import com.superduperlover.finance.core.Account
 import com.superduperlover.finance.core.AccountType
+import com.superduperlover.finance.core.Txn
+import com.superduperlover.finance.core.TxnKind
+import com.superduperlover.finance.core.accountBalance
 import com.superduperlover.finance.core.amountToInput
 import com.superduperlover.finance.core.currencySymbol
 import com.superduperlover.finance.core.defaultAccountColorKey
+import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.core.parseAmount
+import com.superduperlover.finance.core.reconcileKind
+import kotlin.math.abs
 import com.superduperlover.finance.data.DeleteResult
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.CurrencyChips
@@ -103,6 +111,8 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
     var nameError by remember { mutableStateOf<String?>(null) }
     var openingError by remember { mutableStateOf<String?>(null) }
     var deleteError by remember { mutableStateOf<String?>(null) }
+    var showReconcileDialog by remember { mutableStateOf(false) }
+    var reconciled by remember { mutableStateOf(false) }
 
     val hasChanges = name != account.name ||
         type != account.type ||
@@ -308,6 +318,21 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 OutlinedButton(
+                    onClick = { showReconcileDialog = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                ) {
+                    OneLineText("Điều chỉnh số dư")
+                }
+                if (reconciled) {
+                    Text(
+                        text = "Đã điều chỉnh số dư",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                OutlinedButton(
                     onClick = {
                         scope.launch {
                             repo.archiveAccount(account.id)
@@ -344,4 +369,109 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
 
         Spacer(Modifier.height(24.dp))
     }
+
+    if (showReconcileDialog) {
+        ReconcileDialog(
+            account = account,
+            onDismiss = { showReconcileDialog = false },
+            onSuccess = { reconciled = true },
+        )
+    }
+}
+
+@Composable
+private fun ReconcileDialog(
+    account: Account,
+    onDismiss: () -> Unit,
+    onSuccess: () -> Unit,
+) {
+    val repo = LocalRepo.current
+    val scope = rememberCoroutineScope()
+    var currentBalance by remember { mutableStateOf<Long?>(null) }
+    var txns by remember { mutableStateOf<List<Txn>?>(null) }
+    var realText by remember { mutableStateOf("") }
+    var submitting by remember { mutableStateOf(false) }
+
+    LaunchedEffect(account.id) {
+        val loadedTxns = repo.txns(accountId = account.id).first()
+        txns = loadedTxns
+        currentBalance = accountBalance(account, loadedTxns)
+    }
+
+    val real = parseAmount(realText, account.currency)
+    val isError = realText.isNotEmpty() && real == null
+    val current = currentBalance
+    val loadedTxns = txns
+    val kind = if (real != null && loadedTxns != null) reconcileKind(account, loadedTxns, real) else null
+    val confirmEnabled = real != null && kind != null && !submitting
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Điều chỉnh số dư") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = "Số dư trong ChiLi: " + (if (current != null) formatMoney(current, account.currency) else ""),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                OutlinedTextField(
+                    value = realText,
+                    onValueChange = { realText = it },
+                    label = { Text("Số dư thực tế (${currencySymbol(account.currency)})") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = isError,
+                    supportingText = if (isError) {
+                        { Text("Số tiền không hợp lệ") }
+                    } else {
+                        null
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (real != null && current != null) {
+                    val diff = abs(real - current)
+                    val message = when (kind) {
+                        null -> "Không có chênh lệch"
+                        TxnKind.EXPENSE -> "Sẽ ghi một khoản chi ${formatMoney(diff, account.currency)} (danh mục Chênh lệch)"
+                        TxnKind.INCOME -> "Sẽ ghi một khoản thu ${formatMoney(diff, account.currency)} (danh mục Chênh lệch)"
+                        else -> null
+                    }
+                    if (message != null) {
+                        Text(
+                            text = message,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (real != null && !submitting) {
+                        submitting = true
+                        scope.launch {
+                            val id = repo.reconcileAccount(account.id, real)
+                            if (id != null) {
+                                onSuccess()
+                            }
+                            onDismiss()
+                        }
+                    }
+                },
+                enabled = confirmEnabled,
+            ) {
+                Text("Điều chỉnh")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Hủy")
+            }
+        },
+    )
 }
