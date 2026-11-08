@@ -1,4 +1,4 @@
-SPEC B3 - Goals tab                    (writer: head_agent, 2026-11-08; base commit e82d5b6)
+SPEC B3 - Goals tab                    (writer: head_agent, 2026-11-08; base commit f9d420a)
 
 GOAL
 "Mục tiêu" tab: list of savings goals with progress and "Cần để dành X/tháng"; detail screen with contributions,
@@ -25,13 +25,14 @@ DATA (already built; `val repo = LocalRepo.current`, import com.superduperlover.
   suspend repo.archiveGoal(id: Long)
   repo.contributions(goalId: Long): Flow<List<GoalContribution>>   // newest first
   suspend repo.addContribution(c: GoalContribution): Long          // id = 0 inserts; with an existing id it updates (edit)
+  suspend repo.deleteContribution(id: Long)                        // removes one contribution
   core (package com.superduperlover.finance.core): Goal(id, name, target: Long, deadline: LocalDate?, archived),
     GoalContribution(id, goalId, amount: Long, date: LocalDate),
     goalProgress(goal, contributions, today: LocalDate): GoalProgress(saved, remaining, ratio: Double, done, perMonth: Long?),
     formatVnd(Long), parseVndInput(String): Long?
   IMPORTANT: always pass contributions(goal.id) of THAT goal to goalProgress (it does not filter by goalId).
   Do NOT recompute saved / remaining / perMonth yourself. ratio is display only (clamp to 0..1 for the bar).
-  There is no delete for contributions in Repo (v1): offer only add + edit amount/date. Do not add Repo methods.
+  Do not add Repo methods.
   There is no way to find one goal by id in Repo: in the detail screen collect repo.goals() and pick firstOrNull { it.id == goalId };
   if it is not found (archived or missing) call onBack() once via LaunchedEffect and render nothing.
 
@@ -67,7 +68,8 @@ DETAIL SCREEN (GoalDetailScreen)
   incomeColor() from ui/components/Common.kt). Tap a row -> contribution sheet prefilled (edit). Empty: "Chưa có khoản nào".
 - Contribution sheet: OutlinedTextField "Số tiền (₫)" (parseVndInput; error "Số tiền không hợp lệ"), date button
   (default today, DatePickerDialog as above), Button "Lưu" -> repo.addContribution(GoalContribution(id, goalId, amount, date))
-  (id = 0 for new, existing id for edit).
+  (id = 0 for new, existing id for edit). In edit mode the sheet also has a TextButton "Xóa" (error colour) that opens an
+  AlertDialog "Xóa khoản này?" / confirm "Xóa" / dismiss "Hủy"; confirm -> repo.deleteContribution(id), close dialog and sheet.
 - Contributions are tracked separately from accounts: they never change any account balance. Do not touch transactions.
 
 HOW TO CHECK (no UI/e2e tests, rule 14)
