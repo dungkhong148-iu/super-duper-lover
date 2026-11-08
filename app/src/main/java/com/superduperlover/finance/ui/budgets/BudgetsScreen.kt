@@ -9,38 +9,27 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.R
 import com.superduperlover.finance.core.Budget
 import com.superduperlover.finance.core.BudgetPeriod
 import com.superduperlover.finance.core.BudgetStatus
+import com.superduperlover.finance.core.BudgetUsage
 import com.superduperlover.finance.core.CategoryKind
 import com.superduperlover.finance.core.budgetUsage
 import com.superduperlover.finance.core.formatMoney
@@ -52,8 +41,7 @@ import com.superduperlover.finance.ui.components.expenseColor
 import com.superduperlover.finance.ui.components.incomeColor
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 import java.time.LocalDate
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 @Composable
 internal fun amberColor(): Color = ChiLiTheme.colors.warn
@@ -71,10 +59,33 @@ internal fun BudgetStatus.statusLabel(): String = when (this) {
     BudgetStatus.OVER -> "Vượt mức"
 }
 
+internal fun BudgetPeriod.label(): String = when (this) {
+    BudgetPeriod.DAY -> "Ngày"
+    BudgetPeriod.WEEK -> "Tuần"
+    BudgetPeriod.MONTH -> "Tháng"
+    BudgetPeriod.QUARTER -> "Quý"
+    BudgetPeriod.YEAR -> "Năm"
+}
+
+internal fun BudgetPeriod.recurringLabel(): String = when (this) {
+    BudgetPeriod.DAY -> "Hằng ngày"
+    BudgetPeriod.WEEK -> "Hằng tuần"
+    BudgetPeriod.MONTH -> "Hằng tháng"
+    BudgetPeriod.QUARTER -> "Hằng quý"
+    BudgetPeriod.YEAR -> "Hằng năm"
+}
+
+internal fun BudgetPeriod.adverbLabel(): String = when (this) {
+    BudgetPeriod.DAY -> "hằng ngày"
+    BudgetPeriod.WEEK -> "hằng tuần"
+    BudgetPeriod.MONTH -> "hằng tháng"
+    BudgetPeriod.QUARTER -> "hằng quý"
+    BudgetPeriod.YEAR -> "hằng năm"
+}
+
 @Composable
 fun BudgetsScreen() {
     val repo = LocalRepo.current
-    val scope = rememberCoroutineScope()
 
     val today = remember { LocalDate.now() }
     val budgets by remember(repo) { repo.budgets() }.collectAsState(initial = emptyList())
@@ -88,6 +99,20 @@ fun BudgetsScreen() {
 
     var editingBudget by remember { mutableStateOf<Budget?>(null) }
 
+    val sortedBudgetsWithUsage = remember(budgets, txns, accounts, today) {
+        budgets.map { budget ->
+            budget to budgetUsage(budget, txns, accounts, today)
+        }.sortedWith(
+            compareBy<Pair<Budget, BudgetUsage>> { (_, usage) ->
+                when (usage.status) {
+                    BudgetStatus.OVER -> 0
+                    BudgetStatus.WARN -> 1
+                    BudgetStatus.OK -> 2
+                }
+            }.thenBy { (budget, _) -> budget.id }
+        )
+    }
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
@@ -99,18 +124,21 @@ fun BudgetsScreen() {
                 EmptyState(
                     icon = painterResource(R.drawable.ic_savings),
                     title = "Hãy tạo ngân sách đầu tiên",
-                    message = "Đặt hạn mức để biết mỗi tháng còn được tiêu bao nhiêu.",
+                    message = "Đặt hạn mức theo ngày, tuần, tháng, quý hoặc năm để biết còn được tiêu bao nhiêu.",
                     actionLabel = "Tạo ngân sách",
                     onAction = {
                         editingBudget = newBudget(today)
                     },
                 )
             } else {
-                for (budget in budgets) {
-                    val usage = budgetUsage(budget, txns, accounts, today)
+                for ((budget, usage) in sortedBudgetsWithUsage) {
                     val statusColor = budgetStatusColor(usage.status)
                     val accountName = budget.accountId?.let { accountsById[it]?.name ?: "?" } ?: "Tất cả tài khoản (${budget.currency.name})"
                     val categoryName = budget.categoryId?.let { categoriesById[it]?.name ?: "?" } ?: "Tất cả danh mục"
+
+                    val range = usage.range
+                    val startStr = "%02d/%02d".format(range.start.dayOfMonth, range.start.monthValue)
+                    val endStr = "%02d/%02d".format(range.endInclusive.dayOfMonth, range.endInclusive.monthValue)
 
                     SectionCard(
                         modifier = Modifier
@@ -135,6 +163,11 @@ fun BudgetsScreen() {
                                 color = statusColor,
                             )
                         }
+                        OneLineText(
+                            text = "${budget.period.recurringLabel()} · $startStr – $endStr",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                         LinearProgressIndicator(
                             progress = { usage.ratio.toFloat().coerceIn(0f, 1f) },
                             color = statusColor,
@@ -149,6 +182,15 @@ fun BudgetsScreen() {
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        if (usage.carried != 0L) {
+                            val sign = if (usage.carried > 0) "+" else "-"
+                            val carriedStr = "$sign${formatMoney(abs(usage.carried), budget.currency)}"
+                            OneLineText(
+                                text = "Hạn mức ${formatMoney(budget.limit, budget.currency)} · chuyển từ kỳ trước $carriedStr",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                         OneLineText(
                             text = if (usage.remaining >= 0) {
                                 "Còn lại ${formatMoney(usage.remaining, budget.currency)}"
