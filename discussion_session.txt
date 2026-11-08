@@ -27,9 +27,6 @@
 [2026-11-08 11:37] agy_director: B4 done by subagent1-B4. Transaction filters, totals, search implemented per specs/B4.txt.
 [2026-11-08 11:37] agy_director -> director: B4 done. subagent1-B4. 66b0780. :core:test + assembleDebug OK (30 tests pass). None.
 [2026-11-08 10:33] director: A3b approved (f9d420a, 48e40e3). director -> agy_director: B3 sent via deck_inject (specs/B3.txt, base f9d420a).
-[2026-11-08 11:40] agy_director: C2.1 started with subagent1-C2.1. Build backup export/import per specs/C2.txt.
-[2026-11-08 11:55] agy_director: C2.1 done by subagent1-C2.1. Backup export/import built (05ca8ca).
-[2026-11-08 11:55] agy_director: C2.2 started with subagent3-C2.2. Verify C2 build, tests, and diff against specs/C2.txt.
 [2026-11-08 10:44] director: B1-B4 approved (404f081, 5566a2c, cd1fe49, 66b0780). Each commit touched only its spec files; :core:test + assembleDebug + assembleRelease OK (release 1.61 MB); spot-checked budget colours, transfer-free totals, category delete guard. C1 assigned to head_agent with spec C2 for agy.
 [2026-11-08 12:05] head_agent: C1 done (4f001d6 home dashboard; BudgetsScreen helpers made internal for reuse). Pre-wired stub Settings screen + route + Accounts button (a7e53fc) and wrote specs/C2.txt (backup JSON, validateBackup in :core with a tiny MiniJson parser, Repo export/import). :core:test (30) + assembleDebug + assembleRelease OK. Reported to director, hand-off sent to back_agent.
 [2026-11-08 10:47] director -> head_agent: C1 approved (4f001d6, a7e53fc). C2 spec to be revised: no hand-written JSON parser in core; validateBackup takes a parsed Map tree, app converts org.json. A4 assigned: remember repo Flows in screens.
@@ -38,3 +35,9 @@
 [2026-11-08 10:50] director: A4 approved (0fa49d3), scope checked (7 ui files, no settings/data/core). head_agent idle until C2 review / M1 feedback.
 [2026-11-08 10:52] director: M1/M2 started. ChiLi debug (com.chili.app.debug, build of acdacb4) installed on the user's Redmi 24117RN76O (Android 16, HyperOS 3.0) over USB; app launches, no crash. Waiting for user feedback.
 [2026-11-08 10:55] director -> test_fix: F1 assigned (bottom nav labels clipped at font_scale 1.25 on user's Redmi). User told.
+[2026-11-08 11:40] agy_director: C2.1 started with subagent1-C2.1. Build backup export/import per specs/C2.txt.
+[2026-11-08 11:55] agy_director: C2.1 done by subagent1-C2.1. Backup export/import built (05ca8ca).
+[2026-11-08 11:55] agy_director: C2.2 started with subagent3-C2.2. Verify C2 build, tests, and diff against specs/C2.txt.
+[2026-11-08 11:57] agy_director: C2.2 done by subagent3-C2.2. Verified C2 build, 42 tests, and spec compliance: PASS.
+[2026-11-08 11:57] agy_director -> director: C2 done. C2.1 (subagent1), C2.2 (subagent3 verifier). 05ca8ca. :core:test + assembleDebug OK (42 tests pass). None.
+[2026-11-08 10:57] director: ui-ux-pro-max skill copied to .agents/skills/ for agy (Antigravity does not read .claude/skills). Script paths in both SKILL.md fixed to absolute. AGENTS.md Project setup: UI skill line.
