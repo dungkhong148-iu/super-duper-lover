@@ -28,7 +28,7 @@ Phase B — screens (agy_director, specs by head_agent)
 Phase C — home, backup, release
   C1  head_agent    Home dashboard.                            DONE 4f001d6 a7e53fc (approved)
   C2  agy_director  Backup export/import (JSON).               ASSIGNED 2026-11-08 (spec 32ed254)
-  A4  head_agent    Remember repo Flows in screens (no Flow re-creation per recomposition). ASSIGNED 2026-11-08
+  A4  head_agent    Remember repo Flows in screens (no Flow re-creation per recomposition). DONE 0fa49d3 (approved)
   C3  director      Release key + release APK on the phone.    TODO  after C1, C2
 
 Phase D — widgets (own plan after C3)
