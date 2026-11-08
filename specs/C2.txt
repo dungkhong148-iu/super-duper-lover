@@ -1,0 +1,138 @@
+SPEC C2 - Backup export / import (JSON)     (writer: head_agent, 2026-11-08; base commit a7e53fc)
+
+GOAL
+Settings screen with two actions: export ALL data to one JSON file the user picks, and import such a file, which REPLACES
+all data after a confirm dialog. Opened from the "Cài đặt và sao lưu" button on the Accounts tab (already wired).
+Only `org.json` from the Android platform is used (no new library). `validateBackup` lives in :core with tests.
+
+ENV (every shell)
+  . D:\android-tools\env.ps1
+Check command: .\gradlew :core:test assembleDebug   (must end BUILD SUCCESSFUL)
+
+FILES
+  CREATE core/src/main/kotlin/com/superduperlover/finance/core/MiniJson.kt     tiny strict JSON parser (see PART 1)
+  CREATE core/src/main/kotlin/com/superduperlover/finance/core/Backup.kt       validateBackup + constants
+  CREATE core/src/test/kotlin/com/superduperlover/finance/core/BackupTest.kt   tests
+  CREATE app/src/main/java/com/superduperlover/finance/data/BackupJson.kt      entities <-> JSON with org.json
+  EDIT   app/src/main/java/com/superduperlover/finance/data/AppDao.kt          add queries (list in PART 2)
+  EDIT   app/src/main/java/com/superduperlover/finance/data/Repo.kt            add exactly 2 methods (PART 2)
+  EDIT   app/src/main/java/com/superduperlover/finance/ui/settings/SettingsScreen.kt   replace the stub body (PART 3)
+Keep `fun SettingsScreen(onBack: () -> Unit)` exactly (FinanceApp.kt already calls it).
+Sub-task split suggestion for agy_director: PART 1 (core, TDD) and PART 2 (data) touch different files and can run in
+parallel; PART 3 needs PART 2 first. Two subagents never edit the same file at the same time.
+
+DO NOT TOUCH
+  FinanceApp.kt, AccountsScreen.kt, every other ui/ file, Entities.kt, AppDatabase.kt (DB stays version 1, no schema
+  change, app/schemas/* untouched), every existing core/ file, build.gradle.kts files, gradle/libs.versions.toml,
+  AndroidManifest.xml. NO new library or dependency (not even test-only). Do not change existing Repo methods.
+
+BACKUP FORMAT (version 1) - one JSON object. Amount-like and id fields are JSON integers (no ".", no exponent).
+  {
+    "app": "ChiLi",
+    "version": 1,
+    "exportedAt": "2026-11-08T10:30:00",
+    "accounts":          [ {"id":1,"name":"Ví","type":"CASH","openingBalance":0,"archived":false} ],
+    "categories":        [ {"id":1,"name":"Ăn uống","kind":"EXPENSE","icon":"food","archived":false} ],
+    "txns":              [ {"id":1,"kind":"EXPENSE","amount":50000,"accountId":1,"toAccountId":null,"categoryId":1,"date":"2026-11-08","note":""} ],
+    "budgets":           [ {"id":1,"month":"2026-11","accountId":null,"categoryId":null,"limit":1000000} ],
+    "goals":             [ {"id":1,"name":"Du lịch","target":12000000,"deadline":"2027-04-30","archived":false} ],
+    "goalContributions": [ {"id":1,"goalId":1,"amount":2000000,"date":"2026-11-08"} ]
+  }
+  Field names = the Kotlin property names of the entities in data/Entities.kt, except BudgetEntity.limitAmount which is
+  written as "limit". Nullable fields are written as JSON null. Strings are escaped by org.json.
+
+PART 1 - :core (TDD: tests first, see them fail, then implement)
+  MiniJson.kt (internal to the core module): a small strict recursive-descent JSON parser. Types: object (LinkedHashMap),
+  array (List), string (with \" \\ \/ \b \f \n \r \t \uXXXX escapes), number, true, false, null. Numbers are kept as a
+  class JsonNumber(val raw: String) { val isInteger: Boolean } where isInteger is true only for -?(0|[1-9][0-9]*) with no
+  fraction or exponent and the value fits in Long. Trailing garbage after the value, bad syntax, unterminated string -> throw
+  IllegalArgumentException. No external library.
+  Backup.kt (package com.superduperlover.finance.core):
+    const val BACKUP_VERSION = 1
+    val BACKUP_TABLES = listOf("accounts","categories","txns","budgets","goals","goalContributions")
+    fun validateBackup(json: String): List<String>      // empty list = valid
+  Rules, messages in Vietnamese (tests check only emptiness / size / which rule fired by `any { it.contains(...) }`):
+    1. Not parseable JSON, or top level is not an object -> single error "Tệp không phải JSON hợp lệ" (stop).
+    2. "version" missing, not an integer, or != BACKUP_VERSION -> "Phiên bản sao lưu không được hỗ trợ".
+    3. For each name in BACKUP_TABLES: key missing or not an array -> "Thiếu bảng: <name>".
+    4. For every row of every table that exists: each of these fields, when present and not null, must be a JSON integer
+       -> otherwise "Số không hợp lệ: <table>.<field>":
+         accounts: id, openingBalance | categories: id | txns: id, amount, accountId, toAccountId, categoryId |
+         budgets: id, accountId, categoryId, limit | goals: id, target | goalContributions: id, goalId, amount
+       A row that is not an object -> "Dòng không hợp lệ: <table>".
+       Money fields (openingBalance, amount, limit, target) given as "1.5", "1e3" or a string like "50000" are errors.
+    5. Collect all errors (do not stop at the first), but never duplicate the same message more than once.
+  BackupTest.kt (JUnit4), at least these tests:
+    - a minimal valid backup (all six tables empty arrays, version 1) -> empty list
+    - a backup with one row per table, all valid -> empty list
+    - version 2 -> non-empty and contains "Phiên bản"
+    - version missing -> non-empty
+    - table "txns" missing -> contains "Thiếu bảng: txns"
+    - txns amount 12.5 -> contains "txns.amount"
+    - txns amount "50000" (string) -> contains "txns.amount"
+    - text "not json" and text "[]" -> exactly one error "Tệp không phải JSON hợp lệ"
+    - MiniJson: parses nested object / array / escapes; "{" throws
+  Run `.\gradlew :core:test` -> all pass (existing 30 + new).
+
+PART 2 - app/data
+  AppDao.kt - add these (Room @Query, suspend, no Flow); keep everything that exists:
+    SELECT * FROM accounts ORDER BY id            -> allAccounts(): List<AccountEntity>
+    SELECT * FROM categories ORDER BY id          -> allCategories(): List<CategoryEntity>
+    SELECT * FROM txns ORDER BY id                -> allTxns(): List<TxnEntity>
+    SELECT * FROM budgets ORDER BY id             -> allBudgets(): List<BudgetEntity>
+    SELECT * FROM goals ORDER BY id               -> allGoals(): List<GoalEntity>
+    SELECT * FROM goal_contributions ORDER BY id  -> allContributions(): List<ContributionEntity>
+    DELETE FROM accounts / categories / txns / budgets / goals / goal_contributions   -> clearAccounts(), clearCategories(),
+      clearTxns(), clearBudgets(), clearGoals(), clearContributions()
+    Bulk restore reuses the existing @Upsert functions (upsertAccount etc.): the ids in the entities are non-zero, so the
+    rows keep their ids (SQLite AUTOINCREMENT moves its counter past the highest id).
+  BackupJson.kt (data package):
+    class BackupData(accounts: List<AccountEntity>, categories: List<CategoryEntity>, txns: List<TxnEntity>,
+                     budgets: List<BudgetEntity>, goals: List<GoalEntity>, contributions: List<ContributionEntity>)
+    fun BackupData.toJson(exportedAt: String): String      // org.json.JSONObject; JSONObject.NULL for null fields;
+                                                           // numbers as Long (never Double); toString(2) is fine
+    fun parseBackup(json: String): BackupData              // org.json.JSONObject / JSONArray; use getLong / optLong with
+                                                           // isNull checks for nullable fields; may throw (caller catches)
+  Repo.kt - add exactly these two methods (they use `db.withTransaction`, already imported):
+    suspend fun exportBackupJson(): String
+        reads the six tables with the new DAO queries INSIDE one db.withTransaction (consistent snapshot) and returns
+        BackupData(...).toJson(exportedAt = LocalDateTime.now().withNano(0).toString()).
+    suspend fun importBackupJson(json: String): List<String>
+        1) val errors = validateBackup(json); if not empty return errors (nothing touched).
+        2) try { parseBackup(json) } catch (e: Exception) { return listOf("Tệp sao lưu bị lỗi: ${e.message}") } - parse EVERYTHING
+           before touching the database.
+        3) db.withTransaction { clear the six tables, then upsert every entity from the file }.
+        4) return emptyList(). If step 3 throws, Room rolls the transaction back (old data stays); let the exception
+           propagate to the caller.
+        A txn/budget that points to an account or category id missing from the file is still imported as is
+        (the app has no foreign keys); do not add extra checks beyond validateBackup.
+
+PART 3 - ui/settings/SettingsScreen.kt (Vietnamese)
+  - Top row like other screens: IconButton(ArrowBack, "Quay lại", onClick = onBack) + title "Cài đặt và sao lưu".
+  - Short text: "Sao lưu lưu toàn bộ tài khoản, danh mục, giao dịch, ngân sách và mục tiêu vào một tệp JSON."
+  - Button "Xuất dữ liệu": rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json"))
+    launched with the suggested name "chili-backup-yyyyMMdd.json" (today's date, built with LocalDate; use "chili-backup-"
+    + the date digits). In the callback (uri non-null): scope.launch(Dispatchers.IO) { val json = repo.exportBackupJson();
+    context.contentResolver.openOutputStream(uri, "wt")!!.use { it.write(json.toByteArray(Charsets.UTF_8)) } } then set the
+    status message "Đã xuất dữ liệu" (or "Xuất thất bại: <message>" in a try/catch). uri null (cancelled) -> do nothing.
+  - Button "Nhập dữ liệu": launcher ActivityResultContracts.OpenDocument() launched with arrayOf("application/json", "text/plain").
+    Callback (uri non-null): read the file as UTF-8 text on Dispatchers.IO, then call validateBackup(text) (core). If errors:
+    show them in the error colour (one line each, max 5) and do not continue. If valid: keep the text in state and show an
+    AlertDialog: title "Thay thế toàn bộ dữ liệu?", text "Dữ liệu hiện tại sẽ bị xóa và thay bằng nội dung tệp. Không thể hoàn tác.",
+    confirm "Thay thế", dismiss "Hủy". On confirm: errors = repo.importBackupJson(text) on a coroutine; empty -> message
+    "Đã nhập dữ liệu"; otherwise show errors; catch exceptions -> "Nhập thất bại: <message>".
+  - A status Text under the buttons (rememberSaveable not needed). Disable both buttons while an operation runs.
+  - Buttons: full width, min height 48.dp. State with remember { mutableStateOf(...) }. No ViewModel, no new library.
+
+HOW TO CHECK (no UI/e2e tests, rule 14)
+1. .\gradlew :core:test assembleDebug -> BUILD SUCCESSFUL, core tests all pass (existing 30 + new BackupTest tests).
+2. Read your diff against this spec: `git status` shows only the 7 files above; no schema change; validateBackup is called
+   BEFORE the confirm dialog and again inside importBackupJson; parse happens before any delete; exportBackupJson and the
+   clear+restore each run inside ONE db.withTransaction; amounts are written with putLong / read with getLong (no Double).
+3. Round-trip case the director will run on the phone (debug app): note the account balances -> Xuất dữ liệu -> add a
+   transaction and delete an account -> Nhập dữ liệu with the file, confirm -> balances, categories, budgets and goals equal
+   the values noted before. A file edited to have "version": 2, or a missing table, or "amount": 12.5, is refused with a
+   message and changes nothing.
+
+COMMIT (local only, no push): `feat: backup export and import`
+Report to agy_director: files changed, test count, build result, open issues.
