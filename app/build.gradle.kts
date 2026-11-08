@@ -1,8 +1,20 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
 }
+
+// Release signing: the four chili.* keys come from local.properties (git-ignored). Any missing -> release stays unsigned.
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.isFile) f.inputStream().use { load(it) }
+}
+val releaseSigningKeys = listOf("chili.storeFile", "chili.storePassword", "chili.keyAlias", "chili.keyPassword")
+    .associateWith { localProps.getProperty(it)?.takeIf { v -> v.isNotBlank() } }
+val hasReleaseSigning = releaseSigningKeys.values.all { it != null } &&
+    file(releaseSigningKeys.getValue("chili.storeFile")!!).isFile
 
 android {
     namespace = "com.superduperlover.finance"
@@ -16,11 +28,23 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseSigningKeys.getValue("chili.storeFile")!!)
+                storePassword = releaseSigningKeys.getValue("chili.storePassword")
+                keyAlias = releaseSigningKeys.getValue("chili.keyAlias")
+                keyPassword = releaseSigningKeys.getValue("chili.keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
         }
         release {
+            if (hasReleaseSigning) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

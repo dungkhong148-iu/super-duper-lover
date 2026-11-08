@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.superduperlover.finance.core.Currency
 import com.superduperlover.finance.core.TxnKind
+import java.time.LocalDate
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
@@ -48,6 +49,28 @@ class AppPrefs(context: Context) {
         }.apply()
     }
 
+    private val _lastBackupEpochDay = mutableStateOf(prefs.getLong(KEY_LAST_BACKUP, NONE))
+    private val _txnsSinceBackup = mutableStateOf(prefs.getInt(KEY_TXNS_SINCE_BACKUP, 0))
+
+    /** Day of the last successful export, or null if never. Observable: Home recomposes when it changes. */
+    val lastBackupAt: LocalDate?
+        get() = _lastBackupEpochDay.value.takeIf { it != NONE }?.let { LocalDate.ofEpochDay(it) }
+
+    /** Transactions saved (new or edited) since the last successful export. Observable. */
+    val txnsSinceBackup: Int get() = _txnsSinceBackup.value
+
+    fun noteTxnSaved() {
+        _txnsSinceBackup.value += 1
+        prefs.edit().putInt(KEY_TXNS_SINCE_BACKUP, _txnsSinceBackup.value).apply()
+    }
+
+    /** Call after an export has been written successfully. */
+    fun markBackedUp(today: LocalDate = LocalDate.now()) {
+        _lastBackupEpochDay.value = today.toEpochDay()
+        _txnsSinceBackup.value = 0
+        prefs.edit().putLong(KEY_LAST_BACKUP, today.toEpochDay()).putInt(KEY_TXNS_SINCE_BACKUP, 0).apply()
+    }
+
     private fun lastAccountKey(kind: TxnKind) = "last_account_${kind.name.lowercase()}"
 
     private fun readThemeMode(): ThemeMode {
@@ -65,6 +88,8 @@ class AppPrefs(context: Context) {
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_SUMMARY_CURRENCY = "summary_currency"
         private const val KEY_LAST_TO_ACCOUNT = "last_to_account_transfer"
+        private const val KEY_LAST_BACKUP = "last_backup_epoch_day"
+        private const val KEY_TXNS_SINCE_BACKUP = "txns_since_backup"
         private const val NONE = -1L
     }
 }

@@ -9,6 +9,9 @@ import java.time.format.DateTimeParseException
  * and version 2 (budgets have `month` instead of period / startDate / rollover; goals have no completedAt).
  */
 const val BACKUP_VERSION = 3
+
+/** Value of the `app` field in the header of an exported file. */
+const val BACKUP_APP_NAME = "ChiLi"
 const val OLDEST_SUPPORTED_BACKUP_VERSION = 1
 val BACKUP_TABLES = listOf("accounts", "categories", "txns", "budgets", "goals", "goalContributions")
 
@@ -26,6 +29,10 @@ private val TABLES_WITH_CURRENCY = setOf("accounts", "budgets", "goals")
 
 fun validateBackup(root: Map<String, Any?>): List<String> {
     val errors = mutableListOf<String>()
+
+    // `app` is written by export since X0; older files have none and stay valid.
+    val app = root["app"]
+    if (app != null && app != BACKUP_APP_NAME) errors.add("Tệp này không phải bản sao lưu của ChiLi")
 
     val version = root["version"]
     val isVersionValid = when (version) {

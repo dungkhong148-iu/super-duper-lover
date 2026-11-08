@@ -363,6 +363,7 @@ fun AddTransactionScreen(
         if (found.isEmpty() && evaluatedAmount != null) {
             scope.launch {
                 repo.saveTxn(txn)
+                prefs.noteTxnSaved()
                 if (txnId == 0L) prefs.rememberAccount(txn.kind, txn.accountId, txn.toAccountId)
                 onClose()
             }

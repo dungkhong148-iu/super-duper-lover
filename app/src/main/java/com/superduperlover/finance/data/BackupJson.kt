@@ -1,6 +1,7 @@
 package com.superduperlover.finance.data
 
 import com.superduperlover.finance.core.AccountType
+import com.superduperlover.finance.core.BACKUP_APP_NAME
 import com.superduperlover.finance.core.BACKUP_VERSION
 import com.superduperlover.finance.core.accountColorKeyOrDefault
 import com.superduperlover.finance.core.budgetPeriodFromBackup
@@ -22,7 +23,7 @@ class BackupData(
 
 fun BackupData.toJson(exportedAt: String): String {
     val root = JSONObject()
-    root.put("app", "ChiLi")
+    root.put("app", BACKUP_APP_NAME)
     root.put("version", BACKUP_VERSION)
     root.put("exportedAt", exportedAt)
 

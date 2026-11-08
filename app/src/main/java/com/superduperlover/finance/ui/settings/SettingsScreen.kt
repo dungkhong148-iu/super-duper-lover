@@ -29,8 +29,6 @@ import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.ChiLiTopBar
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.SectionCard
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -46,28 +44,16 @@ fun SettingsScreen(onBack: () -> Unit) {
     var showConfirmDialog by remember { mutableStateOf(false) }
     var pendingJson by remember { mutableStateOf("") }
 
-    val exportLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("application/json")
-    ) { uri ->
-        if (uri != null) {
-            isWorking = true
-            statusMessage = null
-            errorMessages = emptyList()
-            scope.launch(Dispatchers.IO) {
-                try {
-                    val json = repo.exportBackupJson()
-                    context.contentResolver.openOutputStream(uri, "wt")!!.use { stream ->
-                        stream.write(json.toByteArray(Charsets.UTF_8))
-                    }
-                    statusMessage = "Đã xuất dữ liệu"
-                } catch (e: Exception) {
-                    statusMessage = "Xuất thất bại: ${e.message}"
-                } finally {
-                    isWorking = false
-                }
+    val startExport = rememberBackupExport(
+        onWorking = { working ->
+            isWorking = working
+            if (working) {
+                statusMessage = null
+                errorMessages = emptyList()
             }
-        }
-    }
+        },
+        onMessage = { statusMessage = it },
+    )
 
     val importLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -118,12 +104,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Button(
-                    onClick = {
-                        val defaultName = "chili-backup-%s.json".format(
-                            LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)
-                        )
-                        exportLauncher.launch(defaultName)
-                    },
+                    onClick = startExport,
                     enabled = !isWorking,
                     modifier = Modifier
                         .fillMaxWidth()

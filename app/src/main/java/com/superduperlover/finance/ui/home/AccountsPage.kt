@@ -2,6 +2,13 @@ package com.superduperlover.finance.ui.home
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Surface
+import com.superduperlover.finance.core.BackupReminder
+import com.superduperlover.finance.core.backupReminder
+import com.superduperlover.finance.ui.settings.rememberBackupExport
+import com.superduperlover.finance.ui.theme.ChiLiTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -113,6 +120,14 @@ fun AccountsPage(
     val accountNames = allAccounts.associate { it.id to it.name }
     val categoryNames = categories.associate { it.id to it.name }
 
+    var backupWorking by remember { mutableStateOf(false) }
+    var backupError by remember { mutableStateOf<String?>(null) }
+    val startBackup = rememberBackupExport(
+        onWorking = { backupWorking = it },
+        onMessage = { backupError = it.takeIf { m -> m.startsWith("Xuất thất bại") } },
+    )
+    val reminder = backupReminder(today, prefs.lastBackupAt, prefs.txnsSinceBackup)
+
     LazyVerticalGrid(
         columns = GridCells.Adaptive(104.dp),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
@@ -120,6 +135,11 @@ fun AccountsPage(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
+        if (reminder != null) {
+            item(key = "backup-reminder", span = FullWidth) {
+                BackupReminderCard(reminder, enabled = !backupWorking, error = backupError, onClick = startBackup)
+            }
+        }
         item(key = "summary", span = FullWidth) {
             SectionCard {
                 if (availableCurrencies.size > 1) {
@@ -282,5 +302,38 @@ fun AccountsPage(
 
     editing?.let { account ->
         AccountSheet(account = account, onDismiss = { editing = null })
+    }
+}
+
+/** Passive reminder (docs/ui-layout.md section 2, cards): tap to export a backup file. */
+@Composable
+private fun BackupReminderCard(
+    reminder: BackupReminder,
+    enabled: Boolean,
+    error: String?,
+    onClick: () -> Unit,
+) {
+    val since = reminder.daysSince?.let { "Đã $it ngày chưa sao lưu" } ?: "Chưa sao lưu lần nào"
+    val text = "$since (${reminder.newTxns} giao dịch mới) — chạm để xuất file"
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, ChiLiTheme.colors.warn),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            if (error != null) {
+                Text(error, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            }
+        }
     }
 }
