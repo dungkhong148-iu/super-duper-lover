@@ -95,4 +95,7 @@ interface AppDao {
 
     @Upsert
     suspend fun upsertContribution(entity: ContributionEntity): Long
+
+    @Query("DELETE FROM goal_contributions WHERE id = :id")
+    suspend fun deleteContribution(id: Long)
 }

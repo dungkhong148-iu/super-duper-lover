@@ -100,4 +100,6 @@ class Repo(private val db: AppDatabase) {
         dao.contributions(goalId).map { rows -> rows.map { it.toCore() } }
 
     suspend fun addContribution(c: GoalContribution): Long = idOf(c.id, dao.upsertContribution(c.toEntity()))
+
+    suspend fun deleteContribution(id: Long) = dao.deleteContribution(id)
 }
