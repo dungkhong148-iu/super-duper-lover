@@ -10,6 +10,7 @@ The director fills this section in for each project. Every rule below that says 
 - Stack: Android only (user's phone: Xiaomi Redmi, Android 16, HyperOS 3.0). Kotlin, Jetpack Compose, Room, Glance. Spec: `docs/superpowers/specs/2026-11-08-finance-app-design.md`. Plan: `docs/superpowers/plans/2026-11-08-finance-app.md`.
 - Toolchain: only `D:\android-tools` (JDK 21, Android SDK command-line tools). Run `. D:\android-tools\env.ps1` in every shell before Gradle or adb; it keeps caches and temp files on D:. Never install Android Studio or an emulator.
 - Code folders: `core/`, `app/`, `docs/`, `specs/`
+- UI layout rules: `docs/ui-layout.md` is binding for every UI task.
 - UI skill: every agent that builds or reviews UI uses the ui-ux-pro-max skill (--stack jetpack-compose). Claude agents: `.claude/skills/ui-ux-pro-max/`. agy and its subagents: `.agents/skills/ui-ux-pro-max/` (agy_director tells each UI subagent to read its SKILL.md and run its search script).
 - Build command: `.\gradlew assembleDebug`
 - Test command: `.\gradlew :core:test`

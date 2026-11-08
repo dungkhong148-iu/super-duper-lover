@@ -34,6 +34,13 @@ Phase C — home, backup, release
 Fixes from user testing
   F1  test_fix      Bottom nav labels clipped at font_scale 1.25.   DONE 7e2ac0f (approved, checked on phone)
 
+Phase U — UI redesign (rules: docs/ui-layout.md)
+  U1  head_agent    Theme, components, 3-tab nav + Home pager, account tiles + colour (DB v2), core evalAmountExpr. Then specs U2-U4.  ASSIGNED 2026-11-08
+  U2  agy_director  Add transaction redesign + calculator pad.  TODO after U1
+  U3  agy_director  Full-screen forms (account, budget, goal, category).  TODO after U1
+  U4  agy_director  Top bars + empty states + Cài đặt.  TODO after U1
+  C3  (release) moves after Phase U.
+
 Phase D — widgets (own plan after C3)
 
 Milestones for user testing (debug APK on the phone over wireless ADB)

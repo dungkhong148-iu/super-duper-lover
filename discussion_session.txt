@@ -45,3 +45,5 @@
 [2026-11-08 11:00] test_fix: F1 done (7e2ac0f, FinanceApp.kt only). Nav labels wrapped at the space at font_scale 1.25; now one line + TextAutoSize 8-12 sp. :core:test + assembleDebug OK; director verified on phone at 1.25 and approved. Hand-off sent to back_agent.
 [2026-11-08 11:00] test_fix -> director: F1 asked before install, flagged corrupted f1.png (PowerShell > on binary); director re-took screenshot and approved 7e2ac0f.
 [2026-11-08 11:00] director: C2 approved (05ca8ca). Scope = 6 spec files; import validates, parses fully, then clears + restores in one Room transaction. Phone test of export/import pending with the user.
+[2026-11-08 11:09] director: phone unplugged by the user. No adb install/screenshot until the user says it is plugged in again. UI redesign (layout guide from user's reference screenshots) waiting for user answers.
+[2026-11-08 11:25] director: phone plugged in again. Wrote docs/ui-layout.md (user's reference app structure + ui-ux-pro-max, green theme, 3-tab nav, calculator pad). Phase U added to plan; U1 assigned to head_agent.

@@ -168,3 +168,22 @@ Create a release signing key in `D:\android-tools\keys\` (never committed). Buil
 ## Phase D — widgets (head_agent first, then agy)
 
 Separate plan written after C3, with the user, after testing the app on the phone. Fixed so far: Jetpack Glance; a 2×2 widget "Còn được tiêu" with a "+" button that opens the add screen; a 4×2 widget with the top budgets; refreshed by `updateAll` after each save, no periodic jobs; checked on the user's HyperOS 3.0 phone (sizes, rounded corners, dark mode, launcher behaviour).
+
+---
+
+## Phase U — UI redesign (after M1 feedback, 2026-11-08)
+
+User decisions: bottom navigation is the director's call; green tone; calculator keys on the number pad; spending donut chart stays in phase 2. Layout rules: `docs/ui-layout.md` (binding for every UI task).
+
+### Task U1: Design foundation + Home (head_agent)
+- Theme tokens from `docs/ui-layout.md` §3 (dark + light), no dynamic colour.
+- Shared components in `ui/components/`: `ChiLiTopBar`, `SectionCard`, `EmptyState`, `SectionHeaderBand`, `FullScreenForm` scaffold (✕ / title / ✓), `OneLineText` (maxLines 1, no wrap, step auto-size, min 10sp).
+- Navigation: bottom bar Trang chủ · Giao dịch · Cài đặt; Trang chủ = TabRow + pager (Tài khoản | Ngân sách & Mục tiêu) as in §1; Cài đặt lists Danh mục and Sao lưu (existing screens).
+- Account colour: `Account.colorKey: String` (one of the 8 keys in §3, default by type) in `:core`; Room v1 -> v2 migration adding the column with a default; backup format accepts files without the field (defaults) and exports it; tests in `:core` for the backup default.
+- Account tile grid on the Tài khoản page (§2).
+- `:core` calculator, TDD: `fun evalAmountExpr(text: String): Long?` — digits with the same grouping/`k` rules as `parseVndInput`, operators `+ − × ÷` (also `- * /`), × ÷ before + −, left to right, ÷ rounds half up to whole đồng, result must be > 0 else null, malformed -> null. Tests: `"50k+30k"`→80000, `"100000-25000"`→75000, `"12000*3"`→36000, `"100000/3"`→33333, `"200000/3"`→66667, `"10+2*3"`→16, `"5-10"`→null, `"1.250.000+50k"`→1300000, `"+5"`→null, `"5+"`→null, `"5/0"`→null.
+- Then write specs U2–U4 for agy and send the director a note.
+
+### Task U2: Add transaction redesign (agy, spec by head_agent) — §2 "Add transaction", uses `evalAmountExpr`.
+### Task U3: Full-screen forms (agy) — account (with colour picker), budget, goal, category; contribution stays a sheet.
+### Task U4: Top bars + empty states everywhere + Cài đặt screen polish (agy).
