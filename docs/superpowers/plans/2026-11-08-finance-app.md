@@ -243,7 +243,7 @@ fun shouldAutoComplete(goal: Goal, savedBefore: Long, savedAfter: Long): Boolean
 ```
 
 **Tests (values):**
-- MONTH from 2026-11-25: index 0 = 25/11–24/12, index 1 = 25/12–24/01; from 2026-01-31: index 1 = 28/02–30/03 (2026 not leap), index 2 = 31/03–30/04.
+- MONTH from 2026-11-25: index 0 = 25/11–24/12, index 1 = 25/12–24/01; from 2026-01-31: index 0 = 31/01–27/02, index 1 = 28/02–30/03 (2026 not leap), index 2 = 31/03–29/04 (index 3 starts 30/04).
 - WEEK from 2026-11-05 (Thu): index 0 = 05/11–11/11, index 1 = 12/11–18/11. DAY index 3 from 2026-11-05 = 08/11–08/11. QUARTER from 2026-11-15: index 0 = 15/11–14/02. YEAR from 2026-03-01: index 0 = 01/03/2026–28/02/2027.
 - `periodIndexAt` before startDate → null; on endInclusive → same index; next day → index + 1.
 - Rollover: MONTH limit 1000, spent 700 in period 0, 1200 in period 1, today in period 2 → period 1 carried +300 (limit 1300, remaining 100), period 2 carried +100 (effective 1100). Overspend: period 0 spent 1500 → period 1 carried −500. Rollover off → carried 0 always.
