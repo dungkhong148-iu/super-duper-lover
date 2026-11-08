@@ -35,11 +35,11 @@ Fixes from user testing
   F1  test_fix      Bottom nav labels clipped at font_scale 1.25.   DONE 7e2ac0f (approved, checked on phone)
 
 Phase U — UI redesign (rules: docs/ui-layout.md)
-  U1  head_agent    Theme, components, 3-tab nav + Home pager, account tiles + colour (DB v2), core evalAmountExpr. Then specs U2-U4.  ASSIGNED 2026-11-08
-  U1b head_agent    Currencies VND/TWD/USD in core (TDD), DB v2 (colour + currency), backup v2.  ASSIGNED 2026-11-08
-  U2  agy_director  Add transaction redesign + calculator pad.  TODO after U1
-  U3  agy_director  Full-screen forms (account, budget, goal, category).  TODO after U1
-  U4  agy_director  Top bars + empty states + Cài đặt.  TODO after U1
+  U1  head_agent    Theme, components, 3-tab nav + Home pager, account tiles + colour (DB v2), core evalAmountExpr. Then specs U2-U4.  DONE eb48620 6bb05b5 196c8e0 (approved)
+  U1b head_agent    Currencies VND/TWD/USD in core (TDD), DB v2 (colour + currency), backup v2.  DONE ee4724a (approved, 75 tests)
+  U2  agy_director  Add transaction redesign + calculator pad.  ASSIGNED 2026-11-08 (specs/U2.txt)
+  U3  agy_director  Full-screen forms (account, budget, goal, category).  ASSIGNED 2026-11-08 (specs/U3.txt)
+  U4  agy_director  Top bars + empty states + Cài đặt.  ASSIGNED 2026-11-08 (specs/U4.txt)
   C3  (release) moves after Phase U.
 
 Phase D — widgets (own plan after C3)
