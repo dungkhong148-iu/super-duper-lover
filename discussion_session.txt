@@ -78,3 +78,16 @@
 [2026-11-08 12:48] agy_director: V3 started with subagent1-V3. Goals UI: completed section, complete/reopen per specs/V3.txt.
 [2026-11-08 12:48] agy_director: V4 started with subagent1-V4. Light mode setting + Home currency chips per specs/V4.txt.
 [2026-11-08 12:53] director: user decision: finish V2-V4, then STOP (no new tasks). Widget / quick-entry work paused; consultant prompt written (docs/consult/quick-entry-prompt.md). Next: install the V build on the phone.
+[2026-11-08 12:57] agy_director: V3.1 done by subagent1-V3. Goals sections, complete and reopen built (d95c8e0).
+[2026-11-08 12:57] agy_director: V3.2 started with subagent3-V3. Verify V3 build, tests, and diff against specs/V3.txt and ui-layout.md.
+[2026-11-08 12:59] agy_director: V2.1 done by subagent1-V2. Budgets UI: periods, start date, rollover built (d1ea7a0).
+[2026-11-08 12:59] agy_director: V2.2 started with subagent3-V2. Verify V2 build, tests, and diff against specs/V2.txt and ui-layout.md.
+[2026-11-08 13:01] agy_director: V3.2 done by subagent3-V3. Verified V3 build, 99 tests, and spec compliance: PASS.
+[2026-11-08 13:01] agy_director -> director: V3 done. V3.1 (subagent1), V3.2 (subagent3 verifier). d95c8e0. :core:test + assembleDebug OK (99 tests pass). None.
+[2026-11-08 13:02] agy_director: V2.2 done by subagent3-V2. Verified V2 build, 99 tests, and spec compliance: PASS.
+[2026-11-08 13:02] agy_director -> director: V2 done. V2.1 (subagent1), V2.2 (subagent3 verifier). d1ea7a0. :core:test + assembleDebug OK (99 tests pass). None.
+[2026-11-08 13:02] agy_director: V4.1 done by subagent1-V4. Light mode setting + Home currency chips built (730a6b4).
+[2026-11-08 13:02] agy_director: V4.2 started with subagent3-V4. Verify V4 build, tests, and diff against specs/V4.txt and ui-layout.md.
+[2026-11-08 13:05] agy_director: V4.2 done by subagent3-V4. Verified V4 build, 99 tests, and spec compliance: PASS.
+[2026-11-08 13:05] agy_director -> director: V4 done. V4.1 (subagent1), V4.2 (subagent3 verifier). 730a6b4. :core:test + assembleDebug OK (99 tests pass). None.
+[2026-11-08 13:06] director: V2 (d1ea7a0), V3 (d95c8e0), V4 (730a6b4) approved; scope OK, 99 tests, release 1.70 MB. Debug DB v2 backed up. Deck PAUSED by user: no new tasks for any agent until the director says so.

@@ -45,9 +45,11 @@ Phase U — UI redesign (rules: docs/ui-layout.md)
 
 Phase V — after first phone test (spec: 'After first phone test')
   V1  head_agent    Budget periods + rollover + goal completion in core (TDD), DB v3, backup v3. Then specs V2-V4.  DONE 1846dac df2279f (approved, 99 tests)
-  V2  agy_director  Budgets UI (periods, start date, rollover).  ASSIGNED 2026-11-08 (specs/V2.txt)
-  V3  agy_director  Goals UI (completed section, complete/reopen).  ASSIGNED 2026-11-08 (specs/V3.txt)
-  V4  agy_director  Light mode setting + Home currency chips.  ASSIGNED 2026-11-08 (specs/V4.txt)
+  V2  agy_director  Budgets UI (periods, start date, rollover).  DONE d1ea7a0 (approved)
+  V3  agy_director  Goals UI (completed section, complete/reopen).  DONE d95c8e0 (approved)
+  V4  agy_director  Light mode setting + Home currency chips.  DONE 730a6b4 (approved)
+
+PAUSED by user after phase V (2026-11-08): no new tasks. Next: widget + quick entry, after the consultant answer (docs/consult/quick-entry-prompt.md).
 
 Phase D — widgets (own plan after C3)
 
