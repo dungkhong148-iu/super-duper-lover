@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.superduperlover.finance.core.Currency
+import com.superduperlover.finance.ui.components.OneLineText
 
 /**
  * 4-column calculator pad:
@@ -65,7 +67,7 @@ fun AmountPad(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(306.dp),
+                .weight(1f),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             // Left 3 columns: Digits (4 rows)
@@ -220,12 +222,11 @@ fun AmountPad(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
+                    OneLineText(
                         text = "Lưu",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onPrimary,
-                        maxLines = 1,
                     )
                 }
             }
@@ -248,6 +249,7 @@ private fun PadKey(
 ) {
     Surface(
         modifier = modifier
+            .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(12.dp))
             .then(
                 if (onLongClick != null) {

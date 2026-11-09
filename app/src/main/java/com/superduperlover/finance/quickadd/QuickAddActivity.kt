@@ -4,6 +4,12 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Modifier
 import com.superduperlover.finance.MainActivity
 import com.superduperlover.finance.core.TxnKind
 import com.superduperlover.finance.ui.add.AddTransactionScreen
@@ -25,16 +31,23 @@ class QuickAddActivity : ComponentActivity() {
             ?.let { runCatching { TxnKind.valueOf(it) }.getOrNull() }
             ?: TxnKind.EXPENSE
         setChiLiContent {
-            AddTransactionScreen(
-                txnId = 0L,
-                initialKind = kind,
-                onClose = { finish() },
-                onGoAccounts = {
-                    // No account yet: the account tiles live on the main screen.
-                    startActivity(Intent(this, MainActivity::class.java))
-                    finish()
-                },
-            )
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .systemBarsPadding()
+            ) {
+                AddTransactionScreen(
+                    txnId = 0L,
+                    initialKind = kind,
+                    onClose = { finish() },
+                    onGoAccounts = {
+                        // No account yet: the account tiles live on the main screen.
+                        startActivity(Intent(this@QuickAddActivity, MainActivity::class.java))
+                        finish()
+                    },
+                )
+            }
         }
     }
 

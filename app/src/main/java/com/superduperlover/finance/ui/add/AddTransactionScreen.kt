@@ -61,6 +61,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.superduperlover.finance.core.Account
 import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
@@ -80,10 +81,10 @@ import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.CategoryIcons
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.SectionCard
-import com.superduperlover.finance.ui.components.color
 import com.superduperlover.finance.ui.components.display
 import com.superduperlover.finance.ui.components.icon
 import com.superduperlover.finance.ui.components.label
+import com.superduperlover.finance.ui.theme.ChiLiTheme
 import com.superduperlover.finance.ui.theme.LocalAppPrefs
 import java.time.LocalDate
 import kotlinx.coroutines.flow.first
@@ -505,44 +506,11 @@ fun AddTransactionScreen(
                 CategoryGrid(
                     categories = displayedCategories,
                     selectedId = categoryId,
-                    kindColor = kind.color(),
                     onSelect = { id ->
                         categoryId = id
                         errors = errors.filterNot { it.lowercase().contains("danh mục") }
                     },
                     onMore = { pickerSheet = PickerSheetType.CATEGORY },
-                )
-            }
-
-            // 6. Compact row: Date button + Note field
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                OutlinedButton(
-                    onClick = { showDate = true },
-                    modifier = Modifier.heightIn(min = 56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.DateRange,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    OneLineText(
-                        text = if (date == LocalDate.now()) "Hôm nay" else date.display(),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("Ghi chú") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.weight(1f),
                 )
             }
 
@@ -576,6 +544,41 @@ fun AddTransactionScreen(
             }
         }
 
+        // 6. Compact row: Date button + Note field (fixed row directly above the number pad, 16dp side padding, 8dp gap to the pad)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            OutlinedButton(
+                onClick = { showDate = true },
+                modifier = Modifier.heightIn(min = 56.dp),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.DateRange,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                OneLineText(
+                    text = if (date == LocalDate.now()) "Hôm nay" else date.display(),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            OutlinedTextField(
+                value = note,
+                onValueChange = { note = it },
+                label = { Text("Ghi chú") },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.weight(1f),
+            )
+        }
+
         // 8. Fixed Calculator Pad (hidden when soft keyboard is open)
         if (!WindowInsets.isImeVisible) {
             AmountPad(
@@ -588,7 +591,11 @@ fun AddTransactionScreen(
                 onEquals = ::onEquals,
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
-                    .padding(bottom = 12.dp),
+                    .padding(bottom = 12.dp)
+                    .heightIn(
+                        min = 48.dp * 4 + 6.dp * 3 + 62.dp,
+                        max = 306.dp + 62.dp,
+                    ),
                 onSave = if (txnId == 0L) ::save else null,
             )
         }
@@ -682,7 +689,18 @@ private fun TypeTabs(
     ) {
         TxnKind.entries.forEach { k ->
             val on = k == selected
-            val c = k.color()
+            val (fillColor, contentColor) = if (on) {
+                when (k) {
+                    TxnKind.EXPENSE -> ChiLiTheme.colors.expenseContainer to ChiLiTheme.colors.onExpenseContainer
+                    TxnKind.INCOME -> ChiLiTheme.colors.incomeContainer to ChiLiTheme.colors.income
+                    TxnKind.TRANSFER -> ChiLiTheme.colors.transferContainer to ChiLiTheme.colors.transfer
+                }
+            } else {
+                Color.Transparent to MaterialTheme.colorScheme.onSurface
+            }
+            val iconColor = if (on) contentColor else MaterialTheme.colorScheme.onSurfaceVariant
+            val borderColor = if (on) contentColor else MaterialTheme.colorScheme.outlineVariant
+
             Surface(
                 modifier = Modifier
                     .weight(1f)
@@ -693,10 +711,10 @@ private fun TypeTabs(
                         onClick = { onPick(k) },
                     ),
                 shape = RoundedCornerShape(12.dp),
-                color = if (on) c.copy(alpha = 0.16f) else Color.Transparent,
+                color = fillColor,
                 border = BorderStroke(
-                    width = if (on) 2.dp else 1.dp,
-                    color = if (on) c else MaterialTheme.colorScheme.outlineVariant,
+                    width = 1.dp,
+                    color = borderColor,
                 ),
             ) {
                 Row(
@@ -710,14 +728,16 @@ private fun TypeTabs(
                         imageVector = k.icon(),
                         contentDescription = null,
                         modifier = Modifier.size(18.dp),
-                        tint = if (on) c else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = iconColor,
                     )
                     Spacer(Modifier.width(4.dp))
                     OneLineText(
                         text = k.label(),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (on) c else MaterialTheme.colorScheme.onSurface,
+                        color = contentColor,
+                        minFontSize = 10.sp,
+                        modifier = Modifier.weight(1f, fill = false),
                     )
                 }
             }
@@ -733,7 +753,11 @@ private fun AmountHeader(
     errors: List<String>,
     modifier: Modifier = Modifier,
 ) {
-    val kindColor = kind.color()
+    val (containerColor, contentColor) = when (kind) {
+        TxnKind.EXPENSE -> ChiLiTheme.colors.expenseContainer to ChiLiTheme.colors.onExpenseContainer
+        TxnKind.INCOME -> ChiLiTheme.colors.incomeContainer to ChiLiTheme.colors.income
+        TxnKind.TRANSFER -> ChiLiTheme.colors.transferContainer to ChiLiTheme.colors.transfer
+    }
     val hasOp = hasOperator(expr)
     val shownAmount: Long = if (!hasOp) {
         parseAmount(expr, currency) ?: 0L
@@ -753,7 +777,7 @@ private fun AmountHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
-                .background(kindColor.copy(alpha = 0.16f))
+                .background(containerColor)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
             Column(
@@ -762,9 +786,10 @@ private fun AmountHeader(
             ) {
                 OneLineText(
                     text = displayText,
-                    style = MaterialTheme.typography.displayMedium,
+                    style = MaterialTheme.typography.displayMedium.copy(fontSize = 28.sp),
                     fontWeight = FontWeight.Bold,
-                    color = kindColor,
+                    color = contentColor,
+                    minFontSize = 20.sp,
                     textAlign = TextAlign.End,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -867,7 +892,6 @@ private fun NoAccounts(onGoAccounts: () -> Unit) {
 private fun CategoryGrid(
     categories: List<Category>,
     selectedId: Long?,
-    kindColor: Color,
     onSelect: (Long) -> Unit,
     onMore: () -> Unit,
     modifier: Modifier = Modifier,
@@ -888,7 +912,6 @@ private fun CategoryGrid(
                         CategoryGridCell(
                             category = c,
                             selected = c.id == selectedId,
-                            kindColor = kindColor,
                             onSelect = { onSelect(c.id) },
                             modifier = Modifier.weight(1f),
                         )
@@ -920,7 +943,6 @@ private fun CategoryGrid(
                         CategoryGridCell(
                             category = c,
                             selected = c.id == selectedId,
-                            kindColor = kindColor,
                             onSelect = { onSelect(c.id) },
                             modifier = Modifier.weight(1f),
                         )
@@ -948,7 +970,6 @@ private fun CategoryGrid(
 private fun CategoryGridCell(
     category: Category,
     selected: Boolean,
-    kindColor: Color,
     onSelect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -965,10 +986,10 @@ private fun CategoryGridCell(
                 contentDescription = category.name
             },
         shape = RoundedCornerShape(12.dp),
-        color = if (selected) kindColor.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surface,
+        color = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
         border = BorderStroke(
-            width = if (selected) 2.dp else 1.dp,
-            color = if (selected) kindColor else MaterialTheme.colorScheme.outlineVariant,
+            width = 1.dp,
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
         ),
     ) {
         Column(
@@ -982,14 +1003,15 @@ private fun CategoryGridCell(
                 imageVector = CategoryIcons.get(category.icon),
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
-                tint = if (selected) kindColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(2.dp))
             OneLineText(
                 text = category.name,
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                color = if (selected) kindColor else MaterialTheme.colorScheme.onSurface,
+                color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
+                minFontSize = 10.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -1029,8 +1051,9 @@ private fun CategoryGridMoreCell(
             Spacer(Modifier.height(2.dp))
             OneLineText(
                 text = "Khác...",
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
                 color = MaterialTheme.colorScheme.onSurface,
+                minFontSize = 10.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )

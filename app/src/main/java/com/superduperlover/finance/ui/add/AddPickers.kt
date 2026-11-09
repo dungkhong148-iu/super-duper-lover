@@ -95,7 +95,7 @@ fun AccountPickerSheet(
                             .semantics { this.selected = isSelected },
                         shape = RoundedCornerShape(12.dp),
                         color = if (isSelected) {
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                            MaterialTheme.colorScheme.secondaryContainer
                         } else {
                             Color.Transparent
                         },
@@ -117,19 +117,27 @@ fun AccountPickerSheet(
                                     text = account.name,
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                    color = MaterialTheme.colorScheme.onSurface,
+                                    color = if (isSelected) {
+                                        MaterialTheme.colorScheme.onSecondaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
                                 )
                                 Text(
                                     text = account.currency.name,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (isSelected) {
+                                        MaterialTheme.colorScheme.onSecondaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
                                 )
                             }
                             if (isSelected) {
                                 Icon(
                                     imageVector = Icons.Filled.Check,
                                     contentDescription = "Đã chọn",
-                                    tint = MaterialTheme.colorScheme.primary,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                     modifier = Modifier.size(24.dp),
                                 )
                             }
@@ -192,12 +200,12 @@ fun CategoryPickerSheet(
                             .semantics { this.selected = isSelected },
                         shape = RoundedCornerShape(12.dp),
                         color = if (isSelected) {
-                            MaterialTheme.colorScheme.primaryContainer
+                            MaterialTheme.colorScheme.secondaryContainer
                         } else {
                             MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                         },
                         border = if (isSelected) {
-                            BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                            BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
                         } else null,
                     ) {
                         Box(modifier = Modifier.fillMaxSize()) {
@@ -224,7 +232,7 @@ fun CategoryPickerSheet(
                                     style = MaterialTheme.typography.labelSmall,
                                     textAlign = TextAlign.Center,
                                     color = if (isSelected) {
-                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                        MaterialTheme.colorScheme.onSecondaryContainer
                                     } else {
                                         MaterialTheme.colorScheme.onSurface
                                     },
