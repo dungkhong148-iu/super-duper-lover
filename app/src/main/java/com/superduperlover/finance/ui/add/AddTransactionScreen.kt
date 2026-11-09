@@ -1,9 +1,9 @@
 package com.superduperlover.finance.ui.add
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -35,8 +36,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -52,13 +51,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -109,15 +111,15 @@ private fun currentOperand(text: String): String {
 }
 
 /**
- * Redesigned Add / Edit transaction screen (docs/ui-layout.md section 2):
+ * Redesigned Add / Edit transaction screen (docs/ui-layout.md sections 2b, 3, 4):
  * 1. Top bar: ✕ · Title · ✓
- * 2. Type tabs: Chi tiêu · Thu nhập · Chuyển khoản
- * 3. Amount header: tinted rounded box with live evaluation and expression
- * 4. Pickers row: Tài khoản | Danh mục (or Từ tài khoản | Đến tài khoản)
- * 5. Top categories chip row + Tất cả chip
- * 6. Compact row: Date button + Note field
+ * 2. Type tabs: ONE card with 3 equal pill segments
+ * 3. Amount card: surfaceContainerLow card tinted by kind with right-aligned amount
+ * 4. Pickers row: two cards side by side (Tài khoản | Danh mục or Từ | Đến)
+ * 5. Category grid: ONE card with 2x4 cells (hidden for transfer)
+ * 6. Date + note row: two nested tiles fixed above pad
  * 7. Cross-currency field (when transferring between different currencies)
- * 8. Fixed calculator pad with evalAmountExpr support
+ * 8. Fixed calculator pad with evalAmountExpr support and full-width Lưu key
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -448,7 +450,7 @@ fun AddTransactionScreen(
                 },
             )
 
-            // 3. Amount header
+            // 3. Amount card
             AmountHeader(
                 kind = kind,
                 expr = expr,
@@ -456,7 +458,7 @@ fun AddTransactionScreen(
                 errors = amountErrors.distinct(),
             )
 
-            // 4. Pickers row
+            // 4. Picker row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -473,6 +475,11 @@ fun AddTransactionScreen(
                         targetAccount?.let { "${it.name} (${it.currency.name})" } ?: "Chọn tài khoản"
                     } else {
                         selectedCategory?.name ?: "Chọn danh mục"
+                    },
+                    valueColor = if (kind != TxnKind.TRANSFER && selectedCategory != null) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
                     },
                     onClick = {
                         pickerSheet = if (kind == TxnKind.TRANSFER) {
@@ -501,7 +508,66 @@ fun AddTransactionScreen(
                 }
             }
 
-            // 5. Fixed category grid (hidden for transfer)
+            // 7. Cross-currency field (transfer only: stays in scrolling Column right under picker row)
+            if (crossCurrency) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    OneLineText(
+                        text = "Số tiền nhận (${currencySymbol(targetAccount.currency)})",
+                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    BasicTextField(
+                        value = receivedText,
+                        onValueChange = {
+                            receivedEdited = true
+                            receivedText = it
+                            errors = emptyList()
+                        },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        ),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 56.dp),
+                        decorationBox = { innerTextField ->
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 16.dp),
+                                    contentAlignment = Alignment.CenterStart,
+                                ) {
+                                    innerTextField()
+                                }
+                            }
+                        },
+                    )
+                    if (rate != null && !receivedEdited) {
+                        Text(
+                            text = "Tự điền theo lần chuyển gần nhất, bạn có thể sửa",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            modifier = Modifier.padding(start = 4.dp, top = 2.dp),
+                        )
+                    }
+                    receivedErrors.forEach { ErrorText(it) }
+                }
+            }
+
+            // 5. Category grid (hidden for transfer)
             if (kind != TxnKind.TRANSFER) {
                 CategoryGrid(
                     categories = displayedCategories,
@@ -513,38 +579,9 @@ fun AddTransactionScreen(
                     onMore = { pickerSheet = PickerSheetType.CATEGORY },
                 )
             }
-
-            // 7. Cross-currency field (transfer only)
-            if (crossCurrency) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
-                        value = receivedText,
-                        onValueChange = {
-                            receivedEdited = true
-                            receivedText = it
-                            errors = emptyList()
-                        },
-                        label = { Text("Số tiền nhận (${currencySymbol(targetAccount.currency)})") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    if (rate != null && !receivedEdited) {
-                        Text(
-                            text = "Tự điền theo lần chuyển gần nhất, bạn có thể sửa",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            modifier = Modifier.padding(start = 4.dp, top = 2.dp),
-                        )
-                    }
-                    receivedErrors.forEach { ErrorText(it) }
-                }
-            }
         }
 
-        // 6. Compact row: Date button + Note field (fixed row directly above the number pad, 16dp side padding, 8dp gap to the pad)
+        // 6. Date + note row: two nested tiles side by side (8dp gap, fixed above the pad)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -553,34 +590,84 @@ fun AddTransactionScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            OutlinedButton(
+            Surface(
                 onClick = { showDate = true },
-                modifier = Modifier.heightIn(min = 56.dp),
-                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .weight(0.45f)
+                    .heightIn(min = 56.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, ChiLiTheme.colors.outline),
             ) {
-                Icon(
-                    imageVector = Icons.Filled.DateRange,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(Modifier.width(6.dp))
-                OneLineText(
-                    text = if (date == LocalDate.now()) "Hôm nay" else date.display(),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.DateRange,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    OneLineText(
+                        text = if (date == LocalDate.now()) "Hôm nay" else date.display(),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        minFontSize = 10.sp,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                }
             }
-            OutlinedTextField(
+            BasicTextField(
                 value = note,
                 onValueChange = { note = it },
-                label = { Text("Ghi chú") },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.weight(1f),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                modifier = Modifier
+                    .weight(0.55f)
+                    .heightIn(min = 56.dp)
+                    .semantics { contentDescription = "Ghi chú" },
+                decorationBox = { innerTextField ->
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 14.dp),
+                            contentAlignment = Alignment.CenterStart,
+                        ) {
+                            if (note.isEmpty()) {
+                                Text(
+                                    text = "Ghi chú...",
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
+                },
             )
         }
 
         // 8. Fixed Calculator Pad (hidden when soft keyboard is open)
         if (!WindowInsets.isImeVisible) {
+            val padMin = if (txnId == 0L) 48.dp * 4 + 8.dp * 4 + 56.dp else 48.dp * 4 + 8.dp * 3
+            val padMax = if (txnId == 0L) 56.dp * 4 + 8.dp * 4 + 56.dp else 56.dp * 4 + 8.dp * 3
             AmountPad(
                 currency = currency,
                 onDigit = ::onDigit,
@@ -593,8 +680,8 @@ fun AddTransactionScreen(
                     .padding(horizontal = 16.dp)
                     .padding(bottom = 12.dp)
                     .heightIn(
-                        min = 48.dp * 4 + 6.dp * 3 + 62.dp,
-                        max = 306.dp + 62.dp,
+                        min = padMin,
+                        max = padMax,
                     ),
                 onSave = if (txnId == 0L) ::save else null,
             )
@@ -683,62 +770,86 @@ private fun TypeTabs(
     onPick: (TxnKind) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    Surface(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, ChiLiTheme.colors.outline),
     ) {
-        TxnKind.entries.forEach { k ->
-            val on = k == selected
-            val (fillColor, contentColor) = if (on) {
-                when (k) {
-                    TxnKind.EXPENSE -> ChiLiTheme.colors.expenseContainer to ChiLiTheme.colors.onExpenseContainer
-                    TxnKind.INCOME -> ChiLiTheme.colors.incomeContainer to ChiLiTheme.colors.income
-                    TxnKind.TRANSFER -> ChiLiTheme.colors.transferContainer to ChiLiTheme.colors.transfer
-                }
-            } else {
-                Color.Transparent to MaterialTheme.colorScheme.onSurface
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp),
+        ) {
+            val density = LocalDensity.current
+            val textMeasurer = rememberTextMeasurer()
+            val labelStyle = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp)
+            val longestWidth = remember(density) {
+                val res = textMeasurer.measure(
+                    text = "Chuyển khoản",
+                    style = labelStyle,
+                )
+                with(density) { res.size.width.toDp() }
             }
-            val iconColor = if (on) contentColor else MaterialTheme.colorScheme.onSurfaceVariant
-            val borderColor = if (on) contentColor else MaterialTheme.colorScheme.outlineVariant
+            // 3 equal pill segments with 4dp gap between them: (maxWidth - 8.dp) / 3
+            val segmentWidth = (maxWidth - 8.dp) / 3
+            // Non-text width inside segment: 8dp horizontal padding (4dp each side) + 18dp icon + 4dp space = 30dp
+            val showIcons = (segmentWidth - 30.dp) >= longestWidth
 
-            Surface(
-                modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = 48.dp)
-                    .selectable(
-                        selected = on,
-                        role = Role.Tab,
-                        onClick = { onPick(k) },
-                    ),
-                shape = RoundedCornerShape(12.dp),
-                color = fillColor,
-                border = BorderStroke(
-                    width = 1.dp,
-                    color = borderColor,
-                ),
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 6.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Icon(
-                        imageVector = k.icon(),
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = iconColor,
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    OneLineText(
-                        text = k.label(),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
-                        color = contentColor,
-                        minFontSize = 10.sp,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
+                TxnKind.entries.forEach { k ->
+                    val on = k == selected
+                    val (fillColor, contentColor) = if (on) {
+                        when (k) {
+                            TxnKind.EXPENSE -> ChiLiTheme.colors.expenseContainer to ChiLiTheme.colors.onExpenseContainer
+                            TxnKind.INCOME -> ChiLiTheme.colors.incomeContainer to ChiLiTheme.colors.income
+                            TxnKind.TRANSFER -> ChiLiTheme.colors.transferContainer to ChiLiTheme.colors.transfer
+                        }
+                    } else {
+                        Color.Transparent to MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 40.dp)
+                            .selectable(
+                                selected = on,
+                                role = Role.Tab,
+                                onClick = { onPick(k) },
+                            ),
+                        shape = RoundedCornerShape(20.dp),
+                        color = fillColor,
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 4.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            if (showIcons) {
+                                Icon(
+                                    imageVector = k.icon(),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = contentColor,
+                                )
+                                Spacer(Modifier.width(4.dp))
+                            }
+                            OneLineText(
+                                text = k.label(),
+                                style = labelStyle,
+                                fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
+                                color = contentColor,
+                                minFontSize = 10.sp,
+                                modifier = Modifier.weight(1f, fill = false),
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -753,10 +864,18 @@ private fun AmountHeader(
     errors: List<String>,
     modifier: Modifier = Modifier,
 ) {
-    val (containerColor, contentColor) = when (kind) {
-        TxnKind.EXPENSE -> ChiLiTheme.colors.expenseContainer to ChiLiTheme.colors.onExpenseContainer
-        TxnKind.INCOME -> ChiLiTheme.colors.incomeContainer to ChiLiTheme.colors.income
-        TxnKind.TRANSFER -> ChiLiTheme.colors.transferContainer to ChiLiTheme.colors.transfer
+    val baseCardColor = MaterialTheme.colorScheme.surfaceContainerLow
+    val tintColor = when (kind) {
+        TxnKind.EXPENSE -> ChiLiTheme.colors.expenseContainer.copy(alpha = 0.35f)
+        TxnKind.INCOME -> ChiLiTheme.colors.incomeContainer
+        TxnKind.TRANSFER -> ChiLiTheme.colors.transferContainer
+    }
+    val cardColor = tintColor.compositeOver(baseCardColor)
+
+    val contentColor = when (kind) {
+        TxnKind.EXPENSE -> ChiLiTheme.colors.onExpenseContainer
+        TxnKind.INCOME -> ChiLiTheme.colors.income
+        TxnKind.TRANSFER -> ChiLiTheme.colors.transfer
     }
     val hasOp = hasOperator(expr)
     val shownAmount: Long = if (!hasOp) {
@@ -772,41 +891,46 @@ private fun AmountHeader(
     }
     val displayText = if (sign.isNotEmpty()) "$sign $formatted" else formatted
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        Box(
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 88.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = cardColor,
+        border = BorderStroke(1.dp, ChiLiTheme.colors.outline),
+    ) {
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(containerColor)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 20.dp),
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.Center,
         ) {
-            Column(
+            OneLineText(
+                text = displayText,
+                style = MaterialTheme.typography.displayMedium.copy(fontSize = 28.sp),
+                fontWeight = FontWeight.Bold,
+                color = contentColor,
+                minFontSize = 20.sp,
+                textAlign = TextAlign.End,
                 modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.End,
-            ) {
+            )
+            if (hasOp) {
+                Spacer(Modifier.height(4.dp))
                 OneLineText(
-                    text = displayText,
-                    style = MaterialTheme.typography.displayMedium.copy(fontSize = 28.sp),
-                    fontWeight = FontWeight.Bold,
-                    color = contentColor,
-                    minFontSize = 20.sp,
+                    text = prettyExpr(expr),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.End,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                if (hasOp) {
-                    Spacer(Modifier.height(4.dp))
-                    OneLineText(
-                        text = prettyExpr(expr),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+            }
+            if (errors.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                errors.forEach { err ->
+                    ErrorText(err, textAlign = TextAlign.End)
                 }
             }
-        }
-        errors.forEach { err ->
-            ErrorText(err)
         }
     }
 }
@@ -817,44 +941,47 @@ private fun PickerButton(
     value: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    valueColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     Surface(
         onClick = onClick,
         modifier = modifier.heightIn(min = 56.dp),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, ChiLiTheme.colors.outline),
         color = MaterialTheme.colorScheme.surface,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.Center,
         ) {
-            Text(
+            OneLineText(
                 text = label,
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
             )
             Spacer(Modifier.height(2.dp))
             OneLineText(
                 text = value,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleSmall.copy(fontSize = 14.sp),
+                fontWeight = FontWeight.Bold,
+                color = valueColor,
             )
         }
     }
 }
 
 @Composable
-private fun ErrorText(text: String) {
+private fun ErrorText(text: String, textAlign: TextAlign = TextAlign.Start) {
     Text(
         text = text,
         color = MaterialTheme.colorScheme.error,
         style = MaterialTheme.typography.bodySmall,
-        modifier = Modifier.padding(start = 4.dp, top = 2.dp),
+        textAlign = textAlign,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 4.dp, top = 2.dp),
     )
 }
 
@@ -896,69 +1023,81 @@ private fun CategoryGrid(
     onMore: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val moreIndex = categories.size
-    Column(
+    val moreIndex = categories.size.coerceAtMost(7)
+
+    Surface(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, ChiLiTheme.colors.outline),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            for (i in 0 until 4) {
-                when {
-                    i < moreIndex -> {
-                        val c = categories[i]
-                        CategoryGridCell(
-                            category = c,
-                            selected = c.id == selectedId,
-                            onSelect = { onSelect(c.id) },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    i == moreIndex -> {
-                        CategoryGridMoreCell(
-                            onClick = onMore,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    else -> {
-                        Spacer(
-                            modifier = Modifier
-                                .weight(1f)
-                                .heightIn(min = 56.dp),
-                        )
+            // Row 1: indices 0..3
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                for (i in 0 until 4) {
+                    when {
+                        i < moreIndex -> {
+                            val c = categories[i]
+                            CategoryGridCell(
+                                category = c,
+                                selected = c.id == selectedId,
+                                onSelect = { onSelect(c.id) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        i == moreIndex -> {
+                            CategoryGridMoreCell(
+                                onClick = onMore,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        else -> {
+                            Spacer(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .heightIn(min = 56.dp),
+                            )
+                        }
                     }
                 }
             }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            for (i in 4 until 8) {
-                when {
-                    i < moreIndex -> {
-                        val c = categories[i]
-                        CategoryGridCell(
-                            category = c,
-                            selected = c.id == selectedId,
-                            onSelect = { onSelect(c.id) },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    i == moreIndex -> {
-                        CategoryGridMoreCell(
-                            onClick = onMore,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    else -> {
-                        Spacer(
-                            modifier = Modifier
-                                .weight(1f)
-                                .heightIn(min = 56.dp),
-                        )
+            // Row 2: indices 4..7
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                for (i in 4 until 8) {
+                    when {
+                        i < moreIndex -> {
+                            val c = categories[i]
+                            CategoryGridCell(
+                                category = c,
+                                selected = c.id == selectedId,
+                                onSelect = { onSelect(c.id) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        i == moreIndex -> {
+                            CategoryGridMoreCell(
+                                onClick = onMore,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        else -> {
+                            Spacer(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .heightIn(min = 56.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -973,10 +1112,12 @@ private fun CategoryGridCell(
     onSelect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val fillColor = if (selected) MaterialTheme.colorScheme.surfaceVariant else Color.Transparent
+    val contentColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+
     Surface(
         modifier = modifier
             .heightIn(min = 56.dp)
-            .clip(RoundedCornerShape(12.dp))
             .selectable(
                 selected = selected,
                 role = Role.RadioButton,
@@ -985,12 +1126,8 @@ private fun CategoryGridCell(
             .semantics {
                 contentDescription = category.name
             },
-        shape = RoundedCornerShape(12.dp),
-        color = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
-        border = BorderStroke(
-            width = 1.dp,
-            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-        ),
+        shape = RoundedCornerShape(16.dp),
+        color = fillColor,
     ) {
         Column(
             modifier = Modifier
@@ -1002,15 +1139,15 @@ private fun CategoryGridCell(
             Icon(
                 imageVector = CategoryIcons.get(category.icon),
                 contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp),
+                tint = contentColor,
             )
             Spacer(Modifier.height(2.dp))
             OneLineText(
                 text = category.name,
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
+                color = contentColor,
                 minFontSize = 10.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
@@ -1031,9 +1168,8 @@ private fun CategoryGridMoreCell(
             .semantics {
                 contentDescription = "Khác"
             },
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.Transparent,
     ) {
         Column(
             modifier = Modifier
@@ -1045,14 +1181,14 @@ private fun CategoryGridMoreCell(
             Icon(
                 imageVector = Icons.Filled.MoreVert,
                 contentDescription = null,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(24.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(2.dp))
             OneLineText(
                 text = "Khác...",
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-                color = MaterialTheme.colorScheme.onSurface,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 minFontSize = 10.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
