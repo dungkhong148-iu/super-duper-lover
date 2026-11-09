@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -126,6 +128,7 @@ fun BudgetsScreen() {
                     onAction = {
                         editingBudget = newBudget(today)
                     },
+                    emphasized = true,
                 )
             } else {
                 for ((budget, usage) in sortedBudgetsWithUsage) {
@@ -199,17 +202,22 @@ fun BudgetsScreen() {
                         )
                     }
                 }
-            }
 
-            Button(
-                onClick = {
-                    editingBudget = newBudget(today)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp),
-            ) {
-                OneLineText("Thêm ngân sách", style = MaterialTheme.typography.labelLarge)
+                FilledTonalButton(
+                    onClick = {
+                        editingBudget = newBudget(today)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    ),
+                ) {
+                    OneLineText("Thêm ngân sách", style = MaterialTheme.typography.labelLarge)
+                }
             }
         }
     }

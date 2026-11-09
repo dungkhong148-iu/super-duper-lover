@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -16,7 +18,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.superduperlover.finance.R
 import com.superduperlover.finance.core.Goal
 import com.superduperlover.finance.core.goalProgress
@@ -61,12 +65,18 @@ fun GoalsScreen(onOpenGoal: (Long) -> Unit) {
                 message = "Chọn một khoản cần để dành và theo dõi tiến độ mỗi tháng.",
                 actionLabel = "Tạo mục tiêu",
                 onAction = { editingGoal = Goal(0L, "", 0L, null) },
+                emphasized = true,
             )
         } else {
+            val subTitleStyle = MaterialTheme.typography.bodyMedium.copy(
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+
             OneLineText(
                 text = "Đang thực hiện",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = subTitleStyle,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             if (inProgress.isEmpty()) {
@@ -84,22 +94,27 @@ fun GoalsScreen(onOpenGoal: (Long) -> Unit) {
             if (completed.isNotEmpty()) {
                 OneLineText(
                     text = "Đã hoàn thành (${completed.size})",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    style = subTitleStyle,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 for (goal in completed) {
                     GoalCard(goal = goal, onOpen = { onOpenGoal(goal.id) })
                 }
             }
-        }
 
-        OutlinedButton(
-            onClick = { editingGoal = Goal(0L, "", 0L, null) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 48.dp),
-        ) {
-            OneLineText("Thêm mục tiêu", style = MaterialTheme.typography.labelLarge)
+            FilledTonalButton(
+                onClick = { editingGoal = Goal(0L, "", 0L, null) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                ),
+            ) {
+                OneLineText("Thêm mục tiêu", style = MaterialTheme.typography.labelLarge)
+            }
         }
     }
 

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
@@ -24,7 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 
 /**
- * Card of a screen section (docs/ui-layout.md section 2): surface colour, 16dp corners, 16dp padding,
+ * Card of a screen section (docs/ui-layout.md section 2): surface colour, 24dp corners, 16dp padding,
  * thin outline, no shadow. [title] is optional; [onAction] adds a "›" button at the right of the title row.
  */
 @Composable
@@ -37,7 +38,7 @@ fun SectionCard(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, ChiLiTheme.colors.outline),
     ) {
