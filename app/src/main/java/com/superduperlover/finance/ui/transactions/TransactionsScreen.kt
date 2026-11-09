@@ -1,5 +1,6 @@
 package com.superduperlover.finance.ui.transactions
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -16,25 +17,30 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -48,9 +54,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
+import androidx.compose.ui.unit.sp
 import com.superduperlover.finance.R
 import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
@@ -63,13 +71,13 @@ import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.CategoryIcons
 import com.superduperlover.finance.ui.components.EmptyState
 import com.superduperlover.finance.ui.components.OneLineText
-import com.superduperlover.finance.ui.components.SectionCard
 import com.superduperlover.finance.ui.components.color
 import com.superduperlover.finance.ui.components.display
 import com.superduperlover.finance.ui.components.expenseColor
 import com.superduperlover.finance.ui.components.icon
 import com.superduperlover.finance.ui.components.incomeColor
 import com.superduperlover.finance.ui.components.label
+import com.superduperlover.finance.ui.theme.ChiLiTheme
 import com.superduperlover.finance.ui.theme.chiLiChipBorder
 import com.superduperlover.finance.ui.theme.chiLiChipColors
 import java.time.YearMonth
@@ -127,212 +135,289 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item(key = "header") {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, ChiLiTheme.colors.outline),
             ) {
-                IconButton(
-                    onClick = { monthStr = month.minusMonths(1).toString() },
-                    modifier = Modifier.size(48.dp),
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(4.dp),
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Tháng trước")
-                }
-                OneLineText(
-                    text = "Tháng ${month.monthValue}/${month.year}",
-                    style = MaterialTheme.typography.titleLarge,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f),
-                )
-                IconButton(
-                    onClick = { monthStr = month.plusMonths(1).toString() },
-                    modifier = Modifier.size(48.dp),
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Tháng sau")
-                }
-                IconButton(
-                    onClick = { isSearchOpen = !isSearchOpen },
-                    modifier = Modifier.size(48.dp),
-                ) {
-                    Icon(Icons.Filled.Search, contentDescription = "Tìm kiếm")
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 56.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        IconButton(
+                            onClick = { monthStr = month.minusMonths(1).toString() },
+                            modifier = Modifier.size(48.dp),
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Tháng trước")
+                        }
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.DateRange,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            val titleStyle = MaterialTheme.typography.titleMedium.let {
+                                if (it.fontSize.isSpecified && it.fontSize > 18.sp) it.copy(fontSize = 18.sp) else it
+                            }
+                            OneLineText(
+                                text = "Tháng ${month.monthValue}/${month.year}",
+                                style = titleStyle,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                        IconButton(
+                            onClick = { monthStr = month.plusMonths(1).toString() },
+                            modifier = Modifier.size(48.dp),
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Tháng sau")
+                        }
+                        IconButton(
+                            onClick = { isSearchOpen = !isSearchOpen },
+                            modifier = Modifier.size(48.dp),
+                        ) {
+                            Icon(Icons.Filled.Search, contentDescription = "Tìm kiếm")
+                        }
+                    }
+                    if (isSearchOpen) {
+                        OutlinedTextField(
+                            value = searchText,
+                            onValueChange = { searchText = it },
+                            label = { Text("Tìm trong ghi chú") },
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
+                        )
+                    }
                 }
             }
         }
 
         item(key = "filters") {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // Account filter chip
-                    Box {
-                        val selectedAccount = accounts.firstOrNull { it.id == filterAccountId }
-                        val accountLabel = if (selectedAccount != null) "Tài khoản: ${selectedAccount.name}" else "Tài khoản: Tất cả"
-                        FilterChip(
-                            selected = filterAccountId != null,
-                            onClick = { accountMenuExpanded = true },
-                            label = {
-                                OneLineText(
-                                    text = accountLabel,
-                                    modifier = Modifier.widthIn(max = 200.dp),
-                                )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Account filter chip
+                Box {
+                    val selectedAccount = accounts.firstOrNull { it.id == filterAccountId }
+                    val accountLabel = if (selectedAccount != null) "Tài khoản: ${selectedAccount.name}" else "Tài khoản: Tất cả"
+                    FilterChip(
+                        selected = filterAccountId != null,
+                        onClick = { accountMenuExpanded = true },
+                        label = {
+                            OneLineText(
+                                text = accountLabel,
+                                modifier = Modifier.widthIn(max = 200.dp),
+                            )
+                        },
+                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+                        colors = chiLiChipColors(),
+                        border = chiLiChipBorder(selected = filterAccountId != null),
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    )
+                    DropdownMenu(
+                        expanded = accountMenuExpanded,
+                        onDismissRequest = { accountMenuExpanded = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Tất cả") },
+                            onClick = {
+                                filterAccountId = null
+                                accountMenuExpanded = false
                             },
-                            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
-                            colors = chiLiChipColors(),
-                            border = chiLiChipBorder(selected = filterAccountId != null),
-                            modifier = Modifier.heightIn(min = 48.dp),
                         )
-                        DropdownMenu(
-                            expanded = accountMenuExpanded,
-                            onDismissRequest = { accountMenuExpanded = false },
-                        ) {
+                        val availableAccounts = accounts.filter { !it.archived || it.id == filterAccountId }
+                        availableAccounts.forEach { a ->
                             DropdownMenuItem(
-                                text = { Text("Tất cả") },
+                                text = { Text(a.name) },
                                 onClick = {
-                                    filterAccountId = null
+                                    filterAccountId = a.id
                                     accountMenuExpanded = false
                                 },
                             )
-                            val availableAccounts = accounts.filter { !it.archived || it.id == filterAccountId }
-                            availableAccounts.forEach { a ->
-                                DropdownMenuItem(
-                                    text = { Text(a.name) },
-                                    onClick = {
-                                        filterAccountId = a.id
-                                        accountMenuExpanded = false
-                                    },
-                                )
-                            }
-                        }
-                    }
-
-                    // Category filter chip
-                    Box {
-                        val selectedCategory = categories.firstOrNull { it.id == filterCategoryId }
-                        val catLabel = if (selectedCategory != null) {
-                            "Danh mục: ${categoryDisplayName(selectedCategory)}"
-                        } else {
-                            "Danh mục: Tất cả"
-                        }
-                        FilterChip(
-                            selected = filterCategoryId != null,
-                            onClick = { categoryMenuExpanded = true },
-                            label = {
-                                OneLineText(
-                                    text = catLabel,
-                                    modifier = Modifier.widthIn(max = 200.dp),
-                                )
-                            },
-                            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
-                            colors = chiLiChipColors(),
-                            border = chiLiChipBorder(selected = filterCategoryId != null),
-                            modifier = Modifier.heightIn(min = 48.dp),
-                        )
-                        DropdownMenu(
-                            expanded = categoryMenuExpanded,
-                            onDismissRequest = { categoryMenuExpanded = false },
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Tất cả") },
-                                onClick = {
-                                    filterCategoryId = null
-                                    categoryMenuExpanded = false
-                                },
-                            )
-                            categories.forEach { c ->
-                                DropdownMenuItem(
-                                    text = { Text(categoryDisplayName(c)) },
-                                    onClick = {
-                                        filterCategoryId = c.id
-                                        categoryMenuExpanded = false
-                                    },
-                                )
-                            }
-                        }
-                    }
-
-                    // Reset button
-                    if (filterAccountId != null || filterCategoryId != null || searchText.isNotBlank()) {
-                        TextButton(
-                            onClick = {
-                                filterAccountId = null
-                                filterCategoryId = null
-                                searchText = ""
-                                isSearchOpen = false
-                            },
-                            modifier = Modifier.heightIn(min = 48.dp),
-                        ) {
-                            OneLineText("Xóa bộ lọc", style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 }
 
-                if (isSearchOpen) {
-                    OutlinedTextField(
-                        value = searchText,
-                        onValueChange = { searchText = it },
-                        label = { Text("Tìm trong ghi chú") },
-                        singleLine = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
+                // Category filter chip
+                Box {
+                    val selectedCategory = categories.firstOrNull { it.id == filterCategoryId }
+                    val catLabel = if (selectedCategory != null) {
+                        "Danh mục: ${categoryDisplayName(selectedCategory)}"
+                    } else {
+                        "Danh mục: Tất cả"
+                    }
+                    FilterChip(
+                        selected = filterCategoryId != null,
+                        onClick = { categoryMenuExpanded = true },
+                        label = {
+                            OneLineText(
+                                text = catLabel,
+                                modifier = Modifier.widthIn(max = 200.dp),
+                            )
+                        },
+                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+                        colors = chiLiChipColors(),
+                        border = chiLiChipBorder(selected = filterCategoryId != null),
+                        modifier = Modifier.heightIn(min = 48.dp),
                     )
+                    DropdownMenu(
+                        expanded = categoryMenuExpanded,
+                        onDismissRequest = { categoryMenuExpanded = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Tất cả") },
+                            onClick = {
+                                filterCategoryId = null
+                                categoryMenuExpanded = false
+                            },
+                        )
+                        categories.forEach { c ->
+                            DropdownMenuItem(
+                                text = { Text(categoryDisplayName(c)) },
+                                onClick = {
+                                    filterCategoryId = c.id
+                                    categoryMenuExpanded = false
+                                },
+                            )
+                        }
+                    }
+                }
+
+                // Reset button
+                val hasFilter = filterAccountId != null || filterCategoryId != null || searchText.isNotBlank()
+                if (hasFilter) {
+                    TextButton(
+                        onClick = {
+                            filterAccountId = null
+                            filterCategoryId = null
+                            searchText = ""
+                            isSearchOpen = false
+                        },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    ) {
+                        OneLineText("Xóa bộ lọc", style = MaterialTheme.typography.labelLarge)
+                    }
                 }
             }
         }
 
         item(key = "totals") {
-            SectionCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, ChiLiTheme.colors.outline),
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Column(
+                    val valueStyle = MaterialTheme.typography.titleMedium.let {
+                        if (it.fontSize.isSpecified && it.fontSize > 18.sp) it.copy(fontSize = 18.sp) else it
+                    }
+                    // Income tile
+                    Surface(
                         modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerLowest,
                     ) {
-                        OneLineText(
-                            text = "Thu nhập",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        totals.forEach { (currency, t) ->
-                            OneLineText(
-                                text = "+${formatMoney(t.income, currency)}",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = incomeColor(),
-                            )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                Icon(
+                                    imageVector = TxnKind.INCOME.icon(),
+                                    contentDescription = null,
+                                    tint = incomeColor(),
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                OneLineText(
+                                    text = "Thu nhập",
+                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    minFontSize = 10.sp,
+                                )
+                            }
+                            totals.forEach { (currency, t) ->
+                                OneLineText(
+                                    text = "+${formatMoney(t.income, currency)}",
+                                    style = valueStyle,
+                                    fontWeight = FontWeight.Bold,
+                                    color = incomeColor(),
+                                )
+                            }
                         }
                     }
-                    Column(
+                    // Expense tile
+                    Surface(
                         modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerLowest,
                     ) {
-                        OneLineText(
-                            text = "Chi tiêu",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        totals.forEach { (currency, t) ->
-                            OneLineText(
-                                text = "-${formatMoney(t.expense, currency)}",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = expenseColor(),
-                            )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                Icon(
+                                    imageVector = TxnKind.EXPENSE.icon(),
+                                    contentDescription = null,
+                                    tint = expenseColor(),
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                OneLineText(
+                                    text = "Chi tiêu",
+                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    minFontSize = 10.sp,
+                                )
+                            }
+                            totals.forEach { (currency, t) ->
+                                OneLineText(
+                                    text = "-${formatMoney(t.expense, currency)}",
+                                    style = valueStyle,
+                                    fontWeight = FontWeight.Bold,
+                                    color = expenseColor(),
+                                )
+                            }
                         }
                     }
                 }
@@ -370,72 +455,90 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
         } else {
             byDay.forEach { (date, dayTxns) ->
                 item(key = "day-$date") {
-                    OneLineText(
-                        text = date.display(),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
-                    )
-                }
-                items(dayTxns, key = { it.id }) { t ->
-                    val category = t.categoryId?.let { categoryById[it] }
-                    val title = if (t.kind == TxnKind.TRANSFER) t.kind.label() else category?.name ?: "Không rõ"
-                    val account = accountNames[t.accountId] ?: "?"
-                    val currency = currencyOfAccount[t.accountId] ?: Currency.VND
-                    val where = if (t.kind == TxnKind.TRANSFER) {
-                        val received = t.toAmount?.let { amount ->
-                            currencyOfAccount[t.toAccountId]?.let { " (+${formatMoney(amount, it)})" }
-                        } ?: ""
-                        "$account → ${accountNames[t.toAccountId] ?: "?"}$received"
-                    } else {
-                        account
-                    }
-                    val subtitle = if (t.note.isBlank()) where else "$where · ${t.note}"
-                    val sign = when (t.kind) {
-                        TxnKind.EXPENSE -> "-"
-                        TxnKind.INCOME -> "+"
-                        TxnKind.TRANSFER -> ""
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 56.dp)
-                            .combinedClickable(onClick = { onEdit(t.id) }, onLongClick = { toDelete = t })
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, ChiLiTheme.colors.outline),
                     ) {
-                        Box(
+                        Column(
                             modifier = Modifier
-                                .size(40.dp)
-                                .background(t.kind.color().copy(alpha = 0.15f), CircleShape),
-                            contentAlignment = Alignment.Center,
+                                .fillMaxWidth()
+                                .padding(16.dp),
                         ) {
-                            Icon(
-                                imageVector = if (category != null) CategoryIcons.get(category.icon) else t.kind.icon(),
-                                contentDescription = null,
-                                tint = t.kind.color(),
-                            )
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
                             OneLineText(
-                                text = title,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                text = subtitle,
-                                style = MaterialTheme.typography.bodySmall,
+                                text = date.display(),
+                                style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(bottom = 8.dp),
                             )
+                            dayTxns.forEachIndexed { index, t ->
+                                if (index > 0) {
+                                    HorizontalDivider(
+                                        thickness = 1.dp,
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                    )
+                                }
+                                val category = t.categoryId?.let { categoryById[it] }
+                                val title = if (t.kind == TxnKind.TRANSFER) t.kind.label() else category?.name ?: "Không rõ"
+                                val account = accountNames[t.accountId] ?: "?"
+                                val currency = currencyOfAccount[t.accountId] ?: Currency.VND
+                                val where = if (t.kind == TxnKind.TRANSFER) {
+                                    val received = t.toAmount?.let { amount ->
+                                        currencyOfAccount[t.toAccountId]?.let { " (+${formatMoney(amount, it)})" }
+                                    } ?: ""
+                                    "$account → ${accountNames[t.toAccountId] ?: "?"}$received"
+                                } else {
+                                    account
+                                }
+                                val subtitle = if (t.note.isBlank()) where else "$where · ${t.note}"
+                                val sign = when (t.kind) {
+                                    TxnKind.EXPENSE -> "-"
+                                    TxnKind.INCOME -> "+"
+                                    TxnKind.TRANSFER -> ""
+                                }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 56.dp)
+                                        .combinedClickable(onClick = { onEdit(t.id) }, onLongClick = { toDelete = t })
+                                    .padding(vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(
+                                            imageVector = if (category != null) CategoryIcons.get(category.icon) else t.kind.icon(),
+                                            contentDescription = null,
+                                            tint = t.kind.color(),
+                                        )
+                                    }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        OneLineText(
+                                            text = title,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                        OneLineText(
+                                            text = subtitle,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            minFontSize = 10.sp,
+                                        )
+                                    }
+                                    OneLineText(
+                                        text = sign + formatMoney(t.amount, currency),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = t.kind.color(),
+                                    )
+                                }
+                            }
                         }
-                        OneLineText(
-                            text = sign + formatMoney(t.amount, currency),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = t.kind.color(),
-                        )
                     }
                 }
             }
