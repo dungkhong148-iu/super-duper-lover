@@ -3,3 +3,4 @@ One entry per install on the user's phone, newest at the bottom. Only the direct
 Format: [date time] versionName (versionCode) | commit | APK size | what changed for the user | backup JSON done? | notes
 
 [2026-11-08 23:48] 0.1.0 (1) | 4317477 | 1.82 MB | First install: accounts, transactions, budgets, goals, quick add (widget + shortcuts), backup/restore JSON, backup reminder card. | n/a (first install) | Signed with D:\android-keys\chili-release.jks.
+[2026-11-09 21:50] 0.1.0 (1) | 3456a63 | 1.74 MB | UI realigned to the Stitch reference: new dark colours, Add screen blocks (type tabs card, amount card, pickers, category card, date/note row, new pad), Home (segmented tabs, goal card, balance card), Giao dịch, Ngân sách/Mục tiêu empty states, bottom bar, chips, font_scale 1.25 fixes. | user said "đè" (backup JSON not explicitly confirmed) | adb install -r over 4317477, same keystore, data kept, app started, pid 16081, no crash in logcat. versionCode still 1.
