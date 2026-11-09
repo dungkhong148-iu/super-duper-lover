@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -586,7 +588,8 @@ fun AddTransactionScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
-                .padding(bottom = 8.dp),
+                .padding(bottom = 8.dp)
+                .height(IntrinsicSize.Min),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -594,6 +597,7 @@ fun AddTransactionScreen(
                 onClick = { showDate = true },
                 modifier = Modifier
                     .weight(0.45f)
+                    .fillMaxHeight()
                     .heightIn(min = 56.dp),
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surface,
@@ -601,8 +605,8 @@ fun AddTransactionScreen(
             ) {
                 Row(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 12.dp),
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Start,
                 ) {
@@ -634,6 +638,7 @@ fun AddTransactionScreen(
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 modifier = Modifier
                     .weight(0.55f)
+                    .fillMaxHeight()
                     .heightIn(min = 56.dp)
                     .semantics { contentDescription = "Ghi chú" },
                 decorationBox = { innerTextField ->
@@ -641,12 +646,12 @@ fun AddTransactionScreen(
                         shape = RoundedCornerShape(16.dp),
                         color = MaterialTheme.colorScheme.surfaceContainerLowest,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Box(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 14.dp),
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 16.dp),
                             contentAlignment = Alignment.CenterStart,
                         ) {
                             if (note.isEmpty()) {
@@ -826,7 +831,7 @@ private fun TypeTabs(
                     ) {
                         Row(
                             modifier = Modifier
-                                .fillMaxSize()
+                                .fillMaxWidth()
                                 .padding(horizontal = 4.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center,
@@ -1131,7 +1136,7 @@ private fun CategoryGridCell(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(horizontal = 4.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -1173,7 +1178,7 @@ private fun CategoryGridMoreCell(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(horizontal = 4.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
