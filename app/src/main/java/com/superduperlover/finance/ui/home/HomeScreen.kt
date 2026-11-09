@@ -13,6 +13,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.superduperlover.finance.ui.components.ChiLiTopBar
 import com.superduperlover.finance.ui.components.OneLineText
 import kotlinx.coroutines.launch
@@ -39,6 +40,7 @@ fun HomeScreen(
         PrimaryTabRow(
             selectedTabIndex = pagerState.currentPage,
             containerColor = MaterialTheme.colorScheme.background,
+            contentColor = MaterialTheme.colorScheme.primary,
         ) {
             PAGE_TITLES.forEachIndexed { index, title ->
                 Tab(
@@ -47,7 +49,13 @@ fun HomeScreen(
                     modifier = Modifier.heightIn(min = 48.dp),
                     selectedContentColor = MaterialTheme.colorScheme.primary,
                     unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    text = { OneLineText(title, style = MaterialTheme.typography.titleSmall) },
+                    text = {
+                        OneLineText(
+                            text = title,
+                            style = MaterialTheme.typography.titleSmall,
+                            minFontSize = 10.sp,
+                        )
+                    },
                 )
             }
         }

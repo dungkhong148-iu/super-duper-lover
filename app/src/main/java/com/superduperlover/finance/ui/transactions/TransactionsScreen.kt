@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -69,6 +70,8 @@ import com.superduperlover.finance.ui.components.expenseColor
 import com.superduperlover.finance.ui.components.icon
 import com.superduperlover.finance.ui.components.incomeColor
 import com.superduperlover.finance.ui.components.label
+import com.superduperlover.finance.ui.theme.chiLiChipBorder
+import com.superduperlover.finance.ui.theme.chiLiChipColors
 import java.time.YearMonth
 import kotlinx.coroutines.launch
 
@@ -176,8 +179,16 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                         FilterChip(
                             selected = filterAccountId != null,
                             onClick = { accountMenuExpanded = true },
-                            label = { Text(accountLabel) },
+                            label = {
+                                OneLineText(
+                                    text = accountLabel,
+                                    modifier = Modifier.widthIn(max = 200.dp),
+                                )
+                            },
                             trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+                            colors = chiLiChipColors(),
+                            border = chiLiChipBorder(selected = filterAccountId != null),
+                            modifier = Modifier.heightIn(min = 48.dp),
                         )
                         DropdownMenu(
                             expanded = accountMenuExpanded,
@@ -214,8 +225,16 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                         FilterChip(
                             selected = filterCategoryId != null,
                             onClick = { categoryMenuExpanded = true },
-                            label = { Text(catLabel) },
+                            label = {
+                                OneLineText(
+                                    text = catLabel,
+                                    modifier = Modifier.widthIn(max = 200.dp),
+                                )
+                            },
                             trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+                            colors = chiLiChipColors(),
+                            border = chiLiChipBorder(selected = filterCategoryId != null),
+                            modifier = Modifier.heightIn(min = 48.dp),
                         )
                         DropdownMenu(
                             expanded = categoryMenuExpanded,
@@ -351,7 +370,7 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
         } else {
             byDay.forEach { (date, dayTxns) ->
                 item(key = "day-$date") {
-                    Text(
+                    OneLineText(
                         text = date.display(),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

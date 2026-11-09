@@ -9,12 +9,15 @@ import com.superduperlover.finance.core.BackupReminder
 import com.superduperlover.finance.core.backupReminder
 import com.superduperlover.finance.ui.settings.rememberBackupExport
 import com.superduperlover.finance.ui.theme.ChiLiTheme
+import com.superduperlover.finance.ui.theme.chiLiChipBorder
+import com.superduperlover.finance.ui.theme.chiLiChipColors
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -157,15 +160,18 @@ fun AccountsPage(
                                     OneLineText(
                                         text = currency.name,
                                         style = MaterialTheme.typography.labelLarge,
+                                        modifier = Modifier.widthIn(max = 200.dp),
                                     )
                                 },
+                                colors = chiLiChipColors(),
+                                border = chiLiChipBorder(selected = currency == selectedCurrency),
                                 modifier = Modifier.heightIn(min = 48.dp),
                             )
                         }
                     }
                 }
-                Text(
-                    "Tổng số dư",
+                OneLineText(
+                    text = "Tổng số dư",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -202,8 +208,8 @@ fun AccountsPage(
                         color = if (left < 0) expenseColor() else MaterialTheme.colorScheme.onSurface,
                     )
                     if (left < 0) {
-                        Text(
-                            "Đã vượt ngân sách",
+                        OneLineText(
+                            text = "Đã vượt ngân sách",
                             color = expenseColor(),
                             style = MaterialTheme.typography.labelMedium,
                         )
@@ -277,7 +283,11 @@ fun AccountsPage(
                                     style = MaterialTheme.typography.titleSmall,
                                     modifier = Modifier.weight(1f),
                                 )
-                                Text(usage.status.statusLabel(), color = color, style = MaterialTheme.typography.labelLarge)
+                                OneLineText(
+                                    usage.status.statusLabel(),
+                                    color = color,
+                                    style = MaterialTheme.typography.labelLarge,
+                                )
                             }
                             LinearProgressIndicator(
                                 progress = { usage.ratio.toFloat().coerceIn(0f, 1f) },

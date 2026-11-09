@@ -15,11 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
-import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -27,7 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.superduperlover.finance.R
 import com.superduperlover.finance.core.Account
 import com.superduperlover.finance.core.AccountType
@@ -99,8 +97,8 @@ fun AddAccountTile(onClick: () -> Unit, modifier: Modifier = Modifier) {
             .fillMaxWidth()
             .heightIn(min = 104.dp),
         shape = TileShape,
-        color = MaterialTheme.colorScheme.background,
-        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(
             modifier = Modifier.padding(8.dp),
@@ -108,18 +106,12 @@ fun AddAccountTile(onClick: () -> Unit, modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.Center,
         ) {
             Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            // May use two lines in this narrow tile, but is never clipped (docs/ui-layout.md section 4).
-            Text(
+            OneLineText(
                 text = "Thêm tài khoản",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
                 textAlign = TextAlign.Center,
-                maxLines = 2,
-                autoSize = TextAutoSize.StepBased(
-                    minFontSize = 10.sp,
-                    maxFontSize = MaterialTheme.typography.labelLarge.fontSize,
-                    stepSize = 0.5.sp,
-                ),
+                minFontSize = 10.sp,
             )
         }
     }
