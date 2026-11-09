@@ -182,12 +182,12 @@ fun SettingsScreen(onBack: () -> Unit) {
                         }
                     }
                 ) {
-                    Text("Thay thế")
+                    OneLineText("Thay thế")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showConfirmDialog = false }) {
-                    Text("Hủy")
+                    OneLineText("Hủy")
                 }
             },
         )

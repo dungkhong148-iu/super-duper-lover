@@ -44,13 +44,10 @@ import java.time.LocalDate
 import kotlin.math.abs
 
 @Composable
-internal fun amberColor(): Color = ChiLiTheme.colors.warn
-
-@Composable
 internal fun budgetStatusColor(status: BudgetStatus): Color = when (status) {
-    BudgetStatus.OK -> incomeColor()
-    BudgetStatus.WARN -> amberColor()
-    BudgetStatus.OVER -> expenseColor()
+    BudgetStatus.OK -> ChiLiTheme.colors.income
+    BudgetStatus.WARN -> ChiLiTheme.colors.warn
+    BudgetStatus.OVER -> ChiLiTheme.colors.over
 }
 
 internal fun BudgetStatus.statusLabel(): String = when (this) {

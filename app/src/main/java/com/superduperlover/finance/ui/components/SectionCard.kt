@@ -19,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
+import androidx.compose.ui.unit.sp
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 
 /**
@@ -42,9 +44,12 @@ fun SectionCard(
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (title != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    val titleStyle = MaterialTheme.typography.titleMedium.let {
+                        if (it.fontSize.isSpecified && it.fontSize > 18.sp) it.copy(fontSize = 18.sp) else it
+                    }
                     OneLineText(
                         text = title,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = titleStyle,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                     )
@@ -64,7 +69,7 @@ fun SectionCard(
 @Composable
 fun SectionHeaderBand(text: String, modifier: Modifier = Modifier) {
     Surface(color = MaterialTheme.colorScheme.surfaceVariant, modifier = modifier.fillMaxWidth()) {
-        Text(
+        OneLineText(
             text = text,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

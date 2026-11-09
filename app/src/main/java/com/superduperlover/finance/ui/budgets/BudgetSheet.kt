@@ -50,6 +50,8 @@ import com.superduperlover.finance.ui.components.CurrencyChips
 import com.superduperlover.finance.ui.components.FormDialog
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.SectionHeaderBand
+import com.superduperlover.finance.ui.theme.chiLiChipBorder
+import com.superduperlover.finance.ui.theme.chiLiChipColors
 import java.time.LocalDate
 import kotlinx.coroutines.launch
 
@@ -156,7 +158,9 @@ internal fun BudgetSheet(
                         selectedAccountId = null
                         duplicateError = null
                     },
-                    label = { Text("Tất cả") },
+                    label = { OneLineText("Tất cả") },
+                    colors = chiLiChipColors(),
+                    border = chiLiChipBorder(selected = selectedAccountId == null),
                 )
                 val displayedAccounts = remember(accounts, budget.accountId) {
                     accounts.filter { !it.archived || it.id == budget.accountId }
@@ -168,7 +172,9 @@ internal fun BudgetSheet(
                             selectedAccountId = acc.id
                             duplicateError = null
                         },
-                        label = { Text("${acc.name} · ${acc.currency.name}") },
+                        label = { OneLineText("${acc.name} · ${acc.currency.name}") },
+                        colors = chiLiChipColors(),
+                        border = chiLiChipBorder(selected = selectedAccountId == acc.id),
                     )
                 }
             }
@@ -184,7 +190,9 @@ internal fun BudgetSheet(
                         selectedCategoryId = null
                         duplicateError = null
                     },
-                    label = { Text("Tất cả") },
+                    label = { OneLineText("Tất cả") },
+                    colors = chiLiChipColors(),
+                    border = chiLiChipBorder(selected = selectedCategoryId == null),
                 )
                 val displayedCategories = remember(categories, budget.categoryId) {
                     categories.filter { it.kind == CategoryKind.EXPENSE && (!it.archived || it.id == budget.categoryId) }
@@ -196,7 +204,9 @@ internal fun BudgetSheet(
                             selectedCategoryId = cat.id
                             duplicateError = null
                         },
-                        label = { Text(cat.name) },
+                        label = { OneLineText(cat.name) },
+                        colors = chiLiChipColors(),
+                        border = chiLiChipBorder(selected = selectedCategoryId == cat.id),
                     )
                 }
             }
@@ -221,7 +231,9 @@ internal fun BudgetSheet(
                             selectedPeriod = p
                             duplicateError = null
                         },
-                        label = { Text(p.label()) },
+                        label = { OneLineText(p.label()) },
+                        colors = chiLiChipColors(),
+                        border = chiLiChipBorder(selected = selectedPeriod == p),
                     )
                 }
             }
@@ -358,12 +370,12 @@ internal fun BudgetSheet(
                     }
                     showDatePicker = false
                 }) {
-                    Text("Chọn")
+                    OneLineText("Chọn")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Hủy")
+                    OneLineText("Hủy")
                 }
             },
         ) {
@@ -385,12 +397,12 @@ internal fun BudgetSheet(
                         }
                     }
                 ) {
-                    Text("Xóa", color = MaterialTheme.colorScheme.error)
+                    OneLineText("Xóa", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text("Hủy")
+                    OneLineText("Hủy")
                 }
             },
         )

@@ -192,12 +192,12 @@ fun GoalSheet(
                     }
                     showDatePicker = false
                 }) {
-                    Text("Chọn")
+                    OneLineText("Chọn")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Hủy")
+                    OneLineText("Hủy")
                 }
             },
         ) {

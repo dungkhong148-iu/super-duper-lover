@@ -70,6 +70,8 @@ import com.superduperlover.finance.ui.components.label
 import com.superduperlover.finance.ui.theme.OnAccountTile
 import com.superduperlover.finance.ui.theme.accountColor
 import com.superduperlover.finance.ui.theme.accountTileColor
+import com.superduperlover.finance.ui.theme.chiLiChipBorder
+import com.superduperlover.finance.ui.theme.chiLiChipColors
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -183,7 +185,9 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
                                 selectedColorKey = defaultAccountColorKey(t)
                             }
                         },
-                        label = { Text(t.label()) },
+                        label = { OneLineText(t.label()) },
+                        colors = chiLiChipColors(),
+                        border = chiLiChipBorder(selected = type == t),
                     )
                 }
             }
@@ -413,7 +417,7 @@ private fun ReconcileDialog(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(
+                OneLineText(
                     text = "Số dư trong ChiLi: " + (if (current != null) formatMoney(current, account.currency) else ""),
                     style = MaterialTheme.typography.bodyMedium,
                 )
@@ -465,12 +469,12 @@ private fun ReconcileDialog(
                 },
                 enabled = confirmEnabled,
             ) {
-                Text("Điều chỉnh")
+                OneLineText("Điều chỉnh")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Hủy")
+                OneLineText("Hủy")
             }
         },
     )

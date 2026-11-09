@@ -58,7 +58,7 @@ import com.superduperlover.finance.ui.components.ChiLiTopBar
 import com.superduperlover.finance.ui.components.EmptyState
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.SectionCard
-import com.superduperlover.finance.ui.components.incomeColor
+import com.superduperlover.finance.ui.theme.ChiLiTheme
 import java.time.LocalDate
 import kotlinx.coroutines.launch
 
@@ -175,7 +175,7 @@ fun GoalDetailScreen(goalId: Long, onBack: () -> Unit) {
             }
 
             item(key = "contributions_header") {
-                Text(
+                OneLineText(
                     text = "Các khoản đã để dành",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(top = 8.dp),
@@ -219,7 +219,7 @@ fun GoalDetailScreen(goalId: Long, onBack: () -> Unit) {
                             OneLineText(
                                 text = formatMoney(contribution.amount, goal.currency),
                                 style = MaterialTheme.typography.titleMedium,
-                                color = incomeColor(),
+                                color = ChiLiTheme.colors.income,
                             )
                         }
                     }
@@ -242,12 +242,12 @@ fun GoalDetailScreen(goalId: Long, onBack: () -> Unit) {
                         }
                     },
                 ) {
-                    Text("Lưu trữ", color = MaterialTheme.colorScheme.error)
+                    OneLineText("Lưu trữ", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showArchiveConfirm = false }) {
-                    Text("Hủy")
+                    OneLineText("Hủy")
                 }
             },
         )
@@ -299,7 +299,7 @@ private fun ContributionSheet(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
+            OneLineText(
                 text = if (isNew) "Thêm khoản để dành" else "Sửa khoản để dành",
                 style = MaterialTheme.typography.titleLarge,
             )
@@ -317,7 +317,7 @@ private fun ContributionSheet(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
             )
-            Text("Ngày", style = MaterialTheme.typography.labelLarge)
+            OneLineText("Ngày", style = MaterialTheme.typography.labelLarge)
             OutlinedButton(
                 onClick = { showDatePicker = true },
                 modifier = Modifier
@@ -404,12 +404,12 @@ private fun ContributionSheet(
                         }
                     },
                 ) {
-                    Text("Xóa", color = MaterialTheme.colorScheme.error)
+                    OneLineText("Xóa", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text("Hủy")
+                    OneLineText("Hủy")
                 }
             },
         )

@@ -108,7 +108,7 @@ fun CategoriesScreen(onBack: () -> Unit) {
                 item(key = "card_expense") {
                     SectionCard(title = "Chi tiêu") {
                         if (expenseCategories.isEmpty()) {
-                            Text(
+                            OneLineText(
                                 text = "Chưa có danh mục chi tiêu",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -146,7 +146,7 @@ fun CategoriesScreen(onBack: () -> Unit) {
                 item(key = "card_income") {
                     SectionCard(title = "Thu nhập") {
                         if (incomeCategories.isEmpty()) {
-                            Text(
+                            OneLineText(
                                 text = "Chưa có danh mục thu nhập",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -39,6 +39,8 @@ import com.superduperlover.finance.ui.components.FormDialog
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.SectionHeaderBand
 import com.superduperlover.finance.ui.components.label
+import com.superduperlover.finance.ui.theme.chiLiChipBorder
+import com.superduperlover.finance.ui.theme.chiLiChipColors
 import kotlinx.coroutines.launch
 
 @Composable
@@ -117,7 +119,9 @@ internal fun CategorySheet(
                             kind = CategoryKind.EXPENSE
                             nameError = null
                         },
-                        label = { Text(TxnKind.EXPENSE.label()) },
+                        label = { OneLineText(TxnKind.EXPENSE.label()) },
+                        colors = chiLiChipColors(),
+                        border = chiLiChipBorder(selected = kind == CategoryKind.EXPENSE),
                     )
                     FilterChip(
                         selected = kind == CategoryKind.INCOME,
@@ -125,7 +129,9 @@ internal fun CategorySheet(
                             kind = CategoryKind.INCOME
                             nameError = null
                         },
-                        label = { Text(TxnKind.INCOME.label()) },
+                        label = { OneLineText(TxnKind.INCOME.label()) },
+                        colors = chiLiChipColors(),
+                        border = chiLiChipBorder(selected = kind == CategoryKind.INCOME),
                     )
                 }
             } else {
@@ -135,7 +141,7 @@ internal fun CategorySheet(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     OneLineText("Loại:", style = MaterialTheme.typography.labelLarge)
-                    Text(
+                    OneLineText(
                         text = if (category.kind == CategoryKind.EXPENSE) TxnKind.EXPENSE.label() else TxnKind.INCOME.label(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -179,9 +185,9 @@ internal fun CategorySheet(
                                 .heightIn(min = 48.dp)
                                 .semantics { this.selected = on },
                             shape = RoundedCornerShape(8.dp),
-                            color = if (on) MaterialTheme.colorScheme.primaryContainer
+                            color = if (on) MaterialTheme.colorScheme.secondaryContainer
                             else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                            border = if (on) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+                            border = if (on) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
                         ) {
                             Box(
                                 modifier = Modifier.padding(8.dp),
@@ -190,7 +196,7 @@ internal fun CategorySheet(
                                 Icon(
                                     imageVector = vector,
                                     contentDescription = key,
-                                    tint = if (on) MaterialTheme.colorScheme.onPrimaryContainer
+                                    tint = if (on) MaterialTheme.colorScheme.onSecondaryContainer
                                     else MaterialTheme.colorScheme.onSurface,
                                 )
                             }

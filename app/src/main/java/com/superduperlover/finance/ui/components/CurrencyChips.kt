@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.core.CURRENCY_DISPLAY_ORDER
 import com.superduperlover.finance.core.Currency
 import com.superduperlover.finance.core.currencySymbol
+import com.superduperlover.finance.ui.theme.chiLiChipBorder
+import com.superduperlover.finance.ui.theme.chiLiChipColors
 
 /** "TWD · NT$" style label of a currency. */
 fun Currency.chipLabel(): String = "$name · ${currencySymbol(this)}"
@@ -28,7 +30,7 @@ fun CurrencyChips(
     label: String = "Loại tiền",
 ) {
     Column(modifier) {
-        Text(label, style = MaterialTheme.typography.labelLarge)
+        OneLineText(label, style = MaterialTheme.typography.labelLarge)
         Row(
             Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -38,7 +40,9 @@ fun CurrencyChips(
                     selected = currency == selected,
                     onClick = { onSelect(currency) },
                     enabled = enabled,
-                    label = { Text(currency.chipLabel()) },
+                    label = { OneLineText(currency.chipLabel()) },
+                    colors = chiLiChipColors(),
+                    border = chiLiChipBorder(selected = currency == selected, enabled = enabled),
                 )
             }
         }

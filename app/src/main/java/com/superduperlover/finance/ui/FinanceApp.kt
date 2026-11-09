@@ -12,11 +12,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -77,12 +79,22 @@ fun FinanceApp() {
                             selected = currentTab == tab,
                             onClick = { openTab(tab) },
                             icon = { Icon(tab.icon, contentDescription = null) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
                             // One line, never wrapped: shrinks on large system font scales.
                             label = {
+                                val labelStyle = MaterialTheme.typography.labelMedium.let {
+                                    if (it.fontSize.isSpecified && it.fontSize > 12.sp) it.copy(fontSize = 12.sp) else it
+                                }
                                 OneLineText(
                                     tab.label,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    minFontSize = 8.sp,
+                                    style = labelStyle,
+                                    minFontSize = 10.sp,
                                 )
                             },
                         )
