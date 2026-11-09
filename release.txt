@@ -1,0 +1,5 @@
+RELEASE LOG - ChiLi (com.chili.app, real data app)
+One entry per install on the user's phone, newest at the bottom. Only the director appends.
+Format: [date time] versionName (versionCode) | commit | APK size | what changed for the user | backup JSON done? | notes
+
+[2026-11-08 23:48] 0.1.0 (1) | 4317477 | 1.82 MB | First install: accounts, transactions, budgets, goals, quick add (widget + shortcuts), backup/restore JSON, backup reminder card. | n/a (first install) | Signed with D:\android-keys\chili-release.jks.
