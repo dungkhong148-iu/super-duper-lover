@@ -7,19 +7,25 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -35,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.superduperlover.finance.R
+import com.superduperlover.finance.core.Goal
 import com.superduperlover.finance.core.JarKind
 import com.superduperlover.finance.core.JarSaving
 import com.superduperlover.finance.core.JarStatus
@@ -43,16 +50,17 @@ import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.ChiLiTopBar
 import com.superduperlover.finance.ui.components.EmptyState
 import com.superduperlover.finance.ui.components.OneLineText
+import com.superduperlover.finance.ui.goals.GoalSheet
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 
 /**
- * Full-screen overview of all jars (docs/ui-layout.md, specs/H3.txt step 5).
+ * Kho hũ bottom tab screen (docs/ui-layout.md, specs/H3.txt step 5, specs/H5.txt).
  */
 @Composable
 fun JarsScreen(
-    onBack: () -> Unit,
     onOpenJar: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
 ) {
     val repo = LocalRepo.current
     val jarSavings by remember(repo) { repo.jarSavings() }.collectAsState(initial = emptyList())
@@ -60,6 +68,7 @@ fun JarsScreen(
     val accountMap = remember(accounts) { accounts.associateBy { it.id } }
 
     var selectedJarId by remember { mutableStateOf<Long?>(null) }
+    var showCreateGoalSheet by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier.fillMaxSize(),
@@ -67,6 +76,17 @@ fun JarsScreen(
         ChiLiTopBar(
             title = "Kho hũ",
             onBack = onBack,
+            actions = {
+                TextButton(onClick = { showCreateGoalSheet = true }) {
+                    Icon(
+                        Icons.Filled.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    OneLineText("Tạo hũ")
+                }
+            },
         )
 
         if (jarSavings.isNotEmpty()) {
@@ -136,31 +156,62 @@ fun JarsScreen(
                     EmptyState(
                         icon = painterResource(R.drawable.ic_savings),
                         title = "Chưa có hũ nào",
-                        message = "Tạo hũ tích lũy hoặc chi tiêu để bắt đầu phân bổ ngân sách dự phòng.",
-                        actionLabel = "Quay lại",
-                        onAction = onBack,
-                    )
-                }
-            } else if (displayedJars.isEmpty()) {
-                item(key = "empty_filter") {
-                    EmptyState(
-                        icon = painterResource(R.drawable.ic_savings),
-                        title = "Không có hũ phù hợp",
-                        message = "Không tìm thấy hũ với bộ lọc đã chọn.",
-                        actionLabel = "Xóa bộ lọc",
-                        onAction = { selectedJarId = null },
+                        message = "Hũ giữ chỗ tiền cho một mục đích: tiết kiệm để mua sắm, hoặc chi phí lớn biết trước như tiền nhà, học phí, bảo hiểm. Tiền vẫn nằm trong tài khoản cho đến khi bạn chi.",
+                        actionLabel = "Tạo hũ",
+                        onAction = { showCreateGoalSheet = true },
                     )
                 }
             } else {
-                items(displayedJars, key = { it.goal.id }) { jar ->
-                    JarDetailCard(
-                        jar = jar,
-                        accountName = jar.goal.sourceAccountId?.let { accountMap[it]?.name },
-                        onClick = { onOpenJar(jar.goal.id) },
-                    )
+                item(key = "jars_info_note") {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.Top,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Info,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp).padding(top = 2.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = "Hũ giữ chỗ tiền cho một mục đích: tiết kiệm để mua sắm, hoặc chi phí lớn biết trước như tiền nhà, học phí, bảo hiểm. Tiền vẫn nằm trong tài khoản cho đến khi bạn chi.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                if (displayedJars.isEmpty()) {
+                    item(key = "empty_filter") {
+                        EmptyState(
+                            icon = painterResource(R.drawable.ic_savings),
+                            title = "Không có hũ phù hợp",
+                            message = "Không tìm thấy hũ với bộ lọc đã chọn.",
+                            actionLabel = "Xóa bộ lọc",
+                            onAction = { selectedJarId = null },
+                        )
+                    }
+                } else {
+                    items(displayedJars, key = { it.goal.id }) { jar ->
+                        JarDetailCard(
+                            jar = jar,
+                            accountName = jar.goal.sourceAccountId?.let { accountMap[it]?.name },
+                            onClick = { onOpenJar(jar.goal.id) },
+                        )
+                    }
                 }
             }
         }
+    }
+
+    if (showCreateGoalSheet) {
+        GoalSheet(
+            goal = Goal(0L, "", 0L, null),
+            onDismiss = { showCreateGoalSheet = false },
+        )
     }
 }
 
@@ -213,7 +264,7 @@ private fun JarDetailCard(
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 ) {
                     OneLineText(
-                        text = if (jar.goal.kind == JarKind.SPENDING) "Chi tiêu" else "Mục tiêu",
+                        text = if (jar.goal.kind == JarKind.SPENDING) "Chi phí lớn" else "Tiết kiệm",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

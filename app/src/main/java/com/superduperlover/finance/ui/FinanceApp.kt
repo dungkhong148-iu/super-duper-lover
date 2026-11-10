@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -27,6 +28,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.superduperlover.finance.R
 import com.superduperlover.finance.ui.add.AddTransactionScreen
 import com.superduperlover.finance.ui.categories.CategoriesScreen
 import com.superduperlover.finance.ui.components.ChiLiTopBar
@@ -39,18 +41,23 @@ import com.superduperlover.finance.ui.settings.SettingsScreen
 import com.superduperlover.finance.ui.settings.SettingsTabScreen
 import com.superduperlover.finance.ui.transactions.TransactionsScreen
 
-// Bottom bar: 3 tabs (docs/ui-layout.md section 1).
-private enum class Tab(val route: String, val label: String, val icon: ImageVector) {
-    HOME("home", "Trang chủ", Icons.Filled.Home),
-    TRANSACTIONS("transactions", "Giao dịch", Icons.AutoMirrored.Filled.List),
-    SETTINGS("settings", "Cài đặt", Icons.Filled.Settings),
+// Bottom bar: 4 tabs (docs/ui-layout.md section 1).
+private enum class Tab(
+    val route: String,
+    val label: String,
+    val icon: ImageVector? = null,
+    val iconRes: Int? = null,
+) {
+    HOME("home", "Trang chủ", icon = Icons.Filled.Home),
+    TRANSACTIONS("transactions", "Giao dịch", icon = Icons.AutoMirrored.Filled.List),
+    JARS("jars", "Kho hũ", iconRes = R.drawable.ic_savings),
+    SETTINGS("settings", "Cài đặt", icon = Icons.Filled.Settings),
 }
 
 private const val ADD_ROUTE = "add/{txnId}"
 private const val CATEGORIES_ROUTE = "categories"
 private const val BACKUP_ROUTE = "backup"
 private const val APPEARANCE_ROUTE = "appearance"
-private const val JARS_ROUTE = "jars"
 
 // Transactions tab; the optional argument opens it already filtered to one account (tap on an account tile).
 private const val TRANSACTIONS_PATTERN = "transactions?accountId={accountId}"
@@ -80,7 +87,13 @@ fun FinanceApp() {
                         NavigationBarItem(
                             selected = currentTab == tab,
                             onClick = { openTab(tab) },
-                            icon = { Icon(tab.icon, contentDescription = null) },
+                            icon = {
+                                if (tab.icon != null) {
+                                    Icon(tab.icon, contentDescription = null)
+                                } else if (tab.iconRes != null) {
+                                    Icon(painterResource(tab.iconRes), contentDescription = null)
+                                }
+                            },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
@@ -127,7 +140,7 @@ fun FinanceApp() {
                         }
                     },
                     onOpenGoal = { id -> navController.navigate("goal/$id") },
-                    onOpenJars = { navController.navigate(JARS_ROUTE) },
+                    onOpenJars = { openTab(Tab.JARS) },
                 )
             }
             composable(
@@ -158,9 +171,9 @@ fun FinanceApp() {
             composable(APPEARANCE_ROUTE) { AppearanceScreen(onBack = { navController.popBackStack() }) }
             composable(BACKUP_ROUTE) { SettingsScreen(onBack = { navController.popBackStack() }) }
             composable(CATEGORIES_ROUTE) { CategoriesScreen(onBack = { navController.popBackStack() }) }
-            composable(JARS_ROUTE) {
+            composable(Tab.JARS.route) {
                 JarsScreen(
-                    onBack = { navController.popBackStack() },
+                    onBack = null,
                     onOpenJar = { id -> navController.navigate("goal/$id") },
                 )
             }

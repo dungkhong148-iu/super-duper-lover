@@ -27,8 +27,8 @@ import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 
 /**
- * Tile representing a jar (docs/ui-layout.md section 2, specs/H3.txt step 4).
- * Used in home accounts page and top row of JarsScreen.
+ * Tile representing a jar (docs/ui-layout.md section 2, specs/H3.txt step 4, specs/H5.txt).
+ * Used in the Kho hũ tab screen filter row.
  */
 @Composable
 fun JarTile(
