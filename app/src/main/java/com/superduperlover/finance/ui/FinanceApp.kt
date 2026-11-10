@@ -33,6 +33,7 @@ import com.superduperlover.finance.ui.components.ChiLiTopBar
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.goals.GoalDetailScreen
 import com.superduperlover.finance.ui.home.HomeScreen
+import com.superduperlover.finance.ui.jars.JarsScreen
 import com.superduperlover.finance.ui.settings.AppearanceScreen
 import com.superduperlover.finance.ui.settings.SettingsScreen
 import com.superduperlover.finance.ui.settings.SettingsTabScreen
@@ -49,6 +50,7 @@ private const val ADD_ROUTE = "add/{txnId}"
 private const val CATEGORIES_ROUTE = "categories"
 private const val BACKUP_ROUTE = "backup"
 private const val APPEARANCE_ROUTE = "appearance"
+private const val JARS_ROUTE = "jars"
 
 // Transactions tab; the optional argument opens it already filtered to one account (tap on an account tile).
 private const val TRANSACTIONS_PATTERN = "transactions?accountId={accountId}"
@@ -125,6 +127,7 @@ fun FinanceApp() {
                         }
                     },
                     onOpenGoal = { id -> navController.navigate("goal/$id") },
+                    onOpenJars = { navController.navigate(JARS_ROUTE) },
                 )
             }
             composable(
@@ -155,6 +158,12 @@ fun FinanceApp() {
             composable(APPEARANCE_ROUTE) { AppearanceScreen(onBack = { navController.popBackStack() }) }
             composable(BACKUP_ROUTE) { SettingsScreen(onBack = { navController.popBackStack() }) }
             composable(CATEGORIES_ROUTE) { CategoriesScreen(onBack = { navController.popBackStack() }) }
+            composable(JARS_ROUTE) {
+                JarsScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenJar = { id -> navController.navigate("goal/$id") },
+                )
+            }
             composable(
                 "goal/{goalId}",
                 arguments = listOf(navArgument("goalId") { type = NavType.LongType }),

@@ -16,10 +16,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,6 +56,8 @@ import com.superduperlover.finance.core.Budget
 import com.superduperlover.finance.core.BudgetStatus
 import com.superduperlover.finance.core.BudgetUsage
 import com.superduperlover.finance.core.CURRENCY_DISPLAY_ORDER
+import com.superduperlover.finance.core.JarSaving
+import com.superduperlover.finance.core.JarStatus
 import com.superduperlover.finance.core.MAIN_CURRENCY
 import com.superduperlover.finance.core.TxnKind
 import com.superduperlover.finance.core.TxnTotals
@@ -62,6 +66,8 @@ import com.superduperlover.finance.core.backupReminder
 import com.superduperlover.finance.core.balancesByCurrency
 import com.superduperlover.finance.core.budgetUsage
 import com.superduperlover.finance.core.formatMoney
+import com.superduperlover.finance.core.freeByCurrency
+import com.superduperlover.finance.core.reservedByCurrency
 import com.superduperlover.finance.core.txnTotals
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.accounts.AccountSheet
@@ -74,6 +80,7 @@ import com.superduperlover.finance.ui.components.expenseColor
 import com.superduperlover.finance.ui.components.icon
 import com.superduperlover.finance.ui.components.incomeColor
 import com.superduperlover.finance.ui.components.thisLabel
+import com.superduperlover.finance.ui.jars.JarTile
 import com.superduperlover.finance.ui.settings.rememberBackupExport
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 import com.superduperlover.finance.ui.theme.LocalAppPrefs
@@ -93,13 +100,15 @@ private val FullWidth: (androidx.compose.foundation.lazy.grid.LazyGridItemSpanSc
 fun AccountsPage(
     onOpenAccountTransactions: (Long) -> Unit,
     onOpenPlan: () -> Unit,
+    onOpenGoal: (Long) -> Unit = {},
+    onOpenJars: () -> Unit = {},
 ) {
     val repo = LocalRepo.current
     val prefs = LocalAppPrefs.current
     val month = remember { YearMonth.now() }
     val today = remember { LocalDate.now() }
     val budgets by remember(repo) { repo.budgets() }.collectAsState(initial = emptyList())
-    val goals by remember(repo) { repo.goals() }.collectAsState(initial = emptyList())
+    val jarSavings by remember(repo) { repo.jarSavings() }.collectAsState(initial = emptyList())
     val monthTxns by remember(repo, month) { repo.txns(month = month) }.collectAsState(initial = emptyList())
     val allTxns by remember(repo) { repo.txns() }.collectAsState(initial = emptyList())
     val accounts by remember(repo) { repo.accounts() }.collectAsState(initial = emptyList())
@@ -134,6 +143,11 @@ fun AccountsPage(
     val selectedTotals = totals[selectedCurrency] ?: TxnTotals(0L, 0L)
     val balanceByCurrency = balancesByCurrency(accounts, allTxns)
     val selectedBalance = balanceByCurrency[selectedCurrency] ?: 0L
+    val reservedMap = reservedByCurrency(jarSavings)
+    val freeMap = freeByCurrency(balanceByCurrency, reservedMap)
+    val selectedReserved = reservedMap[selectedCurrency] ?: 0L
+    val selectedFree = freeMap[selectedCurrency] ?: selectedBalance
+    val pendingJars = jarSavings.filter { it.goal.status == JarStatus.PENDING_SETTLEMENT && !it.goal.archived }
     val balances = accounts.map { it to accountBalance(it, allTxns) }
     val accountNames = allAccounts.associate { it.id to it.name }
     val categoryNames = categories.associate { it.id to it.name }
@@ -156,6 +170,11 @@ fun AccountsPage(
         if (reminder != null) {
             item(key = "backup-reminder", span = FullWidth) {
                 BackupReminderCard(reminder, enabled = !backupWorking, error = backupError, onClick = startBackup)
+            }
+        }
+        for (jar in pendingJars) {
+            item(key = "pending-jar-${jar.goal.id}", span = FullWidth) {
+                PendingJarBanner(jar = jar, onClick = { onOpenGoal(jar.goal.id) })
             }
         }
         item(key = "summary", span = FullWidth) {
@@ -219,6 +238,32 @@ fun AccountsPage(
                         fontWeight = FontWeight.Bold,
                         color = if (selectedBalance < 0) expenseColor() else MaterialTheme.colorScheme.onSurface,
                     )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        OneLineText(
+                            text = "Tự do: ${formatMoney(selectedFree, selectedCurrency)}",
+                            modifier = Modifier.weight(1f, fill = false),
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            minFontSize = 10.sp,
+                            color = if (selectedFree < 0) expenseColor() else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        OneLineText(
+                            text = " · ",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            minFontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        OneLineText(
+                            text = "Đang giữ chỗ trong hũ: ${formatMoney(selectedReserved, selectedCurrency)}",
+                            modifier = Modifier.weight(2f, fill = false),
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            minFontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
 
                     // Nested box (colorScheme.surfaceContainerLowest well, 16dp corner, 12dp padding, full width)
                     Surface(
@@ -465,55 +510,30 @@ fun AccountsPage(
             }
         }
 
-        item(key = "goals-card", span = FullWidth) {
-            val activeGoals = goals.count { it.completedAt == null }
-            val subtitle = if (activeGoals == 0) "Thiết lập mục tiêu đầu tiên của bạn" else "$activeGoals mục tiêu đang chạy"
-            val titleStyle = MaterialTheme.typography.titleMedium.let {
-                if (it.fontSize.isSpecified && it.fontSize > 18.sp) it.copy(fontSize = 18.sp) else it
-            }
-            Surface(
-                onClick = onOpenPlan,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, ChiLiTheme.colors.outline),
+        item(key = "jars-section", span = FullWidth) {
+            SectionCard(
+                title = "Kho hũ",
+                onAction = onOpenJars,
+                actionDescription = "Xem tất cả kho hũ",
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center,
+                val activeJars = jarSavings.filter { !it.goal.archived }
+                if (activeJars.isEmpty()) {
+                    OneLineText(
+                        text = "Chưa có hũ nào. Thiết lập hũ để bắt đầu tích lũy.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                } else {
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_flag),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp),
-                        )
-                    }
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                    ) {
-                        OneLineText(
-                            text = "Mục tiêu tiết kiệm",
-                            style = titleStyle,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        OneLineText(
-                            text = subtitle,
-                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            minFontSize = 10.sp,
-                        )
+                        items(activeJars, key = { it.goal.id }) { jar ->
+                            JarTile(
+                                jar = jar,
+                                onClick = { onOpenGoal(jar.goal.id) },
+                            )
+                        }
                     }
                 }
             }
@@ -522,6 +542,60 @@ fun AccountsPage(
 
     editing?.let { account ->
         AccountSheet(account = account, onDismiss = { editing = null })
+    }
+}
+
+@Composable
+private fun PendingJarBanner(
+    jar: JarSaving,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, ChiLiTheme.colors.warn),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(ChiLiTheme.colors.warn.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_savings),
+                    contentDescription = null,
+                    tint = ChiLiTheme.colors.warn,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                OneLineText(
+                    text = "Hũ đã đủ tiền: ${jar.goal.name}",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = "Đã tích lũy đủ ${formatMoney(jar.saved, jar.goal.currency)} / ${formatMoney(jar.goal.target, jar.goal.currency)} — chạm để xác nhận chi tiêu",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 

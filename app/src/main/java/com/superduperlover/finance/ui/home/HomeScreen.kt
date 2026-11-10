@@ -38,6 +38,7 @@ private val PAGE_TITLES = listOf("Tài khoản", "Ngân sách & Mục tiêu")
 fun HomeScreen(
     onOpenAccountTransactions: (Long) -> Unit,
     onOpenGoal: (Long) -> Unit,
+    onOpenJars: () -> Unit = {},
 ) {
     val pagerState = rememberPagerState { PAGE_TITLES.size }
     val scope = rememberCoroutineScope()
@@ -92,6 +93,8 @@ fun HomeScreen(
                 0 -> AccountsPage(
                     onOpenAccountTransactions = onOpenAccountTransactions,
                     onOpenPlan = { showPage(1) },
+                    onOpenGoal = onOpenGoal,
+                    onOpenJars = onOpenJars,
                 )
                 else -> PlanPage(onOpenGoal = onOpenGoal)
             }
