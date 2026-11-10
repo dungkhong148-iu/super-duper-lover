@@ -1,9 +1,7 @@
 package com.superduperlover.finance.ui.jars
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -42,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.superduperlover.finance.R
 import com.superduperlover.finance.core.Goal
-import com.superduperlover.finance.core.JarKind
 import com.superduperlover.finance.core.JarSaving
 import com.superduperlover.finance.core.JarStatus
 import com.superduperlover.finance.core.formatMoney
@@ -258,18 +255,6 @@ private fun JarDetailCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Box(
-                    modifier = Modifier
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                ) {
-                    OneLineText(
-                        text = if (jar.goal.kind == JarKind.SPENDING) "Chi phí lớn" else "Tiết kiệm",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
                 OneLineText(
                     text = jar.goal.name,
                     style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),

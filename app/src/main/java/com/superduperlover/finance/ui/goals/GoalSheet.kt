@@ -48,7 +48,6 @@ import com.superduperlover.finance.core.CategoryKind
 import com.superduperlover.finance.core.DurationUnit
 import com.superduperlover.finance.core.Goal
 import com.superduperlover.finance.core.JarDuration
-import com.superduperlover.finance.core.JarKind
 import com.superduperlover.finance.core.JarPlanCalculator
 import com.superduperlover.finance.core.SegmentedBarModel
 import com.superduperlover.finance.core.accountBalance
@@ -272,26 +271,6 @@ fun GoalSheet(
                 supportingText = nameError?.let { { Text(it) } },
                 modifier = Modifier.fillMaxWidth(),
             )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FilterChip(
-                    selected = kind == JarKind.SAVING,
-                    onClick = { kind = JarKind.SAVING },
-                    label = { OneLineText("Tiết kiệm") },
-                    colors = chiLiChipColors(),
-                    border = chiLiChipBorder(selected = kind == JarKind.SAVING),
-                )
-                FilterChip(
-                    selected = kind == JarKind.SPENDING,
-                    onClick = { kind = JarKind.SPENDING },
-                    label = { OneLineText("Chi phí lớn") },
-                    colors = chiLiChipColors(),
-                    border = chiLiChipBorder(selected = kind == JarKind.SPENDING),
-                )
-            }
 
             if (isNew && sourceAccountId == null) {
                 CurrencyChips(
