@@ -178,7 +178,7 @@ fun GoalSheet(
         val parsed = parseAmount(targetText, currency)
         var hasError = false
         if (trimmed.isEmpty()) {
-            nameError = "Nhập tên hũ / mục tiêu"
+            nameError = "Nhập tên hũ"
             hasError = true
         }
         if (parsed == null || parsed <= 0L) {
@@ -247,7 +247,7 @@ fun GoalSheet(
     }
 
     FormDialog(
-        title = if (isNew) "Tạo hũ / mục tiêu" else "Sửa hũ / mục tiêu",
+        title = if (isNew) "Tạo hũ" else "Sửa hũ",
         onClose = onDismiss,
         onSave = onSave,
         saveEnabled = saveEnabled,
@@ -266,7 +266,7 @@ fun GoalSheet(
                     name = it
                     nameError = null
                 },
-                label = { Text("Tên hũ / mục tiêu") },
+                label = { Text("Tên hũ") },
                 singleLine = true,
                 isError = nameError != null,
                 supportingText = nameError?.let { { Text(it) } },
@@ -280,14 +280,14 @@ fun GoalSheet(
                 FilterChip(
                     selected = kind == JarKind.SAVING,
                     onClick = { kind = JarKind.SAVING },
-                    label = { OneLineText("Mục tiêu") },
+                    label = { OneLineText("Tiết kiệm") },
                     colors = chiLiChipColors(),
                     border = chiLiChipBorder(selected = kind == JarKind.SAVING),
                 )
                 FilterChip(
                     selected = kind == JarKind.SPENDING,
                     onClick = { kind = JarKind.SPENDING },
-                    label = { OneLineText("Chi tiêu") },
+                    label = { OneLineText("Chi phí lớn") },
                     colors = chiLiChipColors(),
                     border = chiLiChipBorder(selected = kind == JarKind.SPENDING),
                 )
@@ -309,7 +309,7 @@ fun GoalSheet(
                     targetText = it
                     targetError = null
                 },
-                label = { Text("Số tiền mục tiêu (${currencySymbol(currency)})") },
+                label = { Text("Số tiền cần giữ (${currencySymbol(currency)})") },
                 placeholder = { Text("0") },
                 singleLine = true,
                 isError = targetError != null,

@@ -320,7 +320,7 @@ fun GoalDetailScreen(goalId: Long, onBack: () -> Unit) {
                                 .fillMaxWidth()
                                 .heightIn(min = 48.dp),
                         ) {
-                            OneLineText("Sửa mục tiêu", style = MaterialTheme.typography.labelLarge)
+                            OneLineText("Sửa hũ", style = MaterialTheme.typography.labelLarge)
                         }
                     }
 
@@ -334,7 +334,7 @@ fun GoalDetailScreen(goalId: Long, onBack: () -> Unit) {
                         ),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
                     ) {
-                        OneLineText("Lưu trữ mục tiêu", style = MaterialTheme.typography.labelLarge)
+                        OneLineText("Lưu trữ hũ", style = MaterialTheme.typography.labelLarge)
                     }
                 }
             }
@@ -449,7 +449,7 @@ fun GoalDetailScreen(goalId: Long, onBack: () -> Unit) {
     if (showArchiveConfirm) {
         AlertDialog(
             onDismissRequest = { showArchiveConfirm = false },
-            title = { Text("Lưu trữ mục tiêu này?") },
+            title = { Text("Lưu trữ hũ này?") },
             confirmButton = {
                 TextButton(
                     onClick = {

@@ -193,7 +193,7 @@ fun GoalProgressContent(goal: Goal, progress: GoalProgress) {
                 modifier = Modifier.size(16.dp),
             )
             OneLineText(
-                text = "Đã đạt mục tiêu",
+                text = "Đã hoàn thành",
                 color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.labelMedium,
             )

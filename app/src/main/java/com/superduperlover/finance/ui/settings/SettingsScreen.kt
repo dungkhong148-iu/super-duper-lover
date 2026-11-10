@@ -99,7 +99,7 @@ fun SettingsScreen(onBack: () -> Unit) {
         ) {
             SectionCard(title = "Xuất dữ liệu") {
                 Text(
-                    text = "Lưu toàn bộ tài khoản, danh mục, giao dịch, ngân sách và mục tiêu vào một tệp JSON.",
+                    text = "Lưu toàn bộ tài khoản, danh mục, giao dịch, ngân sách và hũ vào một tệp JSON.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

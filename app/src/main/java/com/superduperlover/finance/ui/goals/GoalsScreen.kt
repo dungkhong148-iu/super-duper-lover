@@ -61,9 +61,9 @@ fun GoalsScreen(onOpenGoal: (Long) -> Unit) {
         if (goals.isEmpty()) {
             EmptyState(
                 icon = painterResource(R.drawable.ic_flag),
-                title = "Hãy đặt mục tiêu đầu tiên",
+                title = "Hãy tạo hũ đầu tiên",
                 message = "Chọn một khoản cần để dành và theo dõi tiến độ mỗi tháng.",
-                actionLabel = "Tạo mục tiêu",
+                actionLabel = "Tạo hũ",
                 onAction = { editingGoal = Goal(0L, "", 0L, null) },
                 emphasized = true,
             )
@@ -81,7 +81,7 @@ fun GoalsScreen(onOpenGoal: (Long) -> Unit) {
 
             if (inProgress.isEmpty()) {
                 OneLineText(
-                    text = "Chưa có mục tiêu đang thực hiện",
+                    text = "Chưa có hũ đang thực hiện",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -113,7 +113,7 @@ fun GoalsScreen(onOpenGoal: (Long) -> Unit) {
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                 ),
             ) {
-                OneLineText("Thêm mục tiêu", style = MaterialTheme.typography.labelLarge)
+                OneLineText("Thêm hũ", style = MaterialTheme.typography.labelLarge)
             }
         }
     }
