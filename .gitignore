@@ -13,10 +13,11 @@ AGENTS.md
 CLAUDE.md
 START_HERE.txt
 afterwork.txt
-discussion_session.txt
 task_plan.txt
 deck_inject.ps1
 watch_reports.sh
 specs/
 docs/
 raw/
+.deck/
+graphify-out/
