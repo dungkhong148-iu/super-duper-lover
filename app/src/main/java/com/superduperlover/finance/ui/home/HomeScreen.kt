@@ -28,7 +28,7 @@ import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 import kotlinx.coroutines.launch
 
-private val PAGE_TITLES = listOf("Tài khoản", "Ngân sách & Mục tiêu")
+private val PAGE_TITLES = listOf("Tài khoản", "Ngân sách")
 
 /**
  * "Trang chủ" tab: top bar, segmented card with a swipeable pager (docs/ui-layout.md section 1 & 2b).

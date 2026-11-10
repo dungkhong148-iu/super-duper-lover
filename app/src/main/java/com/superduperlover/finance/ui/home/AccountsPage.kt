@@ -16,12 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -80,7 +78,6 @@ import com.superduperlover.finance.ui.components.expenseColor
 import com.superduperlover.finance.ui.components.icon
 import com.superduperlover.finance.ui.components.incomeColor
 import com.superduperlover.finance.ui.components.thisLabel
-import com.superduperlover.finance.ui.jars.JarTile
 import com.superduperlover.finance.ui.settings.rememberBackupExport
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 import com.superduperlover.finance.ui.theme.LocalAppPrefs
@@ -94,7 +91,7 @@ private val FullWidth: (androidx.compose.foundation.lazy.grid.LazyGridItemSpanSc
 
 /**
  * "Tài khoản" page of the home tab (docs/ui-layout.md section 1 & 2b): summary card, account tile grid,
- * "Ngân sách cần chú ý", and goal card. Every number comes from `:core` (accountBalance, budgetUsage, txnTotals).
+ * and "Ngân sách cần chú ý". Every number comes from `:core` (accountBalance, budgetUsage, txnTotals).
  */
 @Composable
 fun AccountsPage(
@@ -510,34 +507,6 @@ fun AccountsPage(
             }
         }
 
-        item(key = "jars-section", span = FullWidth) {
-            SectionCard(
-                title = "Kho hũ",
-                onAction = onOpenJars,
-                actionDescription = "Xem tất cả kho hũ",
-            ) {
-                val activeJars = jarSavings.filter { !it.goal.archived }
-                if (activeJars.isEmpty()) {
-                    OneLineText(
-                        text = "Chưa có hũ nào. Thiết lập hũ để bắt đầu tích lũy.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                } else {
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        items(activeJars, key = { it.goal.id }) { jar ->
-                            JarTile(
-                                jar = jar,
-                                onClick = { onOpenGoal(jar.goal.id) },
-                            )
-                        }
-                    }
-                }
-            }
-        }
     }
 
     editing?.let { account ->
