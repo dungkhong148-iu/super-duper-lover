@@ -70,6 +70,10 @@ data class Budget(
 /** First and last day (both included) of one budget period. */
 data class PeriodRange(val start: LocalDate, val endInclusive: LocalDate)
 
+/**
+ * A jar ("hũ"; the table is still called goals). Without a [plan] it is a plain saving goal filled by hand.
+ * With a plan the app reserves money on a schedule (see Jars.kt). [deadline] = end of the plan when there is one.
+ */
 data class Goal(
     val id: Long,
     val name: String,
@@ -79,6 +83,15 @@ data class Goal(
     val currency: Currency = MAIN_CURRENCY,
     /** Day the goal was completed (automatically on reaching the target, or by hand); null = in progress. */
     val completedAt: LocalDate? = null,
+    val kind: JarKind = JarKind.SAVING,
+    val status: JarStatus = JarStatus.ACTIVE,
+    /** Account the money is really spent from when the jar is settled. */
+    val sourceAccountId: Long? = null,
+    /** Expense category of the settlement transaction. */
+    val categoryId: Long? = null,
+    /** true: the app settles a full jar by itself; false: it waits for the user (PENDING_SETTLEMENT). */
+    val autoDeduct: Boolean = false,
+    val plan: JarPlan? = null,
 )
 
 data class GoalContribution(
@@ -86,6 +99,11 @@ data class GoalContribution(
     val goalId: Long,
     val amount: Long,
     val date: LocalDate,
+    val type: ContributionType = ContributionType.MANUAL,
+    /** SETTLEMENT only: the real expense transaction. */
+    val txnId: Long? = null,
+    /** AUTO_SCHEDULED only: which period of the plan (1 = first). */
+    val periodIndex: Int? = null,
 )
 
 enum class BudgetStatus { OK, WARN, OVER }

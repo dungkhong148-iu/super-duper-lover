@@ -4,12 +4,12 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 /**
- * Progress of [goal]. [contributions] must be the contributions of this goal.
+ * Progress of [goal]. [contributions] must be the contributions of this goal; a SETTLEMENT record is not savings.
  * `perMonth` = ceil(remaining / max(1, monthsBetween(thisMonth, deadlineMonth) + 1)), in Long math;
  * null when there is no deadline or the goal is done. A passed deadline gives the whole remaining amount.
  */
 fun goalProgress(goal: Goal, contributions: List<GoalContribution>, today: LocalDate): GoalProgress {
-    val saved = contributions.sumOf { it.amount }
+    val saved = jarSaved(contributions)
     val done = saved >= goal.target
     val remaining = if (done) 0L else goal.target - saved
     val ratio = if (goal.target > 0) saved.toDouble() / goal.target.toDouble() else 1.0

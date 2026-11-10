@@ -10,9 +10,15 @@ import com.superduperlover.finance.core.Budget
 import com.superduperlover.finance.core.BudgetPeriod
 import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
+import com.superduperlover.finance.core.ContributionType
 import com.superduperlover.finance.core.Currency
+import com.superduperlover.finance.core.DurationUnit
 import com.superduperlover.finance.core.Goal
 import com.superduperlover.finance.core.GoalContribution
+import com.superduperlover.finance.core.JarDuration
+import com.superduperlover.finance.core.JarKind
+import com.superduperlover.finance.core.JarPlan
+import com.superduperlover.finance.core.JarStatus
 import com.superduperlover.finance.core.Txn
 import com.superduperlover.finance.core.TxnKind
 import java.time.LocalDate
@@ -81,6 +87,19 @@ data class GoalEntity(
     @ColumnInfo(defaultValue = "VND") val currency: String,
     /** ISO date the goal was completed, null = in progress. DB v3. */
     val completedAt: String?,
+    // Jar fields, DB v4. Old goals: plain saving goals without a plan (JarKind / JarStatus names).
+    @ColumnInfo(defaultValue = "SAVING") val kind: String,
+    @ColumnInfo(defaultValue = "ACTIVE") val status: String,
+    val sourceAccountId: Long?,
+    val categoryId: Long?,
+    @ColumnInfo(defaultValue = "0") val autoDeduct: Boolean,
+    // The plan: all null = no plan. planBase = amount saved when the schedule started; lastEvaluatedDate = last day
+    // the due periods were looked at.
+    val durationCount: Int?,
+    val durationUnit: String?,
+    val planStart: String?,
+    @ColumnInfo(defaultValue = "0") val planBase: Long,
+    val lastEvaluatedDate: String?,
 )
 
 @Entity(tableName = "goal_contributions", indices = [Index("goalId")])
@@ -89,6 +108,10 @@ data class ContributionEntity(
     val goalId: Long,
     val amount: Long,
     val date: String,
+    // DB v4. ContributionType name; txnId = the real expense of a SETTLEMENT; periodIndex = period of the plan.
+    @ColumnInfo(defaultValue = "MANUAL") val type: String,
+    val txnId: Long?,
+    val periodIndex: Int?,
 )
 
 fun AccountEntity.toCore() =
@@ -115,11 +138,28 @@ fun Budget.toEntity() =
 
 fun GoalEntity.toCore() = Goal(
     id, name, target, deadline?.let(LocalDate::parse), archived, Currency.valueOf(currency),
-    completedAt?.let(LocalDate::parse),
+    completedAt?.let(LocalDate::parse), JarKind.valueOf(kind), JarStatus.valueOf(status), sourceAccountId, categoryId,
+    autoDeduct, toPlan(),
 )
 
-fun Goal.toEntity() =
-    GoalEntity(id, name, target, deadline?.toString(), archived, currency.name, completedAt?.toString())
+private fun GoalEntity.toPlan(): JarPlan? {
+    val count = durationCount ?: return null
+    val unit = durationUnit ?: return null
+    val start = planStart?.let(LocalDate::parse) ?: return null
+    return JarPlan(
+        JarDuration(count, DurationUnit.valueOf(unit)), start, planBase,
+        lastEvaluatedDate?.let(LocalDate::parse) ?: start,
+    )
+}
 
-fun ContributionEntity.toCore() = GoalContribution(id, goalId, amount, LocalDate.parse(date))
-fun GoalContribution.toEntity() = ContributionEntity(id, goalId, amount, date.toString())
+fun Goal.toEntity() = GoalEntity(
+    id, name, target, deadline?.toString(), archived, currency.name, completedAt?.toString(), kind.name, status.name,
+    sourceAccountId, categoryId, autoDeduct, plan?.duration?.count, plan?.duration?.unit?.name, plan?.start?.toString(),
+    plan?.baseSaved ?: 0L, plan?.lastEvaluated?.toString(),
+)
+
+fun ContributionEntity.toCore() = GoalContribution(
+    id, goalId, amount, LocalDate.parse(date), ContributionType.valueOf(type), txnId, periodIndex,
+)
+
+fun GoalContribution.toEntity() = ContributionEntity(id, goalId, amount, date.toString(), type.name, txnId, periodIndex)

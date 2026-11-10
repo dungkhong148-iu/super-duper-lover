@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.Flow
 
 data class UsageRow(val categoryId: Long, val uses: Int)
 
+data class SavedRow(val goalId: Long, val saved: Long)
+
 @Dao
 interface AppDao {
     // accounts
@@ -100,11 +102,35 @@ interface AppDao {
     @Query("SELECT * FROM goals WHERE id = :id")
     suspend fun goalById(id: Long): GoalEntity?
 
-    @Query("UPDATE goals SET completedAt = :date WHERE id = :id")
+    /** Completed on [date] (status COMPLETED), or back to in progress when null (status ACTIVE). */
+    @Query(
+        "UPDATE goals SET completedAt = :date, " +
+            "status = CASE WHEN :date IS NULL THEN 'ACTIVE' ELSE 'COMPLETED' END WHERE id = :id",
+    )
     suspend fun setGoalCompletedAt(id: Long, date: String?)
 
-    @Query("SELECT COALESCE(SUM(amount), 0) FROM goal_contributions WHERE goalId = :goalId")
+    @Query("UPDATE goals SET status = :status WHERE id = :id")
+    suspend fun setGoalStatus(id: Long, status: String)
+
+    @Query("UPDATE goals SET lastEvaluatedDate = :date WHERE id = :id")
+    suspend fun setGoalLastEvaluated(id: Long, date: String)
+
+    /** Jars with a running plan, the ones that get periods reserved when the app opens. */
+    @Query("SELECT * FROM goals WHERE archived = 0 AND status = 'ACTIVE' AND planStart IS NOT NULL ORDER BY id")
+    suspend fun activePlanGoals(): List<GoalEntity>
+
+    @Query("UPDATE goals SET sourceAccountId = NULL WHERE sourceAccountId = :accountId")
+    suspend fun clearGoalSourceAccount(accountId: Long)
+
+    @Query("UPDATE goals SET categoryId = NULL WHERE categoryId = :categoryId")
+    suspend fun clearGoalCategory(categoryId: Long)
+
+    /** Saved amount of a jar: every contribution except the SETTLEMENT record (the money spent). */
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM goal_contributions WHERE goalId = :goalId AND type != 'SETTLEMENT'")
     suspend fun contributionSum(goalId: Long): Long
+
+    @Query("SELECT goalId, COALESCE(SUM(amount), 0) AS saved FROM goal_contributions WHERE type != 'SETTLEMENT' GROUP BY goalId")
+    fun savedSums(): Flow<List<SavedRow>>
 
     @Query("UPDATE goals SET archived = 1 WHERE id = :id")
     suspend fun archiveGoal(id: Long)

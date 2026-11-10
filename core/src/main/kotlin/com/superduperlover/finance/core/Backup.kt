@@ -6,9 +6,10 @@ import java.time.format.DateTimeParseException
 
 /**
  * Written by export. Import also accepts version 1 (before currencies: no currency, colorKey or toAmount; VND)
- * and version 2 (budgets have `month` instead of period / startDate / rollover; goals have no completedAt).
+ * and version 2 (budgets have `month` instead of period / startDate / rollover; goals have no completedAt)
+ * and version 3 (goals have no jar fields, contributions no type: they read as plain saving goals).
  */
-const val BACKUP_VERSION = 3
+const val BACKUP_VERSION = 4
 
 /** Value of the `app` field in the header of an exported file. */
 const val BACKUP_APP_NAME = "ChiLi"
@@ -20,8 +21,8 @@ private val TABLE_INTEGER_FIELDS = mapOf(
     "categories" to listOf("id"),
     "txns" to listOf("id", "amount", "toAmount", "accountId", "toAccountId", "categoryId"),
     "budgets" to listOf("id", "accountId", "categoryId", "limit"),
-    "goals" to listOf("id", "target"),
-    "goalContributions" to listOf("id", "goalId", "amount"),
+    "goals" to listOf("id", "target", "sourceAccountId", "categoryId", "durationCount", "planBase"),
+    "goalContributions" to listOf("id", "goalId", "amount", "txnId", "periodIndex"),
 )
 
 /** Tables whose rows may carry a `currency` string (version 2). */
@@ -69,10 +70,18 @@ fun validateBackup(root: Map<String, Any?>): List<String> {
                         if (budgetStartDateFromBackup(row) == null) errors.add("Ngày bắt đầu không hợp lệ: budgets.startDate")
                     }
                     if (tableName == "goals") {
-                        val completedAt = row["completedAt"]
-                        if (completedAt != null && parseIsoDate(completedAt) == null) {
-                            errors.add("Ngày không hợp lệ: goals.completedAt")
+                        for (field in listOf("completedAt", "planStart", "lastEvaluatedDate")) {
+                            val value = row[field]
+                            if (value != null && parseIsoDate(value) == null) errors.add("Ngày không hợp lệ: goals.$field")
                         }
+                        checkEnum(row["kind"], JarKind.entries, "goals.kind", errors)
+                        checkEnum(row["status"], JarStatus.entries, "goals.status", errors)
+                        checkEnum(row["durationUnit"], DurationUnit.entries, "goals.durationUnit", errors)
+                        val autoDeduct = row["autoDeduct"]
+                        if (autoDeduct != null && autoDeduct !is Boolean) errors.add("Giá trị không hợp lệ: goals.autoDeduct")
+                    }
+                    if (tableName == "goalContributions") {
+                        checkEnum(row["type"], ContributionType.entries, "goalContributions.type", errors)
                     }
                     for (field in integerFields) {
                         val value = row[field]
@@ -86,6 +95,10 @@ fun validateBackup(root: Map<String, Any?>): List<String> {
     }
 
     return errors.distinct()
+}
+
+private fun checkEnum(value: Any?, allowed: List<Enum<*>>, field: String, errors: MutableList<String>) {
+    if (value != null && (value !is String || allowed.none { it.name == value })) errors.add("Giá trị không hợp lệ: $field")
 }
 
 private fun parseIsoDate(raw: Any?): LocalDate? =
@@ -104,3 +117,15 @@ fun budgetStartDateFromBackup(row: Map<*, *>): LocalDate? {
     val month = row["month"] as? String ?: return null
     return try { YearMonth.parse(month).atDay(1) } catch (e: DateTimeParseException) { null }
 }
+
+/** Jar fields of a backup goal row; missing or unknown (version 3 and older) -> a plain saving goal. */
+fun jarKindFromBackup(raw: Any?): JarKind =
+    (raw as? String)?.let { name -> JarKind.entries.firstOrNull { it.name == name } } ?: JarKind.SAVING
+
+/** Missing status (version 3 and older): COMPLETED when the goal has a completedAt, else ACTIVE. */
+fun jarStatusFromBackup(raw: Any?, completedAt: Any?): JarStatus =
+    (raw as? String)?.let { name -> JarStatus.entries.firstOrNull { it.name == name } }
+        ?: if (completedAt != null) JarStatus.COMPLETED else JarStatus.ACTIVE
+
+fun contributionTypeFromBackup(raw: Any?): ContributionType =
+    (raw as? String)?.let { name -> ContributionType.entries.firstOrNull { it.name == name } } ?: ContributionType.MANUAL

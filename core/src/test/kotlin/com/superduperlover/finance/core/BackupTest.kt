@@ -60,8 +60,8 @@ class BackupTest {
     }
 
     @Test
-    fun version4Fails() {
-        val errors = validateBackup(minimalValidBackup(version = 4))
+    fun version5Fails() {
+        val errors = validateBackup(minimalValidBackup(version = 5))
         assertTrue(errors.isNotEmpty())
         assertTrue(errors.any { it.contains("Phiên bản") })
     }
@@ -229,5 +229,40 @@ class BackupTest {
         assertEquals(LocalDate.of(2026, 11, 25), budgetStartDateFromBackup(v3))
         assertEquals(BudgetPeriod.QUARTER, budgetPeriodFromBackup(v3["period"]))
         assertEquals(null, budgetStartDateFromBackup(mapOf("id" to 1L)))
+    }
+
+    @Test
+    fun version4JarFieldsAreValidatedAndOldGoalsStayPlain() {
+        val v4 = minimalValidBackup(version = 4L).apply {
+            put(
+                "goals",
+                listOf(
+                    mapOf(
+                        "id" to 1L, "target" to 5L, "kind" to "SPENDING", "status" to "PENDING_SETTLEMENT",
+                        "sourceAccountId" to 2L, "categoryId" to 3L, "autoDeduct" to true, "durationCount" to 4,
+                        "durationUnit" to "MONTH", "planStart" to "2026-11-10", "planBase" to 1L,
+                        "lastEvaluatedDate" to "2026-11-10",
+                    ),
+                ),
+            )
+            put(
+                "goalContributions",
+                listOf(mapOf("id" to 1L, "goalId" to 1L, "amount" to 5L, "type" to "AUTO_SCHEDULED", "periodIndex" to 1)),
+            )
+        }
+        assertEquals(emptyList<String>(), validateBackup(v4))
+        val bad = minimalValidBackup(version = 4L).apply {
+            put("goals", listOf(mapOf("id" to 1L, "target" to 5L, "kind" to "BOX", "planStart" to "soon")))
+            put("goalContributions", listOf(mapOf("id" to 1L, "goalId" to 1L, "amount" to 5L, "type" to "GIFT")))
+        }
+        val errors = validateBackup(bad)
+        assertTrue(errors.any { it.contains("goals.kind") })
+        assertTrue(errors.any { it.contains("goals.planStart") })
+        assertTrue(errors.any { it.contains("goalContributions.type") })
+        // version 3 rows have none of these fields
+        assertEquals(JarKind.SAVING, jarKindFromBackup(null))
+        assertEquals(JarStatus.ACTIVE, jarStatusFromBackup(null, null))
+        assertEquals(JarStatus.COMPLETED, jarStatusFromBackup(null, "2026-11-08"))
+        assertEquals(ContributionType.MANUAL, contributionTypeFromBackup(null))
     }
 }

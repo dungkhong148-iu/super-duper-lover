@@ -5,8 +5,12 @@ import com.superduperlover.finance.core.Account
 import com.superduperlover.finance.core.Budget
 import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
+import com.superduperlover.finance.core.ContributionType
 import com.superduperlover.finance.core.Goal
 import com.superduperlover.finance.core.GoalContribution
+import com.superduperlover.finance.core.JarSaving
+import com.superduperlover.finance.core.JarStatus
+import com.superduperlover.finance.core.ScheduleEngine
 import com.superduperlover.finance.core.RECONCILE_CATEGORY_NAME
 import com.superduperlover.finance.core.Txn
 import com.superduperlover.finance.core.TxnKind
@@ -16,6 +20,7 @@ import com.superduperlover.finance.core.shouldAutoComplete
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
@@ -45,6 +50,7 @@ class Repo(private val db: AppDatabase) {
             DeleteResult.HAS_TRANSACTIONS
         } else {
             dao.deleteBudgetsForAccount(id)
+            dao.clearGoalSourceAccount(id)
             dao.deleteAccountRow(id)
             DeleteResult.DELETED
         }
@@ -64,6 +70,7 @@ class Repo(private val db: AppDatabase) {
             DeleteResult.HAS_TRANSACTIONS
         } else {
             dao.deleteBudgetsForCategory(id)
+            dao.clearGoalCategory(id)
             dao.deleteCategoryRow(id)
             DeleteResult.DELETED
         }
@@ -142,21 +149,100 @@ class Repo(private val db: AppDatabase) {
     fun contributions(goalId: Long): Flow<List<GoalContribution>> =
         dao.contributions(goalId).map { rows -> rows.map { it.toCore() } }
 
+    /** Every active jar with what it has saved: the input of reservedByCurrency / freeByCurrency / SegmentedBarModel. */
+    fun jarSavings(): Flow<List<JarSaving>> = combine(goals(), dao.savedSums()) { goals, sums ->
+        val saved = sums.associate { it.goalId to it.saved }
+        goals.map { JarSaving(it, saved[it.id] ?: 0L) }
+    }
+
     /**
-     * Adds (id = 0) or edits a contribution. When it brings the saved amount to the target, the goal is completed
-     * on [today] (only if it is not completed yet and was below the target before).
+     * Adds (id = 0) or edits a contribution. A goal without a plan is completed on [today] when the contribution brings
+     * the saved amount to the target (only if it is not completed yet and was below the target before). A jar with a
+     * plan that gets full is settled (auto-deduct on) or waits as PENDING_SETTLEMENT.
      */
     suspend fun addContribution(c: GoalContribution, today: LocalDate = LocalDate.now()): Long = db.withTransaction {
         val goal = dao.goalById(c.goalId)?.toCore()
         val savedBefore = dao.contributionSum(c.goalId)
         val id = idOf(c.id, dao.upsertContribution(c.toEntity()))
-        if (goal != null && shouldAutoComplete(goal, savedBefore, dao.contributionSum(c.goalId))) {
-            dao.setGoalCompletedAt(goal.id, today.toString())
+        if (goal != null) {
+            if (goal.plan == null) {
+                if (shouldAutoComplete(goal, savedBefore, dao.contributionSum(c.goalId))) {
+                    dao.setGoalCompletedAt(goal.id, today.toString())
+                }
+            } else {
+                settleIfFull(goal.id, today)
+            }
         }
         id
     }
 
     suspend fun deleteContribution(id: Long) = dao.deleteContribution(id)
+
+    /**
+     * Reserves the periods of every running plan that came due since it was last looked at (the app has no
+     * background job; call it when MainActivity starts). Returns how many entries were added.
+     */
+    suspend fun materializeDueJarEntries(today: LocalDate = LocalDate.now()): Int = db.withTransaction {
+        var added = 0
+        for (row in dao.activePlanGoals()) {
+            val goal = row.toCore()
+            val plan = goal.plan ?: continue
+            if (!plan.lastEvaluated.isBefore(today)) continue
+            val due = ScheduleEngine.dueEntries(goal.target, dao.contributionSum(goal.id), plan, today)
+            for (e in due) {
+                dao.upsertContribution(
+                    ContributionEntity(0, goal.id, e.amount, e.date.toString(), ContributionType.AUTO_SCHEDULED.name, null, e.periodIndex),
+                )
+                added++
+            }
+            dao.setGoalLastEvaluated(goal.id, today.toString())
+            settleIfFull(goal.id, today)
+        }
+        added
+    }
+
+    /**
+     * Spends the jar for real: one EXPENSE of [amount] (default: the target) from the source account, in
+     * [categoryId] (default: the jar's category), dated [date]; the jar is COMPLETED and a SETTLEMENT entry records
+     * the transaction. Returns the transaction id, or null when the jar cannot be settled (no source account or
+     * category, account of another currency, already completed or cancelled).
+     */
+    suspend fun settleJar(
+        goalId: Long,
+        categoryId: Long? = null,
+        amount: Long? = null,
+        date: LocalDate = LocalDate.now(),
+    ): Long? = db.withTransaction {
+        val goal = dao.goalById(goalId)?.toCore() ?: return@withTransaction null
+        settle(goal, categoryId, amount, date)
+    }
+
+    /** The jar stops: its reserve is released and nothing is spent. */
+    suspend fun cancelJar(id: Long) = dao.setGoalStatus(id, JarStatus.CANCELLED.name)
+
+    // A plan jar that reached its target: settle it when auto-deduct is on and possible, else wait for the user.
+    private suspend fun settleIfFull(goalId: Long, today: LocalDate) {
+        val goal = dao.goalById(goalId)?.toCore() ?: return
+        if (goal.plan == null || goal.status != JarStatus.ACTIVE) return
+        if (dao.contributionSum(goalId) < goal.target) return
+        val settled = goal.autoDeduct && settle(goal, null, null, today) != null
+        if (!settled) dao.setGoalStatus(goalId, JarStatus.PENDING_SETTLEMENT.name)
+    }
+
+    private suspend fun settle(goal: Goal, categoryId: Long?, amount: Long?, date: LocalDate): Long? {
+        if (goal.status == JarStatus.COMPLETED || goal.status == JarStatus.CANCELLED) return null
+        val accountId = goal.sourceAccountId ?: return null
+        val category = categoryId ?: goal.categoryId ?: return null
+        val account = dao.allAccounts().firstOrNull { it.id == accountId }?.toCore() ?: return null
+        if (account.currency != goal.currency) return null
+        val spent = amount ?: goal.target
+        val txnId = dao.upsertTxn(Txn(0, TxnKind.EXPENSE, spent, accountId, null, category, date, goal.name).toEntity())
+        dao.upsertContribution(
+            ContributionEntity(0, goal.id, spent, date.toString(), ContributionType.SETTLEMENT.name, txnId, null),
+        )
+        dao.setGoalCompletedAt(goal.id, date.toString())
+        return txnId
+    }
 
     suspend fun exportBackupJson(): String = db.withTransaction {
         val data = BackupData(

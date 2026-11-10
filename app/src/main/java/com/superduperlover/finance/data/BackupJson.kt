@@ -6,7 +6,10 @@ import com.superduperlover.finance.core.BACKUP_VERSION
 import com.superduperlover.finance.core.accountColorKeyOrDefault
 import com.superduperlover.finance.core.budgetPeriodFromBackup
 import com.superduperlover.finance.core.budgetStartDateFromBackup
+import com.superduperlover.finance.core.contributionTypeFromBackup
 import com.superduperlover.finance.core.currencyFromBackup
+import com.superduperlover.finance.core.jarKindFromBackup
+import com.superduperlover.finance.core.jarStatusFromBackup
 import com.superduperlover.finance.core.validateBackup
 import org.json.JSONArray
 import org.json.JSONException
@@ -96,6 +99,16 @@ fun BackupData.toJson(exportedAt: String): String {
         obj.put("archived", g.archived)
         obj.put("currency", g.currency)
         obj.put("completedAt", jsonNull(g.completedAt))
+        obj.put("kind", g.kind)
+        obj.put("status", g.status)
+        obj.put("sourceAccountId", jsonNull(g.sourceAccountId))
+        obj.put("categoryId", jsonNull(g.categoryId))
+        obj.put("autoDeduct", g.autoDeduct)
+        obj.put("durationCount", jsonNull(g.durationCount))
+        obj.put("durationUnit", jsonNull(g.durationUnit))
+        obj.put("planStart", jsonNull(g.planStart))
+        obj.put("planBase", g.planBase)
+        obj.put("lastEvaluatedDate", jsonNull(g.lastEvaluatedDate))
         goalsArr.put(obj)
     }
     root.put("goals", goalsArr)
@@ -107,6 +120,9 @@ fun BackupData.toJson(exportedAt: String): String {
         obj.put("goalId", c.goalId)
         obj.put("amount", c.amount)
         obj.put("date", c.date)
+        obj.put("type", c.type)
+        obj.put("txnId", jsonNull(c.txnId))
+        obj.put("periodIndex", jsonNull(c.periodIndex))
         contributionsArr.put(obj)
     }
     root.put("goalContributions", contributionsArr)
@@ -227,6 +243,17 @@ fun parseBackup(root: Map<String, Any?>): BackupData {
             archived = toBool(r["archived"]),
             currency = currencyFromBackup(r["currency"]).name,
             completedAt = toStrOrNull(r["completedAt"]),
+            // version 3 and older: a plain saving goal without a plan
+            kind = jarKindFromBackup(r["kind"]).name,
+            status = jarStatusFromBackup(r["status"], r["completedAt"]).name,
+            sourceAccountId = toLongOrNull(r["sourceAccountId"]),
+            categoryId = toLongOrNull(r["categoryId"]),
+            autoDeduct = (r["autoDeduct"] as? Boolean) ?: false,
+            durationCount = toLongOrNull(r["durationCount"])?.toInt(),
+            durationUnit = toStrOrNull(r["durationUnit"]),
+            planStart = toStrOrNull(r["planStart"]),
+            planBase = toLongOrNull(r["planBase"]) ?: 0L,
+            lastEvaluatedDate = toStrOrNull(r["lastEvaluatedDate"]),
         )
     }
     val contributions = (root["goalContributions"] as List<*>).map {
@@ -236,6 +263,9 @@ fun parseBackup(root: Map<String, Any?>): BackupData {
             goalId = toLong(r["goalId"]),
             amount = toLong(r["amount"]),
             date = toStr(r["date"]),
+            type = contributionTypeFromBackup(r["type"]).name,
+            txnId = toLongOrNull(r["txnId"]),
+            periodIndex = toLongOrNull(r["periodIndex"])?.toInt(),
         )
     }
     return BackupData(accounts, categories, txns, budgets, goals, contributions)

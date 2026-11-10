@@ -20,7 +20,7 @@ import androidx.sqlite.execSQL
         GoalEntity::class,
         ContributionEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
     autoMigrations = [AutoMigration(from = 1, to = 2, spec = Migration1To2::class)],
 )
@@ -30,7 +30,7 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "finance.db")
-                .addMigrations(Migration2To3)
+                .addMigrations(Migration2To3, Migration3To4)
                 .addCallback(SeedCallback)
                 .build()
     }
@@ -101,5 +101,30 @@ object Migration2To3 : Migration(2, 3) {
         connection.execSQL("DROP TABLE `budgets`")
         connection.execSQL("ALTER TABLE `budgets_new` RENAME TO `budgets`")
         connection.execSQL("ALTER TABLE `goals` ADD COLUMN `completedAt` TEXT")
+    }
+}
+
+/**
+ * v3 -> v4 (jars): goals and goal_contributions get new columns; no table is rebuilt, nothing is copied. Old goals
+ * become jars of kind SAVING without a plan (all plan columns NULL), status ACTIVE, or COMPLETED when they have a
+ * completedAt. Old contributions are MANUAL. The column definitions are the ones Room generated into
+ * schemas/.../4.json.
+ */
+object Migration3To4 : Migration(3, 4) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE `goals` ADD COLUMN `kind` TEXT NOT NULL DEFAULT 'SAVING'")
+        connection.execSQL("ALTER TABLE `goals` ADD COLUMN `status` TEXT NOT NULL DEFAULT 'ACTIVE'")
+        connection.execSQL("ALTER TABLE `goals` ADD COLUMN `sourceAccountId` INTEGER")
+        connection.execSQL("ALTER TABLE `goals` ADD COLUMN `categoryId` INTEGER")
+        connection.execSQL("ALTER TABLE `goals` ADD COLUMN `autoDeduct` INTEGER NOT NULL DEFAULT 0")
+        connection.execSQL("ALTER TABLE `goals` ADD COLUMN `durationCount` INTEGER")
+        connection.execSQL("ALTER TABLE `goals` ADD COLUMN `durationUnit` TEXT")
+        connection.execSQL("ALTER TABLE `goals` ADD COLUMN `planStart` TEXT")
+        connection.execSQL("ALTER TABLE `goals` ADD COLUMN `planBase` INTEGER NOT NULL DEFAULT 0")
+        connection.execSQL("ALTER TABLE `goals` ADD COLUMN `lastEvaluatedDate` TEXT")
+        connection.execSQL("UPDATE `goals` SET `status` = 'COMPLETED' WHERE `completedAt` IS NOT NULL")
+        connection.execSQL("ALTER TABLE `goal_contributions` ADD COLUMN `type` TEXT NOT NULL DEFAULT 'MANUAL'")
+        connection.execSQL("ALTER TABLE `goal_contributions` ADD COLUMN `txnId` INTEGER")
+        connection.execSQL("ALTER TABLE `goal_contributions` ADD COLUMN `periodIndex` INTEGER")
     }
 }
