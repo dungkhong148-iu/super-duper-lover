@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -59,6 +60,7 @@ import com.superduperlover.finance.core.goalProgress
 import com.superduperlover.finance.core.jarSchedule
 import com.superduperlover.finance.core.maxDurationCount
 import com.superduperlover.finance.core.parseAmount
+import com.superduperlover.finance.data.PurgeResult
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.add.AccountPickerSheet
 import com.superduperlover.finance.ui.add.CategoryPickerSheet
@@ -137,6 +139,9 @@ fun GoalSheet(
     var showAccountPicker by remember { mutableStateOf(false) }
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showArchiveConfirm by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var deleteError by remember { mutableStateOf<String?>(null) }
 
     val accounts = remember(allAccounts, sourceAccountId) {
         allAccounts.filter { !it.archived || it.id == sourceAccountId }
@@ -681,7 +686,112 @@ fun GoalSheet(
             }
         }
 
+        if (!isNew) {
+            SectionHeaderBand("Khác")
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                OutlinedButton(
+                    onClick = { showArchiveConfirm = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                ) {
+                    OneLineText("Lưu trữ")
+                }
+                Text(
+                    text = "Ẩn khỏi danh sách, giữ lịch sử, khôi phục trong Cài đặt > Lưu trữ",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                OutlinedButton(
+                    onClick = {
+                        deleteError = null
+                        showDeleteConfirm = true
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                ) {
+                    OneLineText("Xóa hũ", color = MaterialTheme.colorScheme.error)
+                }
+                Text(
+                    text = "Xóa vĩnh viễn, chỉ khi chưa có giao dịch",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                deleteError?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+        }
+
         Spacer(Modifier.height(24.dp))
+    }
+
+    if (showArchiveConfirm) {
+        AlertDialog(
+            onDismissRequest = { showArchiveConfirm = false },
+            title = { Text("Lưu trữ hũ?") },
+            text = { Text("Ẩn hũ khỏi danh sách và giải phóng số tiền giữ.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showArchiveConfirm = false
+                        scope.launch {
+                            repo.archiveGoal(goal.id)
+                            onDismiss()
+                        }
+                    },
+                ) {
+                    OneLineText("Lưu trữ")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showArchiveConfirm = false }) {
+                    OneLineText("Hủy")
+                }
+            },
+        )
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Xóa hũ?") },
+            text = { Text("Xóa hũ này vĩnh viễn? Hành động này không thể hoàn tác.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirm = false
+                        scope.launch {
+                            val res = repo.deleteGoal(goal.id)
+                            if (res == PurgeResult.PURGED) {
+                                onDismiss()
+                            } else if (res == PurgeResult.HAS_CONTRIBUTIONS) {
+                                deleteError = "Hũ đã có khoản tích lũy, chỉ có thể lưu trữ"
+                            }
+                        }
+                    },
+                ) {
+                    OneLineText("Xóa", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    OneLineText("Hủy")
+                }
+            },
+        )
     }
 
     if (showAccountPicker) {

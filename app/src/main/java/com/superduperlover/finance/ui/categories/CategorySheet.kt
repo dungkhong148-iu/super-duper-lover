@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +19,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -64,6 +66,8 @@ internal fun CategorySheet(
 
     var nameError by remember { mutableStateOf<String?>(null) }
     var deleteError by remember { mutableStateOf<String?>(null) }
+    var showArchiveConfirm by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     val hasChanges = name != category.name ||
         (isNew && kind != category.kind) ||
@@ -218,28 +222,23 @@ internal fun CategorySheet(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 OutlinedButton(
-                    onClick = {
-                        scope.launch {
-                            repo.archiveCategory(category.id)
-                            onDismiss()
-                        }
-                    },
+                    onClick = { showArchiveConfirm = true },
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 48.dp),
                 ) {
                     OneLineText("Lưu trữ")
                 }
+                Text(
+                    text = "Ẩn khỏi danh sách, giữ lịch sử, khôi phục trong Cài đặt > Lưu trữ",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
 
                 OutlinedButton(
                     onClick = {
-                        scope.launch {
-                            when (repo.deleteCategory(category.id)) {
-                                DeleteResult.DELETED -> onDismiss()
-                                DeleteResult.HAS_TRANSACTIONS ->
-                                    deleteError = "Danh mục đã có giao dịch, chỉ có thể lưu trữ"
-                            }
-                        }
+                        deleteError = null
+                        showDeleteConfirm = true
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -247,6 +246,11 @@ internal fun CategorySheet(
                 ) {
                     OneLineText("Xóa danh mục", color = MaterialTheme.colorScheme.error)
                 }
+                Text(
+                    text = "Xóa vĩnh viễn, chỉ khi chưa có giao dịch",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
 
                 deleteError?.let {
                     Text(
@@ -259,5 +263,64 @@ internal fun CategorySheet(
         }
 
         Spacer(Modifier.height(24.dp))
+    }
+
+    if (showArchiveConfirm) {
+        AlertDialog(
+            onDismissRequest = { showArchiveConfirm = false },
+            title = { Text("Lưu trữ danh mục?") },
+            text = {
+                Text("Ẩn danh mục khỏi danh sách và giữ lại lịch sử giao dịch.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showArchiveConfirm = false
+                        scope.launch {
+                            repo.archiveCategory(category.id)
+                            onDismiss()
+                        }
+                    },
+                ) {
+                    OneLineText("Lưu trữ")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showArchiveConfirm = false }) {
+                    OneLineText("Hủy")
+                }
+            },
+        )
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Xóa danh mục?") },
+            text = {
+                Text("Xóa danh mục này vĩnh viễn? Hành động này không thể hoàn tác.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirm = false
+                        scope.launch {
+                            when (repo.deleteCategory(category.id)) {
+                                DeleteResult.DELETED -> onDismiss()
+                                DeleteResult.HAS_TRANSACTIONS ->
+                                    deleteError = "Danh mục đã có giao dịch, chỉ có thể lưu trữ"
+                            }
+                        }
+                    },
+                ) {
+                    OneLineText("Xóa", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    OneLineText("Hủy")
+                }
+            },
+        )
     }
 }

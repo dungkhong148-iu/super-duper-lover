@@ -107,6 +107,7 @@ fun GoalDetailScreen(goalId: Long, onBack: () -> Unit) {
     var editingGoal by remember { mutableStateOf<Goal?>(null) }
     var editingContribution by remember { mutableStateOf<GoalContribution?>(null) }
     var showArchiveConfirm by remember { mutableStateOf(false) }
+    var showDeleteGoalConfirm by remember { mutableStateOf(false) }
     var showCancelJarConfirm by remember { mutableStateOf(false) }
     var showSettlementSheet by remember { mutableStateOf(false) }
 
@@ -336,6 +337,17 @@ fun GoalDetailScreen(goalId: Long, onBack: () -> Unit) {
                     ) {
                         OneLineText("Lưu trữ hũ", style = MaterialTheme.typography.labelLarge)
                     }
+
+                    if (contributions.isEmpty()) {
+                        OutlinedButton(
+                            onClick = { showDeleteGoalConfirm = true },
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+                        ) {
+                            OneLineText("Xóa hũ", style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
                 }
             }
 
@@ -465,6 +477,32 @@ fun GoalDetailScreen(goalId: Long, onBack: () -> Unit) {
             },
             dismissButton = {
                 TextButton(onClick = { showArchiveConfirm = false }) {
+                    OneLineText("Hủy")
+                }
+            },
+        )
+    }
+
+    if (showDeleteGoalConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteGoalConfirm = false },
+            title = { Text("Xóa hũ này?") },
+            text = { Text("Xóa hũ này vĩnh viễn? Hành động này không thể hoàn tác.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteGoalConfirm = false
+                        scope.launch {
+                            repo.deleteGoal(goal.id)
+                            onBack()
+                        }
+                    },
+                ) {
+                    OneLineText("Xóa", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteGoalConfirm = false }) {
                     OneLineText("Hủy")
                 }
             },

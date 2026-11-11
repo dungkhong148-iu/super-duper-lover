@@ -113,6 +113,9 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
     var nameError by remember { mutableStateOf<String?>(null) }
     var openingError by remember { mutableStateOf<String?>(null) }
     var deleteError by remember { mutableStateOf<String?>(null) }
+    var showArchiveConfirm by remember { mutableStateOf(false) }
+    var archiveBalance by remember { mutableStateOf<Long?>(null) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
     var showReconcileDialog by remember { mutableStateOf(false) }
     var reconciled by remember { mutableStateOf(false) }
 
@@ -339,8 +342,8 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
                 OutlinedButton(
                     onClick = {
                         scope.launch {
-                            repo.archiveAccount(account.id)
-                            onDismiss()
+                            archiveBalance = accountBalance(account, repo.txns(accountId = account.id).first())
+                            showArchiveConfirm = true
                         }
                     },
                     modifier = Modifier
@@ -349,8 +352,82 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
                 ) {
                     OneLineText("Lưu trữ")
                 }
+                Text(
+                    text = "Ẩn khỏi danh sách, giữ lịch sử, khôi phục trong Cài đặt > Lưu trữ",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 OutlinedButton(
                     onClick = {
+                        deleteError = null
+                        showDeleteConfirm = true
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                ) {
+                    OneLineText("Xóa tài khoản", color = MaterialTheme.colorScheme.error)
+                }
+                Text(
+                    text = "Xóa vĩnh viễn, chỉ khi chưa có giao dịch",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                deleteError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+    }
+
+    if (showArchiveConfirm) {
+        val bal = archiveBalance ?: 0L
+        AlertDialog(
+            onDismissRequest = { showArchiveConfirm = false },
+            title = { Text("Lưu trữ tài khoản?") },
+            text = {
+                Text(
+                    if (bal != 0L) {
+                        "Số dư ${formatMoney(bal, account.currency)} sẽ không còn tính vào tổng. Khôi phục để tính lại."
+                    } else {
+                        "Ẩn tài khoản khỏi danh sách và giữ lại lịch sử giao dịch."
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showArchiveConfirm = false
+                        scope.launch {
+                            repo.archiveAccount(account.id)
+                            onDismiss()
+                        }
+                    },
+                ) {
+                    OneLineText("Lưu trữ")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showArchiveConfirm = false }) {
+                    OneLineText("Hủy")
+                }
+            },
+        )
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Xóa tài khoản?") },
+            text = {
+                Text("Xóa tài khoản này vĩnh viễn? Hành động này không thể hoàn tác.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirm = false
                         scope.launch {
                             when (repo.deleteAccount(account.id)) {
                                 DeleteResult.DELETED -> onDismiss()
@@ -359,19 +436,16 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
                             }
                         }
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp),
                 ) {
-                    OneLineText("Xóa tài khoản", color = MaterialTheme.colorScheme.error)
+                    OneLineText("Xóa", color = MaterialTheme.colorScheme.error)
                 }
-                deleteError?.let {
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    OneLineText("Hủy")
                 }
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
+            },
+        )
     }
 
     if (showReconcileDialog) {
