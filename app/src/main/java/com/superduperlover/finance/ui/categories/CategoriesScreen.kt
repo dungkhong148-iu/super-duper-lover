@@ -19,13 +19,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,7 +41,6 @@ import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.SectionCard
 import com.superduperlover.finance.ui.components.expenseColor
 import com.superduperlover.finance.ui.components.incomeColor
-import kotlinx.coroutines.launch
 
 @Composable
 private fun CategoryKind.color(): Color = when (this) {
@@ -54,7 +51,6 @@ private fun CategoryKind.color(): Color = when (this) {
 @Composable
 fun CategoriesScreen(onBack: () -> Unit) {
     val repo = LocalRepo.current
-    val scope = rememberCoroutineScope()
     val allCategories by remember(repo) { repo.categories(includeArchived = true) }.collectAsState(initial = emptyList())
     var editing by remember { mutableStateOf<Category?>(null) }
 
@@ -63,9 +59,6 @@ fun CategoriesScreen(onBack: () -> Unit) {
     }
     val incomeCategories = remember(allCategories) {
         allCategories.filter { it.kind == CategoryKind.INCOME && !it.archived }
-    }
-    val archivedCategories = remember(allCategories) {
-        allCategories.filter { it.archived }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -180,26 +173,6 @@ fun CategoriesScreen(onBack: () -> Unit) {
                         }
                     }
                 }
-
-                if (archivedCategories.isNotEmpty()) {
-                    item(key = "card_archived") {
-                        SectionCard(title = "Đã lưu trữ") {
-                            archivedCategories.forEachIndexed { index, category ->
-                                if (index > 0) {
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                                }
-                                ArchivedCategoryRow(
-                                    category = category,
-                                    onRestore = {
-                                        scope.launch {
-                                            repo.saveCategory(category.copy(archived = false))
-                                        }
-                                    },
-                                )
-                            }
-                        }
-                    }
-                }
             }
         }
     }
@@ -245,45 +218,5 @@ private fun CategoryRow(
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
-    }
-}
-
-@Composable
-private fun ArchivedCategoryRow(
-    category: Category,
-    onRestore: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = CategoryIcons.get(category.icon),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        OneLineText(
-            text = category.name,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-        TextButton(
-            onClick = onRestore,
-            modifier = Modifier.heightIn(min = 48.dp),
-        ) {
-            OneLineText("Khôi phục", style = MaterialTheme.typography.labelLarge)
-        }
     }
 }

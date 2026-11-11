@@ -31,6 +31,7 @@ fun SettingsTabScreen(
     onOpenCategories: () -> Unit,
     onOpenBackup: () -> Unit,
     onOpenAppearance: () -> Unit,
+    onOpenArchive: () -> Unit,
 ) {
     val prefs = LocalAppPrefs.current
     val themeSubtitle = when (prefs.themeMode) {
@@ -48,7 +49,9 @@ fun SettingsTabScreen(
             SectionCard {
                 SettingsRow("Giao diện", themeSubtitle, onOpenAppearance)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                SettingsRow("Danh mục", "Thêm, đổi tên, lưu trữ danh mục chi tiêu và thu nhập", onOpenCategories)
+                SettingsRow("Danh mục", "Thêm, đổi tên danh mục chi tiêu và thu nhập", onOpenCategories)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                SettingsRow("Lưu trữ", "Khôi phục hoặc xóa hẳn tài khoản, danh mục, hũ", onOpenArchive)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 SettingsRow("Sao lưu và khôi phục", "Xuất hoặc nhập toàn bộ dữ liệu ra tệp", onOpenBackup)
             }
