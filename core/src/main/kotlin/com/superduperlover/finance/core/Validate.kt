@@ -1,5 +1,7 @@
 package com.superduperlover.finance.core
 
+import java.time.LocalDate
+
 /**
  * Returns Vietnamese error messages for [txn]; an empty list means the transaction is valid.
  * [original] = the stored version when [txn] is an edit: an archived account or category is accepted when the
@@ -10,10 +12,12 @@ fun validateTxn(
     accounts: List<Account>,
     categories: List<Category>,
     original: Txn? = null,
+    today: LocalDate = LocalDate.now(),
 ): List<String> {
     val errors = mutableListOf<String>()
 
     if (txn.amount <= 0) errors += "Số tiền phải lớn hơn 0"
+    if (txn.date.isAfter(today) && original?.date != txn.date) errors += "Ngày không được sau hôm nay"
 
     val account = accounts.firstOrNull { it.id == txn.accountId }
     if (account == null) errors += "Chưa chọn tài khoản"

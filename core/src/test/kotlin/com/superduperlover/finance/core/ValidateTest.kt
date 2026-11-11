@@ -94,4 +94,19 @@ class ValidateTest {
     fun receivedAmountOnlyForTransfers() {
         assertTrue(validateTxn(validExpense.copy(toAmount = 5), accounts, categories).isNotEmpty())
     }
+
+    @Test
+    fun dateCannotBeAfterToday() {
+        val fixedToday = LocalDate.of(2026, 11, 8)
+        val futureTxn = validExpense.copy(date = fixedToday.plusDays(1))
+        val todayTxn = validExpense.copy(date = fixedToday)
+        val pastTxn = validExpense.copy(date = fixedToday.minusDays(1))
+
+        val errors = validateTxn(futureTxn, accounts, categories, today = fixedToday)
+        assertTrue(errors.contains("Ngày không được sau hôm nay"))
+        assertTrue(validateTxn(todayTxn, accounts, categories, today = fixedToday).isEmpty())
+        assertTrue(validateTxn(pastTxn, accounts, categories, today = fixedToday).isEmpty())
+        // editing an old txn that already has the future date is allowed while the date is unchanged
+        assertTrue(validateTxn(futureTxn, accounts, categories, original = futureTxn, today = fixedToday).isEmpty())
+    }
 }

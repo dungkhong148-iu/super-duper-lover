@@ -208,6 +208,16 @@ class Repo(private val db: AppDatabase) {
         }
 
     // transactions
+    /** Newest first. [from] and [to] (inclusive) filter by transaction date. */
+    fun txns(
+        from: LocalDate?,
+        to: LocalDate?,
+        accountId: Long? = null,
+        categoryId: Long? = null,
+    ): Flow<List<Txn>> =
+        dao.txns(from?.toString(), to?.toString(), accountId, categoryId)
+            .map { rows -> rows.map { it.toCore() } }
+
     /** Newest first. [month] filters by the transaction's own date; [accountId] also matches transfers into it. */
     fun txns(
         month: YearMonth? = null,
