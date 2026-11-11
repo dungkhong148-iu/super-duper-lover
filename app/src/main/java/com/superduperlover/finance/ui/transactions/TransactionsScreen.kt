@@ -3,6 +3,7 @@ package com.superduperlover.finance.ui.transactions
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -28,9 +29,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,9 +44,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -80,8 +86,24 @@ import com.superduperlover.finance.ui.components.label
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 import com.superduperlover.finance.ui.theme.chiLiChipBorder
 import com.superduperlover.finance.ui.theme.chiLiChipColors
+import java.time.LocalDate
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
+
+private const val MILLIS_PER_DAY = 86_400_000L
+
+private fun formatDateRange(from: LocalDate, to: LocalDate): String {
+    val dmf = DateTimeFormatter.ofPattern("dd/MM")
+    val full = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+    return if (from == to) {
+        from.format(full)
+    } else if (from.year == to.year) {
+        "${from.format(dmf)} - ${to.format(full)}"
+    } else {
+        "${from.format(full)} - ${to.format(full)}"
+    }
+}
 
 /** Current month, newest first, grouped by day. Tap edits, long-press deletes (after a confirm). */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -93,13 +115,32 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
     var monthStr by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
     val month = remember(monthStr) { YearMonth.parse(monthStr) }
 
+    var customRangeStart by rememberSaveable { mutableStateOf<String?>(null) }
+    var customRangeEnd by rememberSaveable { mutableStateOf<String?>(null) }
+    var showDateRangePicker by remember { mutableStateOf(false) }
+
+    val rangeFrom: LocalDate? = customRangeStart?.let(LocalDate::parse)
+    val rangeTo: LocalDate? = customRangeEnd?.let(LocalDate::parse)
+    val hasRange = rangeFrom != null && rangeTo != null
+
     var filterAccountId by rememberSaveable(initialAccountId) { mutableStateOf(initialAccountId) }
     var filterCategoryId by rememberSaveable { mutableStateOf<Long?>(null) }
     var searchText by rememberSaveable { mutableStateOf("") }
     var isSearchOpen by rememberSaveable { mutableStateOf(false) }
 
-    val txnsFlow = remember(month, filterAccountId, filterCategoryId) {
-        repo.txns(month = month, accountId = filterAccountId, categoryId = filterCategoryId)
+    val hasFilter = filterAccountId != null || filterCategoryId != null || searchText.isNotBlank() || hasRange
+
+    val txnsFlow = remember(month, customRangeStart, customRangeEnd, filterAccountId, filterCategoryId) {
+        if (rangeFrom != null && rangeTo != null) {
+            repo.txns(
+                from = rangeFrom,
+                to = rangeTo,
+                accountId = filterAccountId,
+                categoryId = filterCategoryId,
+            )
+        } else {
+            repo.txns(month = month, accountId = filterAccountId, categoryId = filterCategoryId)
+        }
     }
     val rawTxns by txnsFlow.collectAsState(initial = emptyList())
     val accounts by remember(repo) { repo.accounts(includeArchived = true) }.collectAsState(initial = emptyList())
@@ -156,35 +197,89 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         IconButton(
-                            onClick = { monthStr = month.minusMonths(1).toString() },
+                            onClick = {
+                                customRangeStart = null
+                                customRangeEnd = null
+                                monthStr = month.minusMonths(1).toString()
+                            },
                             modifier = Modifier.size(48.dp),
                         ) {
                             Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Tháng trước")
                         }
-                        Row(
-                            modifier = Modifier.weight(1f),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.DateRange,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp),
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            val titleStyle = MaterialTheme.typography.titleMedium.let {
-                                if (it.fontSize.isSpecified && it.fontSize > 18.sp) it.copy(fontSize = 18.sp) else it
+                        if (rangeFrom != null && rangeTo != null) {
+                            val rangeText = formatDateRange(rangeFrom, rangeTo)
+                            Row(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { showDateRangePicker = true },
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.DateRange,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                val titleStyle = MaterialTheme.typography.titleMedium.let {
+                                    if (it.fontSize.isSpecified && it.fontSize > 18.sp) it.copy(fontSize = 18.sp) else it
+                                }
+                                OneLineText(
+                                    text = rangeText,
+                                    style = titleStyle,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                )
+                                IconButton(
+                                    onClick = {
+                                        customRangeStart = null
+                                        customRangeEnd = null
+                                    },
+                                    modifier = Modifier.size(48.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Close,
+                                        contentDescription = "Quay lại xem theo tháng",
+                                        modifier = Modifier.size(18.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
-                            OneLineText(
-                                text = "Tháng ${month.monthValue}/${month.year}",
-                                style = titleStyle,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center,
-                            )
+                        } else {
+                            Row(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { showDateRangePicker = true },
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.DateRange,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                val titleStyle = MaterialTheme.typography.titleMedium.let {
+                                    if (it.fontSize.isSpecified && it.fontSize > 18.sp) it.copy(fontSize = 18.sp) else it
+                                }
+                                OneLineText(
+                                    text = "Tháng ${month.monthValue}/${month.year}",
+                                    style = titleStyle,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
                         }
                         IconButton(
-                            onClick = { monthStr = month.plusMonths(1).toString() },
+                            onClick = {
+                                customRangeStart = null
+                                customRangeEnd = null
+                                monthStr = month.plusMonths(1).toString()
+                            },
+                            enabled = month.isBefore(YearMonth.now()),
                             modifier = Modifier.size(48.dp),
                         ) {
                             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Tháng sau")
@@ -307,7 +402,6 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                 }
 
                 // Reset button
-                val hasFilter = filterAccountId != null || filterCategoryId != null || searchText.isNotBlank()
                 if (hasFilter) {
                     TextButton(
                         onClick = {
@@ -315,6 +409,8 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                             filterCategoryId = null
                             searchText = ""
                             isSearchOpen = false
+                            customRangeStart = null
+                            customRangeEnd = null
                         },
                         modifier = Modifier.heightIn(min = 48.dp),
                     ) {
@@ -426,7 +522,6 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
 
         if (txns.isEmpty()) {
             item(key = "empty") {
-                val hasFilter = filterAccountId != null || filterCategoryId != null || searchText.isNotBlank()
                 if (hasFilter) {
                     EmptyState(
                         icon = painterResource(R.drawable.ic_wallet),
@@ -438,6 +533,8 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                             filterCategoryId = null
                             searchText = ""
                             isSearchOpen = false
+                            customRangeStart = null
+                            customRangeEnd = null
                         },
                         modifier = Modifier.padding(top = 8.dp),
                     )
@@ -555,5 +652,60 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
             },
             dismissButton = { TextButton(onClick = { toDelete = null }) { Text("Hủy") } },
         )
+    }
+
+    if (showDateRangePicker) {
+        val today = remember { LocalDate.now() }
+        val todayEpochMillis = remember(today) { today.toEpochDay() * MILLIS_PER_DAY }
+        val todayYear = remember(today) { today.year }
+        val selectableDates = remember(todayEpochMillis, todayYear) {
+            object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis <= todayEpochMillis
+                override fun isSelectableYear(year: Int): Boolean = year <= todayYear
+            }
+        }
+        val initialStartMillis = remember(rangeFrom) {
+            rangeFrom?.let { it.toEpochDay() * MILLIS_PER_DAY }
+        }
+        val initialEndMillis = remember(rangeTo) {
+            rangeTo?.let { it.toEpochDay() * MILLIS_PER_DAY }
+        }
+        val dateRangePickerState = rememberDateRangePickerState(
+            initialSelectedStartDateMillis = initialStartMillis,
+            initialSelectedEndDateMillis = initialEndMillis,
+            selectableDates = selectableDates,
+        )
+
+        DatePickerDialog(
+            onDismissRequest = { showDateRangePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val startMillis = dateRangePickerState.selectedStartDateMillis
+                        if (startMillis != null) {
+                            val endMillis = dateRangePickerState.selectedEndDateMillis ?: startMillis
+                            val start = LocalDate.ofEpochDay(Math.floorDiv(startMillis, MILLIS_PER_DAY))
+                            val end = LocalDate.ofEpochDay(Math.floorDiv(endMillis, MILLIS_PER_DAY))
+                            customRangeStart = start.toString()
+                            customRangeEnd = end.toString()
+                        }
+                        showDateRangePicker = false
+                    },
+                    enabled = dateRangePickerState.selectedStartDateMillis != null,
+                ) {
+                    Text("Chọn")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDateRangePicker = false }) {
+                    Text("Hủy")
+                }
+            },
+        ) {
+            DateRangePicker(
+                state = dateRangePickerState,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }

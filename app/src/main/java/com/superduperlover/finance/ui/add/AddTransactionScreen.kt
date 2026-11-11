@@ -38,6 +38,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -747,7 +748,19 @@ fun AddTransactionScreen(
 
     // Date picker dialog
     if (showDate) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = epochDay * MILLIS_PER_DAY)
+        val today = remember { LocalDate.now() }
+        val todayEpochMillis = remember(today) { today.toEpochDay() * MILLIS_PER_DAY }
+        val todayYear = remember(today) { today.year }
+        val selectableDates = remember(todayEpochMillis, todayYear) {
+            object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis <= todayEpochMillis
+                override fun isSelectableYear(year: Int): Boolean = year <= todayYear
+            }
+        }
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = epochDay * MILLIS_PER_DAY,
+            selectableDates = selectableDates,
+        )
         DatePickerDialog(
             onDismissRequest = { showDate = false },
             confirmButton = {
