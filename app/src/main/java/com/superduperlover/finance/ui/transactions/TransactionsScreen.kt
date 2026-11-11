@@ -705,6 +705,33 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
             DateRangePicker(
                 state = dateRangePickerState,
                 modifier = Modifier.weight(1f),
+                title = {
+                    Text(
+                        "Chọn khoảng ngày",
+                        modifier = Modifier.padding(start = 24.dp, end = 12.dp, top = 16.dp),
+                    )
+                },
+                headline = {
+                    val startMillis = dateRangePickerState.selectedStartDateMillis
+                    val endMillis = dateRangePickerState.selectedEndDateMillis
+                    val dmf = DateTimeFormatter.ofPattern("dd/MM")
+                    val full = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                    val text = if (startMillis == null) {
+                        "Từ ngày - Đến ngày"
+                    } else if (endMillis == null) {
+                        val start = LocalDate.ofEpochDay(Math.floorDiv(startMillis, MILLIS_PER_DAY))
+                        "${start.format(dmf)} - Đến ngày"
+                    } else {
+                        val start = LocalDate.ofEpochDay(Math.floorDiv(startMillis, MILLIS_PER_DAY))
+                        val end = LocalDate.ofEpochDay(Math.floorDiv(endMillis, MILLIS_PER_DAY))
+                        "${start.format(dmf)} - ${end.format(full)}"
+                    }
+                    OneLineText(
+                        text = text,
+                        modifier = Modifier.padding(start = 24.dp, end = 12.dp, bottom = 12.dp),
+                        style = MaterialTheme.typography.headlineSmall,
+                    )
+                },
             )
         }
     }
