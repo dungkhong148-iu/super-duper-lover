@@ -14,6 +14,11 @@ import com.superduperlover.finance.core.ScheduleEngine
 import com.superduperlover.finance.core.RECONCILE_CATEGORY_NAME
 import com.superduperlover.finance.core.Txn
 import com.superduperlover.finance.core.TxnKind
+import com.superduperlover.finance.core.canDeleteGoal
+import com.superduperlover.finance.core.fallbackCategoryFor
+import com.superduperlover.finance.core.otherCategoryIcon
+import com.superduperlover.finance.core.otherCategoryName
+import com.superduperlover.finance.core.planAccountPurge
 import com.superduperlover.finance.core.reconcileKind
 import com.superduperlover.finance.core.reconcileTxn
 import com.superduperlover.finance.core.shouldAutoComplete
@@ -25,6 +30,24 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 enum class DeleteResult { DELETED, HAS_TRANSACTIONS }
+
+/** Outcome of deleting an archived item for good (Lưu trữ screen) or a jar. Only PURGED changed anything. */
+enum class PurgeResult {
+    PURGED,
+
+    /** Account / category: only archived ones can be purged. */
+    NOT_ARCHIVED,
+
+    /** Category: it is the "other" category its own transactions would move to, and it still has transactions. */
+    IS_FALLBACK,
+
+    /** Jar: not archived and has contributions. */
+    HAS_CONTRIBUTIONS,
+    NOT_FOUND,
+}
+
+/** What a purge would do, for the confirm dialog: transactions deleted, transactions moved, transfers kept. */
+data class PurgePreview(val deletedTxns: Int, val movedTxns: Int, val keptTransfers: Int)
 
 /**
  * The only door to storage. Reads return `:core` types; `id = 0` in `save*` means insert.
@@ -43,6 +66,44 @@ class Repo(private val db: AppDatabase) {
     suspend fun saveAccount(a: Account): Long = idOf(a.id, dao.upsertAccount(a.toEntity()))
 
     suspend fun archiveAccount(id: Long) = dao.archiveAccount(id)
+
+    suspend fun restoreAccount(id: Long) = dao.restoreAccount(id)
+
+    fun archivedAccounts(): Flow<List<Account>> =
+        dao.accounts(true).map { rows -> rows.filter { it.archived }.map { it.toCore() } }
+
+    /** What [purgeAccount] would do: its Thu/Chi are deleted, transfers with another account are kept (converted). */
+    suspend fun previewPurgeAccount(id: Long): PurgePreview {
+        val account = dao.accountById(id)?.toCore() ?: return PurgePreview(0, 0, 0)
+        val plan = planAccountPurge(account, dao.txnsOfAccount(id).map { it.toCore() })
+        return PurgePreview(plan.deleted.size, 0, plan.converted.size)
+    }
+
+    /**
+     * Deletes an archived account for good, with its budgets and its expenses/incomes. A transfer with another
+     * account is not lost, so that account's balance stays the same: it becomes an Income (transfer out) or an
+     * Expense (transfer in) of the other account, in the "other" category (see [planAccountPurge]).
+     */
+    suspend fun purgeAccount(id: Long): PurgeResult = db.withTransaction {
+        val account = dao.accountById(id)?.toCore() ?: return@withTransaction PurgeResult.NOT_FOUND
+        if (!account.archived) return@withTransaction PurgeResult.NOT_ARCHIVED
+        val plan = planAccountPurge(account, dao.txnsOfAccount(id).map { it.toCore() })
+        for (t in plan.deleted) {
+            dao.clearContributionTxn(t.id)
+            dao.deleteTxn(t.id)
+        }
+        if (plan.converted.isNotEmpty()) {
+            val incomeId = otherCategoryId(CategoryKind.INCOME)
+            val expenseId = otherCategoryId(CategoryKind.EXPENSE)
+            for (t in plan.converted) {
+                dao.upsertTxn(t.copy(categoryId = if (t.kind == TxnKind.INCOME) incomeId else expenseId).toEntity())
+            }
+        }
+        dao.deleteBudgetsForAccount(id)
+        dao.clearGoalSourceAccount(id)
+        dao.deleteAccountRow(id)
+        PurgeResult.PURGED
+    }
 
     /** Refuses (and deletes nothing) when any transaction uses the account. Budgets of the account go with it. */
     suspend fun deleteAccount(id: Long): DeleteResult = db.withTransaction {
@@ -63,6 +124,42 @@ class Repo(private val db: AppDatabase) {
     suspend fun saveCategory(c: Category): Long = idOf(c.id, dao.upsertCategory(c.toEntity()))
 
     suspend fun archiveCategory(id: Long) = dao.archiveCategory(id)
+
+    suspend fun restoreCategory(id: Long) = dao.restoreCategory(id)
+
+    fun archivedCategories(): Flow<List<Category>> =
+        dao.categories(null, true).map { rows -> rows.filter { it.archived }.map { it.toCore() } }
+
+    /** What [purgeCategory] would do: [PurgePreview.movedTxns] transactions move to the "other" category. */
+    suspend fun previewPurgeCategory(id: Long): PurgePreview = PurgePreview(0, dao.txnCountForCategory(id), 0)
+
+    /**
+     * Deletes an archived category for good, with its budgets. Its transactions move to the "other" category of the
+     * same kind ([otherCategoryName]; created when missing). Refuses with [PurgeResult.IS_FALLBACK] when the category
+     * is itself that "other" category and still has transactions (they would have nowhere to go).
+     */
+    suspend fun purgeCategory(id: Long): PurgeResult = db.withTransaction {
+        val category = dao.categoryById(id)?.toCore() ?: return@withTransaction PurgeResult.NOT_FOUND
+        if (!category.archived) return@withTransaction PurgeResult.NOT_ARCHIVED
+        if (dao.txnCountForCategory(id) > 0) {
+            val fallback = fallbackCategoryFor(category, dao.allCategories().map { it.toCore() })
+            val target = when {
+                fallback != null -> fallback.id
+                category.name == otherCategoryName(category.kind) -> return@withTransaction PurgeResult.IS_FALLBACK
+                else -> otherCategoryId(category.kind)
+            }
+            dao.moveTxnsToCategory(id, target)
+        }
+        dao.deleteBudgetsForCategory(id)
+        dao.clearGoalCategory(id)
+        dao.deleteCategoryRow(id)
+        PurgeResult.PURGED
+    }
+
+    // Id of the "other" category of [kind]; created when no category of that kind has the name.
+    private suspend fun otherCategoryId(kind: CategoryKind): Long =
+        dao.categoryByName(kind.name, otherCategoryName(kind))?.id
+            ?: dao.upsertCategory(CategoryEntity(0, otherCategoryName(kind), kind.name, otherCategoryIcon(kind), archived = false))
 
     /** Refuses (and deletes nothing) when any transaction uses the category. Budgets of the category go with it. */
     suspend fun deleteCategory(id: Long): DeleteResult = db.withTransaction {
@@ -122,6 +219,8 @@ class Repo(private val db: AppDatabase) {
 
     suspend fun saveTxn(t: Txn): Long = idOf(t.id, dao.upsertTxn(t.toEntity()))
 
+    suspend fun txn(id: Long): Txn? = dao.txnById(id)?.toCore()
+
     suspend fun deleteTxn(id: Long) = dao.deleteTxn(id)
 
     // budgets
@@ -139,6 +238,25 @@ class Repo(private val db: AppDatabase) {
     suspend fun saveGoal(g: Goal): Long = idOf(g.id, dao.upsertGoal(g.toEntity()))
 
     suspend fun archiveGoal(id: Long) = dao.archiveGoal(id)
+
+    suspend fun restoreGoal(id: Long) = dao.restoreGoal(id)
+
+    fun archivedGoals(): Flow<List<Goal>> = dao.archivedGoals().map { rows -> rows.map { it.toCore() } }
+
+    /** Number of entries of the jar (all types); an archived jar deletes them with itself. */
+    suspend fun contributionCount(goalId: Long): Int = dao.contributionCount(goalId)
+
+    /**
+     * Deletes a jar for good: allowed when it has no contribution, or when it is archived (its contributions are
+     * deleted too). A settled jar's expense transaction stays. Otherwise [PurgeResult.HAS_CONTRIBUTIONS].
+     */
+    suspend fun deleteGoal(id: Long): PurgeResult = db.withTransaction {
+        val goal = dao.goalById(id)?.toCore() ?: return@withTransaction PurgeResult.NOT_FOUND
+        if (!canDeleteGoal(goal, dao.contributionCount(id))) return@withTransaction PurgeResult.HAS_CONTRIBUTIONS
+        dao.deleteContributionsForGoal(id)
+        dao.deleteGoalRow(id)
+        PurgeResult.PURGED
+    }
 
     /** Marks the goal completed on [date] (by hand, before the target is reached). */
     suspend fun completeGoal(id: Long, date: LocalDate = LocalDate.now()) = dao.setGoalCompletedAt(id, date.toString())

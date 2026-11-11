@@ -30,6 +30,15 @@ interface AppDao {
     @Query("DELETE FROM budgets WHERE accountId = :id")
     suspend fun deleteBudgetsForAccount(id: Long)
 
+    @Query("UPDATE accounts SET archived = 0 WHERE id = :id")
+    suspend fun restoreAccount(id: Long)
+
+    @Query("SELECT * FROM accounts WHERE id = :id")
+    suspend fun accountById(id: Long): AccountEntity?
+
+    @Query("SELECT * FROM txns WHERE accountId = :id OR toAccountId = :id")
+    suspend fun txnsOfAccount(id: Long): List<TxnEntity>
+
     // categories
     @Query(
         "SELECT * FROM categories WHERE (:kind IS NULL OR kind = :kind) " +
@@ -51,6 +60,15 @@ interface AppDao {
 
     @Query("DELETE FROM budgets WHERE categoryId = :id")
     suspend fun deleteBudgetsForCategory(id: Long)
+
+    @Query("UPDATE categories SET archived = 0 WHERE id = :id")
+    suspend fun restoreCategory(id: Long)
+
+    @Query("SELECT * FROM categories WHERE id = :id")
+    suspend fun categoryById(id: Long): CategoryEntity?
+
+    @Query("UPDATE txns SET categoryId = :toId WHERE categoryId = :fromId")
+    suspend fun moveTxnsToCategory(fromId: Long, toId: Long)
 
     @Query(
         "SELECT categoryId, COUNT(*) AS uses FROM txns " +
@@ -79,6 +97,13 @@ interface AppDao {
     @Upsert
     suspend fun upsertTxn(entity: TxnEntity): Long
 
+    @Query("SELECT * FROM txns WHERE id = :id")
+    suspend fun txnById(id: Long): TxnEntity?
+
+    /** A SETTLEMENT entry that points at a transaction about to be deleted keeps its amount but loses the link. */
+    @Query("UPDATE goal_contributions SET txnId = NULL WHERE txnId = :txnId")
+    suspend fun clearContributionTxn(txnId: Long)
+
     @Query("DELETE FROM txns WHERE id = :id")
     suspend fun deleteTxn(id: Long)
 
@@ -95,6 +120,21 @@ interface AppDao {
     // goals
     @Query("SELECT * FROM goals WHERE archived = 0 ORDER BY id")
     fun goals(): Flow<List<GoalEntity>>
+
+    @Query("SELECT * FROM goals WHERE archived = 1 ORDER BY id")
+    fun archivedGoals(): Flow<List<GoalEntity>>
+
+    @Query("UPDATE goals SET archived = 0 WHERE id = :id")
+    suspend fun restoreGoal(id: Long)
+
+    @Query("DELETE FROM goals WHERE id = :id")
+    suspend fun deleteGoalRow(id: Long)
+
+    @Query("SELECT COUNT(*) FROM goal_contributions WHERE goalId = :goalId")
+    suspend fun contributionCount(goalId: Long): Int
+
+    @Query("DELETE FROM goal_contributions WHERE goalId = :goalId")
+    suspend fun deleteContributionsForGoal(goalId: Long)
 
     @Upsert
     suspend fun upsertGoal(entity: GoalEntity): Long

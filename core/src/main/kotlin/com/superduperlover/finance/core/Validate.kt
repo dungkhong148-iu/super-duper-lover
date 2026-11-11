@@ -1,14 +1,23 @@
 package com.superduperlover.finance.core
 
-/** Returns Vietnamese error messages for [txn]; an empty list means the transaction is valid. */
-fun validateTxn(txn: Txn, accounts: List<Account>, categories: List<Category>): List<String> {
+/**
+ * Returns Vietnamese error messages for [txn]; an empty list means the transaction is valid.
+ * [original] = the stored version when [txn] is an edit: an archived account or category is accepted when the
+ * stored transaction already uses it, so old transactions stay editable.
+ */
+fun validateTxn(
+    txn: Txn,
+    accounts: List<Account>,
+    categories: List<Category>,
+    original: Txn? = null,
+): List<String> {
     val errors = mutableListOf<String>()
 
     if (txn.amount <= 0) errors += "Số tiền phải lớn hơn 0"
 
     val account = accounts.firstOrNull { it.id == txn.accountId }
     if (account == null) errors += "Chưa chọn tài khoản"
-    else if (account.archived) errors += "Tài khoản đã được lưu trữ"
+    else if (account.archived && original?.accountId != account.id) errors += "Tài khoản đã được lưu trữ"
 
     when (txn.kind) {
         TxnKind.TRANSFER -> {
@@ -19,7 +28,7 @@ fun validateTxn(txn: Txn, accounts: List<Account>, categories: List<Category>): 
             } else {
                 val to = accounts.firstOrNull { it.id == txn.toAccountId }
                 if (to == null) errors += "Tài khoản nhận không tồn tại"
-                else if (to.archived) errors += "Tài khoản nhận đã được lưu trữ"
+                else if (to.archived && original?.toAccountId != to.id) errors += "Tài khoản nhận đã được lưu trữ"
                 if (to != null && account != null) {
                     if (to.currency != account.currency) {
                         // different currencies: both amounts are recorded
@@ -41,7 +50,7 @@ fun validateTxn(txn: Txn, accounts: List<Account>, categories: List<Category>): 
                 if (category == null) errors += "Danh mục không tồn tại"
                 else {
                     if (category.kind != wanted) errors += "Danh mục không khớp loại giao dịch"
-                    if (category.archived) errors += "Danh mục đã được lưu trữ"
+                    if (category.archived && original?.categoryId != category.id) errors += "Danh mục đã được lưu trữ"
                 }
             }
         }

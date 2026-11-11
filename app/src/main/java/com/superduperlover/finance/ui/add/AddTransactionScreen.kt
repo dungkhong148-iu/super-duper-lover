@@ -364,16 +364,18 @@ fun AddTransactionScreen(
                 parseAmount(receivedText, targetAccount.currency)
             } else null,
         )
-        val found = validateTxn(txn, allAccounts, allCategories)
-        if (found.isEmpty() && evaluatedAmount != null) {
-            scope.launch {
+        scope.launch {
+            // An edit may keep an archived account / category it already used.
+            val original = if (txnId != 0L) repo.txn(txnId) else null
+            val found = validateTxn(txn, allAccounts, allCategories, original)
+            if (found.isEmpty() && evaluatedAmount != null) {
                 repo.saveTxn(txn)
                 prefs.noteTxnSaved()
                 if (txnId == 0L) prefs.rememberAccount(txn.kind, txn.accountId, txn.toAccountId)
                 onClose()
+            } else {
+                errors = found
             }
-        } else {
-            errors = found
         }
     }
 

@@ -42,6 +42,18 @@ class ValidateTest {
     }
 
     @Test
+    fun editingOldTxnOfArchivedAccountOrCategoryIsAllowedOnlyIfUnchanged() {
+        val old = validExpense.copy(accountId = 3, categoryId = 11)
+        assertTrue(errors(old).isNotEmpty())
+        assertTrue(validateTxn(old.copy(amount = 70_000), accounts, categories, original = old).isEmpty())
+        // moving a new txn onto the archived account is still refused
+        assertTrue(validateTxn(validExpense.copy(accountId = 3), accounts, categories, original = validExpense).isNotEmpty())
+        assertTrue(validateTxn(validExpense.copy(categoryId = 11), accounts, categories, original = validExpense).isNotEmpty())
+        val oldTransfer = validTransfer.copy(toAccountId = 3)
+        assertTrue(validateTxn(oldTransfer.copy(amount = 1), accounts, categories, original = oldTransfer).isEmpty())
+    }
+
+    @Test
     fun transferNeedsDifferentActiveTargetAndNoCategory() {
         assertTrue(errors(validTransfer.copy(toAccountId = null)).isNotEmpty())
         assertTrue(errors(validTransfer.copy(toAccountId = 1)).isNotEmpty())
