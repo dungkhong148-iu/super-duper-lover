@@ -1,7 +1,6 @@
 package com.superduperlover.finance.core
 
 import java.time.LocalDate
-import java.time.YearMonth
 
 /** Currencies ChiLi knows. [decimals] = digits after the decimal point; amounts are stored as Long minor units. */
 enum class Currency(val decimals: Int) { VND(0), TWD(0), USD(2) }

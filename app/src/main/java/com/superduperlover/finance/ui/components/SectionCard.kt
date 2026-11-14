@@ -15,7 +15,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,7 +32,6 @@ fun SectionCard(
     modifier: Modifier = Modifier,
     title: String? = null,
     onAction: (() -> Unit)? = null,
-    actionDescription: String = "Xem thêm",
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Surface(
@@ -56,7 +54,7 @@ fun SectionCard(
                     )
                     if (onAction != null) {
                         IconButton(onClick = onAction, modifier = Modifier.size(48.dp)) {
-                            Icon(Icons.Filled.KeyboardArrowRight, contentDescription = actionDescription)
+                            Icon(Icons.Filled.KeyboardArrowRight, contentDescription = "Xem thêm")
                         }
                     }
                 }

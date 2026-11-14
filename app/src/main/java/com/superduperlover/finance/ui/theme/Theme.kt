@@ -187,12 +187,15 @@ fun chiLiChipBorder(selected: Boolean, enabled: Boolean = true): BorderStroke {
 }
 
 @Composable
+fun ThemeMode.isDark(): Boolean = when (this) {
+    ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    ThemeMode.LIGHT -> false
+    ThemeMode.DARK -> true
+}
+
+@Composable
 fun FinanceTheme(content: @Composable () -> Unit) {
-    val dark = when (LocalAppPrefs.current.themeMode) {
-        ThemeMode.SYSTEM -> isSystemInDarkTheme()
-        ThemeMode.LIGHT -> false
-        ThemeMode.DARK -> true
-    }
+    val dark = LocalAppPrefs.current.themeMode.isDark()
     CompositionLocalProvider(LocalChiLiColors provides if (dark) DarkTokens else LightTokens) {
         MaterialTheme(colorScheme = if (dark) DarkScheme else LightScheme, content = content)
     }

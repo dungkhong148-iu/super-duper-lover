@@ -1,8 +1,5 @@
 package com.superduperlover.finance.ui.components
 
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
@@ -21,15 +18,13 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbUp
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.superduperlover.finance.core.AccountType
+import com.superduperlover.finance.R
 import com.superduperlover.finance.core.BudgetPeriod
+import com.superduperlover.finance.core.CategoryKind
 import com.superduperlover.finance.core.TxnKind
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 import java.time.DayOfWeek
@@ -71,6 +66,12 @@ fun TxnKind.color(): Color = when (this) {
     TxnKind.TRANSFER -> ChiLiTheme.colors.transfer
 }
 
+@Composable
+fun CategoryKind.color(): Color = when (this) {
+    CategoryKind.EXPENSE -> expenseColor()
+    CategoryKind.INCOME -> incomeColor()
+}
+
 fun TxnKind.label(): String = when (this) {
     TxnKind.EXPENSE -> "Chi tiêu"
     TxnKind.INCOME -> "Thu nhập"
@@ -90,6 +91,13 @@ fun BudgetPeriod.thisLabel(): String = when (this) {
     BudgetPeriod.MONTH -> "tháng này"
     BudgetPeriod.QUARTER -> "quý này"
     BudgetPeriod.YEAR -> "năm nay"
+}
+
+fun AccountType.iconRes(): Int = when (this) {
+    AccountType.CASH -> R.drawable.ic_account_cash
+    AccountType.BANK -> R.drawable.ic_account_bank
+    AccountType.CARD -> R.drawable.ic_account_card
+    AccountType.EWALLET -> R.drawable.ic_account_ewallet
 }
 
 fun AccountType.label(): String = when (this) {
@@ -112,10 +120,3 @@ fun DayOfWeek.vietnamese(): String = when (this) {
 /** `Thứ Hai, 08/11/2026`. */
 fun LocalDate.display(): String =
     "%s, %02d/%02d/%d".format(dayOfWeek.vietnamese(), dayOfMonth, monthValue, year)
-
-@Composable
-fun ComingSoon(title: String) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("$title - sắp có", color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
