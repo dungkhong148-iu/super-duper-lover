@@ -39,8 +39,8 @@ import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.EmptyState
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.SectionCard
+import com.superduperlover.finance.ui.components.dayMonth
 import com.superduperlover.finance.ui.components.expenseColor
-import com.superduperlover.finance.ui.components.incomeColor
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 import java.time.LocalDate
 import kotlin.math.abs
@@ -72,14 +72,6 @@ internal fun BudgetPeriod.recurringLabel(): String = when (this) {
     BudgetPeriod.MONTH -> "Hằng tháng"
     BudgetPeriod.QUARTER -> "Hằng quý"
     BudgetPeriod.YEAR -> "Hằng năm"
-}
-
-internal fun BudgetPeriod.adverbLabel(): String = when (this) {
-    BudgetPeriod.DAY -> "hằng ngày"
-    BudgetPeriod.WEEK -> "hằng tuần"
-    BudgetPeriod.MONTH -> "hằng tháng"
-    BudgetPeriod.QUARTER -> "hằng quý"
-    BudgetPeriod.YEAR -> "hằng năm"
 }
 
 @Composable
@@ -137,8 +129,8 @@ fun BudgetsScreen() {
                     val categoryName = budget.categoryId?.let { categoriesById[it]?.name ?: "?" } ?: "Tất cả danh mục"
 
                     val range = usage.range
-                    val startStr = "%02d/%02d".format(range.start.dayOfMonth, range.start.monthValue)
-                    val endStr = "%02d/%02d".format(range.endInclusive.dayOfMonth, range.endInclusive.monthValue)
+                    val startStr = range.start.dayMonth()
+                    val endStr = range.endInclusive.dayMonth()
 
                     SectionCard(
                         modifier = Modifier

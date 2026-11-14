@@ -34,7 +34,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.R
 import com.superduperlover.finance.core.Account
-import com.superduperlover.finance.core.AccountType
 import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
 import com.superduperlover.finance.core.Goal
@@ -48,24 +47,11 @@ import com.superduperlover.finance.ui.components.ChiLiTopBar
 import com.superduperlover.finance.ui.components.EmptyState
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.SectionCard
-import com.superduperlover.finance.ui.components.expenseColor
-import com.superduperlover.finance.ui.components.incomeColor
+import com.superduperlover.finance.ui.components.color
+import com.superduperlover.finance.ui.components.iconRes
 import com.superduperlover.finance.ui.components.label
 import com.superduperlover.finance.ui.theme.accountColor
 import kotlinx.coroutines.launch
-
-@Composable
-private fun CategoryKind.color(): Color = when (this) {
-    CategoryKind.EXPENSE -> expenseColor()
-    CategoryKind.INCOME -> incomeColor()
-}
-
-private fun accountIconRes(type: AccountType): Int = when (type) {
-    AccountType.CASH -> R.drawable.ic_account_cash
-    AccountType.BANK -> R.drawable.ic_account_bank
-    AccountType.CARD -> R.drawable.ic_account_card
-    AccountType.EWALLET -> R.drawable.ic_account_ewallet
-}
 
 @Composable
 fun ArchiveScreen(onBack: () -> Unit) {
@@ -143,7 +129,7 @@ fun ArchiveScreen(onBack: () -> Unit) {
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         Icon(
-                                            painter = painterResource(accountIconRes(account.type)),
+                                            painter = painterResource(account.type.iconRes()),
                                             contentDescription = null,
                                             tint = Color.White,
                                             modifier = Modifier.size(24.dp),

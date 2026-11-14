@@ -50,6 +50,8 @@ import com.superduperlover.finance.ui.components.CurrencyChips
 import com.superduperlover.finance.ui.components.FormDialog
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.SectionHeaderBand
+import com.superduperlover.finance.ui.components.dayMonth
+import com.superduperlover.finance.ui.components.dayMonthYear
 import com.superduperlover.finance.ui.theme.chiLiChipBorder
 import com.superduperlover.finance.ui.theme.chiLiChipColors
 import java.time.LocalDate
@@ -245,7 +247,7 @@ internal fun BudgetSheet(
                     .fillMaxWidth()
                     .heightIn(min = 48.dp),
             ) {
-                OneLineText("%02d/%02d/%04d".format(selectedStartDate.dayOfMonth, selectedStartDate.monthValue, selectedStartDate.year))
+                OneLineText(selectedStartDate.dayMonthYear())
             }
 
             val periodIndex = remember(selectedPeriod, selectedStartDate, today) {
@@ -254,8 +256,8 @@ internal fun BudgetSheet(
             val currentRange = remember(selectedPeriod, selectedStartDate, periodIndex) {
                 periodRange(selectedPeriod, selectedStartDate, periodIndex)
             }
-            val startStr = "%02d/%02d".format(currentRange.start.dayOfMonth, currentRange.start.monthValue)
-            val endStr = "%02d/%02d".format(currentRange.endInclusive.dayOfMonth, currentRange.endInclusive.monthValue)
+            val startStr = currentRange.start.dayMonth()
+            val endStr = currentRange.endInclusive.dayMonth()
             val ruleExplain = if (selectedPeriod == BudgetPeriod.WEEK) "7 ngày từ ngày bắt đầu." else "Mỗi kỳ tính từ ngày bắt đầu."
             Text(
                 text = "Kỳ hiện tại: $startStr – $endStr. $ruleExplain",
