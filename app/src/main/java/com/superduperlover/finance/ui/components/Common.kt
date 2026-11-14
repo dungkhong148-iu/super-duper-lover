@@ -117,6 +117,12 @@ fun DayOfWeek.vietnamese(): String = when (this) {
     DayOfWeek.SUNDAY -> "Chủ nhật"
 }
 
+/** `08/11`. */
+fun LocalDate.dayMonth(): String = "%02d/%02d".format(dayOfMonth, monthValue)
+
+/** `08/11/2026`. */
+fun LocalDate.dayMonthYear(): String = "%02d/%02d/%d".format(dayOfMonth, monthValue, year)
+
 /** `Thứ Hai, 08/11/2026`. */
 fun LocalDate.display(): String =
     "%s, %02d/%02d/%d".format(dayOfWeek.vietnamese(), dayOfMonth, monthValue, year)
