@@ -99,10 +99,20 @@ class Repo(private val db: AppDatabase) {
                 dao.upsertTxn(t.copy(categoryId = if (t.kind == TxnKind.INCOME) incomeId else expenseId).toEntity())
             }
         }
-        dao.deleteBudgetsForAccount(id)
-        dao.clearGoalSourceAccount(id)
+        dropAccountRefs(id)
         dao.deleteAccountRow(id)
         PurgeResult.PURGED
+    }
+
+    // Rows that point at an account / category go with it (no foreign keys). New tables that hold such an id add a line here.
+    private suspend fun dropAccountRefs(id: Long) {
+        dao.deleteBudgetsForAccount(id)
+        dao.clearGoalSourceAccount(id)
+    }
+
+    private suspend fun dropCategoryRefs(id: Long) {
+        dao.deleteBudgetsForCategory(id)
+        dao.clearGoalCategory(id)
     }
 
     /** Refuses (and deletes nothing) when any transaction uses the account. Budgets of the account go with it. */
@@ -110,8 +120,7 @@ class Repo(private val db: AppDatabase) {
         if (dao.txnCountForAccount(id) > 0) {
             DeleteResult.HAS_TRANSACTIONS
         } else {
-            dao.deleteBudgetsForAccount(id)
-            dao.clearGoalSourceAccount(id)
+            dropAccountRefs(id)
             dao.deleteAccountRow(id)
             DeleteResult.DELETED
         }
@@ -150,8 +159,7 @@ class Repo(private val db: AppDatabase) {
             }
             dao.moveTxnsToCategory(id, target)
         }
-        dao.deleteBudgetsForCategory(id)
-        dao.clearGoalCategory(id)
+        dropCategoryRefs(id)
         dao.deleteCategoryRow(id)
         PurgeResult.PURGED
     }
@@ -166,8 +174,7 @@ class Repo(private val db: AppDatabase) {
         if (dao.txnCountForCategory(id) > 0) {
             DeleteResult.HAS_TRANSACTIONS
         } else {
-            dao.deleteBudgetsForCategory(id)
-            dao.clearGoalCategory(id)
+            dropCategoryRefs(id)
             dao.deleteCategoryRow(id)
             DeleteResult.DELETED
         }
