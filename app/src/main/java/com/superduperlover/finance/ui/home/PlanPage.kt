@@ -12,7 +12,7 @@ import com.superduperlover.finance.ui.budgets.BudgetsScreen
 
 /** "Ngân sách" page: month switcher + budgets (docs/ui-layout.md section 1). */
 @Composable
-fun PlanPage(onOpenGoal: ((Long) -> Unit)? = null) {
+fun PlanPage() {
     Column(
         Modifier
             .fillMaxSize()

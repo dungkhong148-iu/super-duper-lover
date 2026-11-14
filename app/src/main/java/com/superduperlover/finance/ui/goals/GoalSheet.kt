@@ -69,6 +69,7 @@ import com.superduperlover.finance.ui.components.CurrencyChips
 import com.superduperlover.finance.ui.components.FormDialog
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.SectionHeaderBand
+import com.superduperlover.finance.ui.components.dayMonthYear
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 import com.superduperlover.finance.ui.theme.accountColor
 import com.superduperlover.finance.ui.theme.chiLiChipBorder
@@ -354,7 +355,7 @@ fun GoalSheet(
                             .weight(1f)
                             .heightIn(min = 48.dp),
                     ) {
-                        OneLineText(manualDeadline?.let { formatGoalDate(it) } ?: "Chưa đặt hạn")
+                        OneLineText(manualDeadline?.dayMonthYear() ?: "Chưa đặt hạn")
                     }
                     if (manualDeadline != null) {
                         TextButton(

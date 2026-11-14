@@ -3,7 +3,6 @@ package com.superduperlover.finance.ui.home
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,22 +29,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.superduperlover.finance.R
 import com.superduperlover.finance.core.Account
-import com.superduperlover.finance.core.AccountType
 import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.ui.components.OneLineText
+import com.superduperlover.finance.ui.components.iconRes
 import com.superduperlover.finance.ui.theme.OnAccountTile
 import com.superduperlover.finance.ui.theme.accountTileColor
 
 private val TileShape = RoundedCornerShape(16.dp)
-
-private fun iconOf(type: AccountType): Int = when (type) {
-    AccountType.CASH -> R.drawable.ic_account_cash
-    AccountType.BANK -> R.drawable.ic_account_bank
-    AccountType.CARD -> R.drawable.ic_account_card
-    AccountType.EWALLET -> R.drawable.ic_account_ewallet
-}
 
 /**
  * Account tile (docs/ui-layout.md section 2): filled with the account colour, type icon, name, balance.
@@ -71,7 +62,7 @@ fun AccountTile(
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
         Icon(
-            painter = painterResource(iconOf(account.type)),
+            painter = painterResource(account.type.iconRes()),
             contentDescription = null,
             tint = OnAccountTile,
             modifier = Modifier.size(24.dp),

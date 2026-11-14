@@ -47,6 +47,7 @@ import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.ChiLiTopBar
 import com.superduperlover.finance.ui.components.EmptyState
 import com.superduperlover.finance.ui.components.OneLineText
+import com.superduperlover.finance.ui.components.dayMonthYear
 import com.superduperlover.finance.ui.goals.GoalSheet
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 
@@ -233,9 +234,7 @@ private fun JarDetailCard(
         else -> MaterialTheme.colorScheme.primary
     }
 
-    val deadlineStr = jar.goal.deadline?.let {
-        "%02d/%02d/%d".format(it.dayOfMonth, it.monthValue, it.year)
-    }
+    val deadlineStr = jar.goal.deadline?.dayMonthYear()
 
     Surface(
         onClick = onClick,

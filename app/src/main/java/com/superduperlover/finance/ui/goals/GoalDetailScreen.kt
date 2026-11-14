@@ -75,6 +75,7 @@ import com.superduperlover.finance.ui.components.ChiLiTopBar
 import com.superduperlover.finance.ui.components.EmptyState
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.SectionCard
+import com.superduperlover.finance.ui.components.dayMonthYear
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 import java.time.LocalDate
 import kotlinx.coroutines.launch
@@ -394,7 +395,7 @@ fun GoalDetailScreen(goalId: Long, onBack: () -> Unit) {
                                 verticalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
                                 OneLineText(
-                                    text = formatGoalDate(contribution.date),
+                                    text = contribution.date.dayMonthYear(),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
@@ -659,7 +660,7 @@ private fun SettlementSheet(
                     .fillMaxWidth()
                     .heightIn(min = 48.dp),
             ) {
-                OneLineText(formatGoalDate(selectedDate), style = MaterialTheme.typography.labelLarge)
+                OneLineText(selectedDate.dayMonthYear(), style = MaterialTheme.typography.labelLarge)
             }
 
             if (settleError != null) {
@@ -802,7 +803,7 @@ private fun ContributionSheet(
                     .fillMaxWidth()
                     .heightIn(min = 48.dp),
             ) {
-                OneLineText(formatGoalDate(selectedDate), style = MaterialTheme.typography.labelLarge)
+                OneLineText(selectedDate.dayMonthYear(), style = MaterialTheme.typography.labelLarge)
             }
             Button(
                 onClick = {

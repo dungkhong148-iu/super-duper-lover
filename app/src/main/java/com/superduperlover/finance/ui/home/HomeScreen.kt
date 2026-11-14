@@ -96,7 +96,7 @@ fun HomeScreen(
                     onOpenGoal = onOpenGoal,
                     onOpenJars = onOpenJars,
                 )
-                else -> PlanPage(onOpenGoal = onOpenGoal)
+                else -> PlanPage()
             }
         }
     }

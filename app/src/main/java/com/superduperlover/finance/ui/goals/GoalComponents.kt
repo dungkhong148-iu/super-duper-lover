@@ -33,17 +33,13 @@ import com.superduperlover.finance.core.ReserveCycle
 import com.superduperlover.finance.core.SegmentedBar
 import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.ui.components.OneLineText
+import com.superduperlover.finance.ui.components.dayMonthYear
 import com.superduperlover.finance.ui.theme.ChiLiTheme
-import java.time.LocalDate
 import kotlin.math.roundToInt
-
-fun formatGoalDate(date: LocalDate): String =
-    "%02d/%02d/%d".format(date.dayOfMonth, date.monthValue, date.year)
 
 @Composable
 fun SegmentedBarVisual(
     bar: SegmentedBar,
-    currency: Currency,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -103,7 +99,7 @@ fun SegmentedVolumeSlider(
         modifier = modifier.fillMaxWidth(),
     ) {
         Box(modifier = Modifier.padding(vertical = 8.dp)) {
-            SegmentedBarVisual(bar = bar, currency = currency)
+            SegmentedBarVisual(bar = bar)
         }
         val valueRange = if (schedule.cycle == ReserveCycle.DAILY) 1f..30f else 2f..36f
         val steps = if (schedule.cycle == ReserveCycle.DAILY) 28 else 33
@@ -127,7 +123,7 @@ fun SegmentedVolumeSlider(
                 append(" · Xong trong ")
                 append(schedule.periods)
                 append(" kỳ (Dự kiến: ")
-                append(formatGoalDate(schedule.endDate))
+                append(schedule.endDate.dayMonthYear())
                 append(")")
                 if (schedule.extraDays > 0) {
                     append(" ≈ ${schedule.periods} tháng ${schedule.extraDays} ngày")
@@ -176,7 +172,7 @@ fun GoalProgressContent(goal: Goal, progress: GoalProgress) {
                 modifier = Modifier.size(16.dp),
             )
             OneLineText(
-                text = "Hoàn thành ngày ${formatGoalDate(completedAt)}",
+                text = "Hoàn thành ngày ${completedAt.dayMonthYear()}",
                 color = ChiLiTheme.colors.income,
                 style = MaterialTheme.typography.labelMedium,
             )
@@ -208,7 +204,7 @@ fun GoalProgressContent(goal: Goal, progress: GoalProgress) {
     val deadline = goal.deadline
     if (deadline != null) {
         OneLineText(
-            text = "Hạn: ${formatGoalDate(deadline)}",
+            text = "Hạn: ${deadline.dayMonthYear()}",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
