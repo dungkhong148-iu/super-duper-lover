@@ -67,7 +67,6 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.superduperlover.finance.core.Account
 import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
 import com.superduperlover.finance.core.Currency

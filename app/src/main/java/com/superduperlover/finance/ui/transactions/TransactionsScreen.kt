@@ -14,14 +14,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -78,6 +76,8 @@ import com.superduperlover.finance.ui.components.CategoryIcons
 import com.superduperlover.finance.ui.components.EmptyState
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.color
+import com.superduperlover.finance.ui.components.dayMonth
+import com.superduperlover.finance.ui.components.dayMonthYear
 import com.superduperlover.finance.ui.components.display
 import com.superduperlover.finance.ui.components.expenseColor
 import com.superduperlover.finance.ui.components.icon
@@ -88,20 +88,17 @@ import com.superduperlover.finance.ui.theme.chiLiChipBorder
 import com.superduperlover.finance.ui.theme.chiLiChipColors
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
 
 private const val MILLIS_PER_DAY = 86_400_000L
 
 private fun formatDateRange(from: LocalDate, to: LocalDate): String {
-    val dmf = DateTimeFormatter.ofPattern("dd/MM")
-    val full = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     return if (from == to) {
-        from.format(full)
+        from.dayMonthYear()
     } else if (from.year == to.year) {
-        "${from.format(dmf)} - ${to.format(full)}"
+        "${from.dayMonth()} - ${to.dayMonthYear()}"
     } else {
-        "${from.format(full)} - ${to.format(full)}"
+        "${from.dayMonthYear()} - ${to.dayMonthYear()}"
     }
 }
 
@@ -714,17 +711,15 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                 headline = {
                     val startMillis = dateRangePickerState.selectedStartDateMillis
                     val endMillis = dateRangePickerState.selectedEndDateMillis
-                    val dmf = DateTimeFormatter.ofPattern("dd/MM")
-                    val full = DateTimeFormatter.ofPattern("dd/MM/yyyy")
                     val text = if (startMillis == null) {
                         "Từ ngày - Đến ngày"
                     } else if (endMillis == null) {
                         val start = LocalDate.ofEpochDay(Math.floorDiv(startMillis, MILLIS_PER_DAY))
-                        "${start.format(dmf)} - Đến ngày"
+                        "${start.dayMonth()} - Đến ngày"
                     } else {
                         val start = LocalDate.ofEpochDay(Math.floorDiv(startMillis, MILLIS_PER_DAY))
                         val end = LocalDate.ofEpochDay(Math.floorDiv(endMillis, MILLIS_PER_DAY))
-                        "${start.format(dmf)} - ${end.format(full)}"
+                        "${start.dayMonth()} - ${end.dayMonthYear()}"
                     }
                     OneLineText(
                         text = text,
