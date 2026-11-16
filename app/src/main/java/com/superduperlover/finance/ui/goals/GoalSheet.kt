@@ -65,9 +65,10 @@ import com.superduperlover.finance.ui.add.CategoryPickerSheet
 import com.superduperlover.finance.ui.components.CategoryIcons
 import com.superduperlover.finance.ui.components.CurrencyChips
 import com.superduperlover.finance.ui.components.FormDialog
+import com.superduperlover.finance.ui.components.FormFeature
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.CheckRow
-import com.superduperlover.finance.ui.components.SectionHeaderBand
+import com.superduperlover.finance.ui.components.FormSection
 import com.superduperlover.finance.ui.components.dayMonthYear
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 import com.superduperlover.finance.ui.theme.accountColor
@@ -256,461 +257,469 @@ fun GoalSheet(
     }
 
     FormDialog(
+        feature = FormFeature.JAR,
         title = if (isNew) "Tạo hũ" else "Sửa hũ",
         onClose = onDismiss,
         onSave = onSave,
         saveEnabled = saveEnabled,
         hasChanges = hasChanges,
     ) {
-        SectionHeaderBand("Thông tin")
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            OutlinedTextField(
-                shape = RoundedCornerShape(16.dp),
-                value = name,
-                onValueChange = {
-                    name = it
-                    nameError = null
-                },
-                label = { Text("Tên hũ") },
-                singleLine = true,
-                isError = nameError != null,
-                supportingText = nameError?.let { { Text(it) } },
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            if (isNew && sourceAccountId == null) {
-                CurrencyChips(
-                    selected = currency,
-                    onSelect = {
-                        currency = it
-                        targetError = null
-                    },
-                )
-            }
-
-            OutlinedTextField(
-                shape = RoundedCornerShape(16.dp),
-                value = targetText,
-                onValueChange = {
-                    targetText = it
-                    targetError = null
-                },
-                label = { Text("Số tiền cần giữ (${currencySymbol(currency)})") },
-                placeholder = { Text("0") },
-                singleLine = true,
-                isError = targetError != null,
-                supportingText = targetError?.let { { Text(it) } },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-
-        if (!isNew && goal.plan == null) {
-            SectionHeaderBand("Kế hoạch trích tiền")
+        FormSection("Thông tin") {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                CheckRow(
-                    text = "Đặt kế hoạch trích tiền",
-                    checked = hasPlan,
-                    onChange = {
-                        hasPlan = it
-                        if (!it) {
-                            accountError = null
-                            categoryError = null
-                        }
+                OutlinedTextField(
+                    shape = RoundedCornerShape(16.dp),
+                    value = name,
+                    onValueChange = {
+                        name = it
+                        nameError = null
                     },
+                    label = { Text("Tên hũ") },
+                    singleLine = true,
+                    isError = nameError != null,
+                    supportingText = nameError?.let { { Text(it) } },
+                    modifier = Modifier.fillMaxWidth(),
                 )
+
+                if (isNew && sourceAccountId == null) {
+                    CurrencyChips(
+                        selected = currency,
+                        onSelect = {
+                            currency = it
+                            targetError = null
+                        },
+                    )
+                }
+
+                OutlinedTextField(
+                    shape = RoundedCornerShape(16.dp),
+                    value = targetText,
+                    onValueChange = {
+                        targetText = it
+                        targetError = null
+                    },
+                    label = { Text("Số tiền cần giữ (${currencySymbol(currency)})") },
+                    placeholder = { Text("0") },
+                    singleLine = true,
+                    isError = targetError != null,
+                    supportingText = targetError?.let { { Text(it) } },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        if (!isNew && goal.plan == null) {
+            FormSection("Kế hoạch trích tiền") {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    CheckRow(
+                        text = "Đặt kế hoạch trích tiền",
+                        checked = hasPlan,
+                        onChange = {
+                            hasPlan = it
+                            if (!it) {
+                                accountError = null
+                                categoryError = null
+                            }
+                        },
+                    )
+                }
             }
         }
 
         if (!hasPlan) {
-            SectionHeaderBand("Thời hạn")
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                OneLineText("Hạn hoàn thành (không bắt buộc)", style = MaterialTheme.typography.labelLarge)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+            FormSection("Thời hạn") {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    OutlinedButton(
-                        onClick = { showDatePicker = true },
-                        modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 48.dp),
+                    OneLineText("Hạn hoàn thành (không bắt buộc)", style = MaterialTheme.typography.labelLarge)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        OneLineText(manualDeadline?.dayMonthYear() ?: "Chưa đặt hạn")
-                    }
-                    if (manualDeadline != null) {
-                        TextButton(
-                            onClick = { manualDeadline = null },
-                            modifier = Modifier.heightIn(min = 48.dp),
+                        OutlinedButton(
+                            onClick = { showDatePicker = true },
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 48.dp),
                         ) {
-                            OneLineText("Bỏ hạn")
+                            OneLineText(manualDeadline?.dayMonthYear() ?: "Chưa đặt hạn")
+                        }
+                        if (manualDeadline != null) {
+                            TextButton(
+                                onClick = { manualDeadline = null },
+                                modifier = Modifier.heightIn(min = 48.dp),
+                            ) {
+                                OneLineText("Bỏ hạn")
+                            }
                         }
                     }
                 }
             }
         } else {
-            SectionHeaderBand("Tài khoản và danh mục")
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Surface(
-                    onClick = { showAccountPicker = true },
+            FormSection("Tài khoản và danh mục") {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(
-                        1.dp,
-                        if (accountError != null) MaterialTheme.colorScheme.error else ChiLiTheme.colors.outline,
-                    ),
-                    color = MaterialTheme.colorScheme.surface,
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Row(
+                    Surface(
+                        onClick = { showAccountPicker = true },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            .heightIn(min = 56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(
+                            1.dp,
+                            if (accountError != null) MaterialTheme.colorScheme.error else ChiLiTheme.colors.outline,
+                        ),
+                        color = MaterialTheme.colorScheme.surface,
                     ) {
-                        if (selectedAccount != null) {
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .clip(CircleShape)
-                                    .background(accountColor(selectedAccount.colorKey)),
-                            )
-                            Column(modifier = Modifier.weight(1f)) {
-                                OneLineText(
-                                    text = selectedAccount.name,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface,
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            if (selectedAccount != null) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(12.dp)
+                                        .clip(CircleShape)
+                                        .background(accountColor(selectedAccount.colorKey)),
                                 )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    OneLineText(
+                                        text = selectedAccount.name,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    OneLineText(
+                                        text = "Số dư: ${formatMoney(accountBalance(selectedAccount, allTxns), selectedAccount.currency)}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            } else {
                                 OneLineText(
-                                    text = "Số dư: ${formatMoney(accountBalance(selectedAccount, allTxns), selectedAccount.currency)}",
-                                    style = MaterialTheme.typography.bodySmall,
+                                    text = "Chọn tài khoản nguồn",
+                                    style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f),
                                 )
                             }
-                        } else {
-                            OneLineText(
-                                text = "Chọn tài khoản nguồn",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.weight(1f),
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    }
+                    if (accountError != null) {
+                        Text(
+                            text = accountError!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 4.dp),
+                        )
+                    }
+
+                    val selectedCategory = categories.firstOrNull { it.id == categoryId }
+                    Surface(
+                        onClick = { showCategoryPicker = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(
+                            1.dp,
+                            if (categoryError != null) MaterialTheme.colorScheme.error else ChiLiTheme.colors.outline,
+                        ),
+                        color = MaterialTheme.colorScheme.surface,
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            if (selectedCategory != null) {
+                                Icon(
+                                    imageVector = CategoryIcons.get(selectedCategory.icon),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp),
+                                )
+                                OneLineText(
+                                    text = selectedCategory.name,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            } else {
+                                OneLineText(
+                                    text = "Chọn danh mục",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    if (categoryError != null) {
+                        Text(
+                            text = categoryError!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 4.dp),
                         )
                     }
                 }
-                if (accountError != null) {
-                    Text(
-                        text = accountError!!,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(start = 4.dp),
-                    )
-                }
+            }
 
-                val selectedCategory = categories.firstOrNull { it.id == categoryId }
-                Surface(
-                    onClick = { showCategoryPicker = true },
+            FormSection("Thời gian gom tiền") {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(
-                        1.dp,
-                        if (categoryError != null) MaterialTheme.colorScheme.error else ChiLiTheme.colors.outline,
-                    ),
-                    color = MaterialTheme.colorScheme.surface,
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        if (selectedCategory != null) {
-                            Icon(
-                                imageVector = CategoryIcons.get(selectedCategory.icon),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp),
-                            )
-                            OneLineText(
-                                text = selectedCategory.name,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f),
-                            )
-                        } else {
-                            OneLineText(
-                                text = "Chọn danh mục",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        val quickSelected = !isCustom && isQuickDuration(duration)
+                        FilterChip(
+                            selected = quickSelected && duration == JarDuration(7, DurationUnit.DAY),
+                            onClick = {
+                                duration = JarDuration(7, DurationUnit.DAY)
+                                customCountText = "7"
+                                isCustom = false
+                            },
+                            label = { OneLineText("1 tuần") },
+                            colors = chiLiChipColors(),
+                            border = chiLiChipBorder(selected = quickSelected && duration == JarDuration(7, DurationUnit.DAY)),
+                        )
+                        val oneMonth = quickSelected && (duration == JarDuration(1, DurationUnit.MONTH) || duration == JarDuration(30, DurationUnit.DAY))
+                        FilterChip(
+                            selected = oneMonth,
+                            onClick = {
+                                duration = JarDuration(1, DurationUnit.MONTH)
+                                customCountText = "1"
+                                isCustom = false
+                            },
+                            label = { OneLineText("1 tháng") },
+                            colors = chiLiChipColors(),
+                            border = chiLiChipBorder(selected = oneMonth),
+                        )
+                        FilterChip(
+                            selected = quickSelected && duration == JarDuration(6, DurationUnit.MONTH),
+                            onClick = {
+                                duration = JarDuration(6, DurationUnit.MONTH)
+                                customCountText = "6"
+                                isCustom = false
+                            },
+                            label = { OneLineText("6 tháng") },
+                            colors = chiLiChipColors(),
+                            border = chiLiChipBorder(selected = quickSelected && duration == JarDuration(6, DurationUnit.MONTH)),
+                        )
+                        FilterChip(
+                            selected = quickSelected && (duration == JarDuration(1, DurationUnit.YEAR) || (duration.unit == DurationUnit.MONTH && duration.count == 12)),
+                            onClick = {
+                                duration = JarDuration(1, DurationUnit.YEAR)
+                                customCountText = "1"
+                                isCustom = false
+                            },
+                            label = { OneLineText("1 năm") },
+                            colors = chiLiChipColors(),
+                            border = chiLiChipBorder(selected = quickSelected && (duration == JarDuration(1, DurationUnit.YEAR) || (duration.unit == DurationUnit.MONTH && duration.count == 12))),
+                        )
+                        val customSelected = isCustom || !isQuickDuration(duration)
+                        FilterChip(
+                            selected = customSelected,
+                            onClick = {
+                                isCustom = true
+                                customCountText = duration.count.toString()
+                            },
+                            label = { OneLineText("Tùy chỉnh") },
+                            colors = chiLiChipColors(),
+                            border = chiLiChipBorder(selected = customSelected),
                         )
                     }
-                }
-                if (categoryError != null) {
-                    Text(
-                        text = categoryError!!,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(start = 4.dp),
+
+                    if (isCustom || !isQuickDuration(duration)) {
+                            OutlinedTextField(
+                    shape = RoundedCornerShape(16.dp),
+                                value = customCountText,
+                                onValueChange = { input ->
+                                    val filtered = input.filter { it.isDigit() }.take(3)
+                                    customCountText = filtered
+                                    val countInt = filtered.toIntOrNull()
+                                    if (countInt != null) {
+                                        val max = maxDurationCount(duration.unit)
+                                        val clamped = countInt.coerceIn(1, max)
+                                        duration = JarDuration(clamped, duration.unit)
+                                    }
+                                },
+                                label = { Text("Số lượng") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                    }
+                    // Unit of the plan: the slider below counts in this unit (days up to 30, months up to 12, years up to 3).
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        FilterChip(
+                            selected = duration.unit == DurationUnit.DAY,
+                            onClick = {
+                                val max = maxDurationCount(DurationUnit.DAY)
+                                val newCount = duration.count.coerceIn(1, max)
+                                duration = JarDuration(newCount, DurationUnit.DAY)
+                                customCountText = newCount.toString()
+                            },
+                            label = { OneLineText("Ngày") },
+                            colors = chiLiChipColors(),
+                            border = chiLiChipBorder(selected = duration.unit == DurationUnit.DAY),
+                        )
+                        FilterChip(
+                            selected = duration.unit == DurationUnit.MONTH,
+                            onClick = {
+                                val max = maxDurationCount(DurationUnit.MONTH)
+                                val newCount = duration.count.coerceIn(1, max)
+                                duration = JarDuration(newCount, DurationUnit.MONTH)
+                                customCountText = newCount.toString()
+                            },
+                            label = { OneLineText("Tháng") },
+                            colors = chiLiChipColors(),
+                            border = chiLiChipBorder(selected = duration.unit == DurationUnit.MONTH),
+                        )
+                        FilterChip(
+                            selected = duration.unit == DurationUnit.YEAR,
+                            onClick = {
+                                val max = maxDurationCount(DurationUnit.YEAR)
+                                val newCount = duration.count.coerceIn(1, max)
+                                duration = JarDuration(newCount, DurationUnit.YEAR)
+                                customCountText = newCount.toString()
+                            },
+                            label = { OneLineText("Năm") },
+                            colors = chiLiChipColors(),
+                            border = chiLiChipBorder(selected = duration.unit == DurationUnit.YEAR),
+                        )
+                    }
+
+
+                    SegmentedVolumeSlider(
+                        schedule = schedule,
+                        bar = bar,
+                        currency = currency,
+                        unit = duration.unit,
+                        count = duration.count,
+                        onCountChange = { n ->
+                            duration = JarDuration(n, duration.unit)
+                            customCountText = n.toString()
+                            isCustom = !isQuickDuration(duration)
+                        },
+                        target = parsedTarget ?: 0L,
+                        baseSaved = savedSoFar,
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
 
-            SectionHeaderBand("Thời gian gom tiền")
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Row(
+            FormSection("Cài đặt") {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    val quickSelected = !isCustom && isQuickDuration(duration)
-                    FilterChip(
-                        selected = quickSelected && duration == JarDuration(7, DurationUnit.DAY),
-                        onClick = {
-                            duration = JarDuration(7, DurationUnit.DAY)
-                            customCountText = "7"
-                            isCustom = false
-                        },
-                        label = { OneLineText("1 tuần") },
-                        colors = chiLiChipColors(),
-                        border = chiLiChipBorder(selected = quickSelected && duration == JarDuration(7, DurationUnit.DAY)),
+                    CheckRow(
+                        text = "Tự động trừ tiền khi đủ",
+                        checked = autoDeduct,
+                        onChange = { autoDeduct = it },
                     )
-                    val oneMonth = quickSelected && (duration == JarDuration(1, DurationUnit.MONTH) || duration == JarDuration(30, DurationUnit.DAY))
-                    FilterChip(
-                        selected = oneMonth,
-                        onClick = {
-                            duration = JarDuration(1, DurationUnit.MONTH)
-                            customCountText = "1"
-                            isCustom = false
-                        },
-                        label = { OneLineText("1 tháng") },
-                        colors = chiLiChipColors(),
-                        border = chiLiChipBorder(selected = oneMonth),
-                    )
-                    FilterChip(
-                        selected = quickSelected && duration == JarDuration(6, DurationUnit.MONTH),
-                        onClick = {
-                            duration = JarDuration(6, DurationUnit.MONTH)
-                            customCountText = "6"
-                            isCustom = false
-                        },
-                        label = { OneLineText("6 tháng") },
-                        colors = chiLiChipColors(),
-                        border = chiLiChipBorder(selected = quickSelected && duration == JarDuration(6, DurationUnit.MONTH)),
-                    )
-                    FilterChip(
-                        selected = quickSelected && (duration == JarDuration(1, DurationUnit.YEAR) || (duration.unit == DurationUnit.MONTH && duration.count == 12)),
-                        onClick = {
-                            duration = JarDuration(1, DurationUnit.YEAR)
-                            customCountText = "1"
-                            isCustom = false
-                        },
-                        label = { OneLineText("1 năm") },
-                        colors = chiLiChipColors(),
-                        border = chiLiChipBorder(selected = quickSelected && (duration == JarDuration(1, DurationUnit.YEAR) || (duration.unit == DurationUnit.MONTH && duration.count == 12))),
-                    )
-                    val customSelected = isCustom || !isQuickDuration(duration)
-                    FilterChip(
-                        selected = customSelected,
-                        onClick = {
-                            isCustom = true
-                            customCountText = duration.count.toString()
-                        },
-                        label = { OneLineText("Tùy chỉnh") },
-                        colors = chiLiChipColors(),
-                        border = chiLiChipBorder(selected = customSelected),
+                    CheckRow(
+                        text = "Lặp lại mỗi kỳ",
+                        subtitle = "Sau khi chốt, hũ tự mở kỳ mới với cùng số tiền, thời hạn và tài khoản",
+                        checked = repeat,
+                        onChange = { repeat = it },
                     )
                 }
-
-                if (isCustom || !isQuickDuration(duration)) {
-                        OutlinedTextField(
-                shape = RoundedCornerShape(16.dp),
-                            value = customCountText,
-                            onValueChange = { input ->
-                                val filtered = input.filter { it.isDigit() }.take(3)
-                                customCountText = filtered
-                                val countInt = filtered.toIntOrNull()
-                                if (countInt != null) {
-                                    val max = maxDurationCount(duration.unit)
-                                    val clamped = countInt.coerceIn(1, max)
-                                    duration = JarDuration(clamped, duration.unit)
-                                }
-                            },
-                            label = { Text("Số lượng") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                }
-                // Unit of the plan: the slider below counts in this unit (days up to 30, months up to 12, years up to 3).
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    FilterChip(
-                        selected = duration.unit == DurationUnit.DAY,
-                        onClick = {
-                            val max = maxDurationCount(DurationUnit.DAY)
-                            val newCount = duration.count.coerceIn(1, max)
-                            duration = JarDuration(newCount, DurationUnit.DAY)
-                            customCountText = newCount.toString()
-                        },
-                        label = { OneLineText("Ngày") },
-                        colors = chiLiChipColors(),
-                        border = chiLiChipBorder(selected = duration.unit == DurationUnit.DAY),
-                    )
-                    FilterChip(
-                        selected = duration.unit == DurationUnit.MONTH,
-                        onClick = {
-                            val max = maxDurationCount(DurationUnit.MONTH)
-                            val newCount = duration.count.coerceIn(1, max)
-                            duration = JarDuration(newCount, DurationUnit.MONTH)
-                            customCountText = newCount.toString()
-                        },
-                        label = { OneLineText("Tháng") },
-                        colors = chiLiChipColors(),
-                        border = chiLiChipBorder(selected = duration.unit == DurationUnit.MONTH),
-                    )
-                    FilterChip(
-                        selected = duration.unit == DurationUnit.YEAR,
-                        onClick = {
-                            val max = maxDurationCount(DurationUnit.YEAR)
-                            val newCount = duration.count.coerceIn(1, max)
-                            duration = JarDuration(newCount, DurationUnit.YEAR)
-                            customCountText = newCount.toString()
-                        },
-                        label = { OneLineText("Năm") },
-                        colors = chiLiChipColors(),
-                        border = chiLiChipBorder(selected = duration.unit == DurationUnit.YEAR),
-                    )
-                }
-
-
-                SegmentedVolumeSlider(
-                    schedule = schedule,
-                    bar = bar,
-                    currency = currency,
-                    unit = duration.unit,
-                    count = duration.count,
-                    onCountChange = { n ->
-                        duration = JarDuration(n, duration.unit)
-                        customCountText = n.toString()
-                        isCustom = !isQuickDuration(duration)
-                    },
-                    target = parsedTarget ?: 0L,
-                    baseSaved = savedSoFar,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            SectionHeaderBand("Cài đặt")
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                CheckRow(
-                    text = "Tự động trừ tiền khi đủ",
-                    checked = autoDeduct,
-                    onChange = { autoDeduct = it },
-                )
-                CheckRow(
-                    text = "Lặp lại mỗi kỳ",
-                    subtitle = "Sau khi chốt, hũ tự mở kỳ mới với cùng số tiền, thời hạn và tài khoản",
-                    checked = repeat,
-                    onChange = { repeat = it },
-                )
             }
         }
 
         if (!isNew) {
-            SectionHeaderBand("Khác")
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                OutlinedButton(
-                    onClick = { showArchiveConfirm = true },
+            FormSection("Khác") {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 48.dp),
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    OneLineText("Lưu trữ")
-                }
-                Text(
-                    text = "Ẩn khỏi danh sách, giữ lịch sử, khôi phục trong Cài đặt > Lưu trữ",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                OutlinedButton(
-                    onClick = {
-                        deleteError = null
-                        showDeleteConfirm = true
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp),
-                ) {
-                    OneLineText("Xóa hũ", color = MaterialTheme.colorScheme.error)
-                }
-                Text(
-                    text = "Xóa vĩnh viễn, chỉ khi chưa có giao dịch",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                deleteError?.let {
+                    OutlinedButton(
+                        onClick = { showArchiveConfirm = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
+                    ) {
+                        OneLineText("Lưu trữ")
+                    }
                     Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = "Ẩn khỏi danh sách, giữ lịch sử, khôi phục trong Cài đặt > Lưu trữ",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+
+                    OutlinedButton(
+                        onClick = {
+                            deleteError = null
+                            showDeleteConfirm = true
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
+                    ) {
+                        OneLineText("Xóa hũ", color = MaterialTheme.colorScheme.error)
+                    }
+                    Text(
+                        text = "Xóa vĩnh viễn, chỉ khi chưa có giao dịch",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    deleteError?.let {
+                        Text(
+                            text = it,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
                 }
             }
         }

@@ -39,7 +39,7 @@ import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.CategoryIcons
 import com.superduperlover.finance.ui.components.FormDialog
 import com.superduperlover.finance.ui.components.OneLineText
-import com.superduperlover.finance.ui.components.SectionHeaderBand
+import com.superduperlover.finance.ui.components.FormSection
 import com.superduperlover.finance.ui.components.label
 import com.superduperlover.finance.ui.theme.chiLiChipBorder
 import com.superduperlover.finance.ui.theme.chiLiChipColors
@@ -107,162 +107,165 @@ internal fun CategorySheet(
         saveEnabled = saveEnabled,
         hasChanges = hasChanges,
     ) {
-        SectionHeaderBand("Thông tin")
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            if (isNew) {
-                OneLineText("Loại", style = MaterialTheme.typography.labelLarge)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                    shape = RoundedCornerShape(12.dp),
-                        selected = kind == CategoryKind.EXPENSE,
-                        onClick = {
-                            kind = CategoryKind.EXPENSE
-                            nameError = null
-                        },
-                        label = { OneLineText(TxnKind.EXPENSE.label()) },
-                        colors = chiLiChipColors(),
-                        border = chiLiChipBorder(selected = kind == CategoryKind.EXPENSE),
-                    )
-                    FilterChip(
-                    shape = RoundedCornerShape(12.dp),
-                        selected = kind == CategoryKind.INCOME,
-                        onClick = {
-                            kind = CategoryKind.INCOME
-                            nameError = null
-                        },
-                        label = { OneLineText(TxnKind.INCOME.label()) },
-                        colors = chiLiChipColors(),
-                        border = chiLiChipBorder(selected = kind == CategoryKind.INCOME),
-                    )
-                }
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OneLineText("Loại:", style = MaterialTheme.typography.labelLarge)
-                    OneLineText(
-                        text = if (category.kind == CategoryKind.EXPENSE) TxnKind.EXPENSE.label() else TxnKind.INCOME.label(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            OutlinedTextField(
-                shape = RoundedCornerShape(16.dp),
-                value = name,
-                onValueChange = {
-                    name = it
-                    nameError = null
-                },
-                label = { Text("Tên danh mục") },
-                singleLine = true,
-                isError = nameError != null,
-                supportingText = nameError?.let { { Text(it) } },
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-
-        SectionHeaderBand("Biểu tượng")
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            val iconEntries = remember { CategoryIcons.all.entries.toList() }
-            iconEntries.chunked(5).forEach { rowEntries ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    rowEntries.forEach { (key, vector) ->
-                        val on = key == selectedIcon
-                        Surface(
-                            onClick = { selectedIcon = key },
-                            modifier = Modifier
-                                .weight(1f)
-                                .heightIn(min = 48.dp)
-                                .semantics { this.selected = on },
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (on) MaterialTheme.colorScheme.secondaryContainer
-                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                            border = if (on) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
-                        ) {
-                            Box(
-                                modifier = Modifier.padding(8.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    imageVector = vector,
-                                    contentDescription = key,
-                                    tint = if (on) MaterialTheme.colorScheme.onSecondaryContainer
-                                    else MaterialTheme.colorScheme.onSurface,
-                                )
-                            }
-                        }
-                    }
-                    repeat(5 - rowEntries.size) {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-                }
-            }
-        }
-
-        if (!isNew) {
-            SectionHeaderBand("Khác")
+        FormSection("Thông tin") {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                OutlinedButton(
-                shape = RoundedCornerShape(16.dp),
-                    onClick = { showArchiveConfirm = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp),
-                ) {
-                    OneLineText("Lưu trữ")
+                if (isNew) {
+                    OneLineText("Loại", style = MaterialTheme.typography.labelLarge)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                        shape = RoundedCornerShape(12.dp),
+                            selected = kind == CategoryKind.EXPENSE,
+                            onClick = {
+                                kind = CategoryKind.EXPENSE
+                                nameError = null
+                            },
+                            label = { OneLineText(TxnKind.EXPENSE.label()) },
+                            colors = chiLiChipColors(),
+                            border = chiLiChipBorder(selected = kind == CategoryKind.EXPENSE),
+                        )
+                        FilterChip(
+                        shape = RoundedCornerShape(12.dp),
+                            selected = kind == CategoryKind.INCOME,
+                            onClick = {
+                                kind = CategoryKind.INCOME
+                                nameError = null
+                            },
+                            label = { OneLineText(TxnKind.INCOME.label()) },
+                            colors = chiLiChipColors(),
+                            border = chiLiChipBorder(selected = kind == CategoryKind.INCOME),
+                        )
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        OneLineText("Loại:", style = MaterialTheme.typography.labelLarge)
+                        OneLineText(
+                            text = if (category.kind == CategoryKind.EXPENSE) TxnKind.EXPENSE.label() else TxnKind.INCOME.label(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
-                Text(
-                    text = "Ẩn khỏi danh sách, giữ lịch sử, khôi phục trong Cài đặt > Lưu trữ",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
 
-                OutlinedButton(
-                shape = RoundedCornerShape(16.dp),
-                    onClick = {
-                        deleteError = null
-                        showDeleteConfirm = true
+                OutlinedTextField(
+                    shape = RoundedCornerShape(16.dp),
+                    value = name,
+                    onValueChange = {
+                        name = it
+                        nameError = null
                     },
+                    label = { Text("Tên danh mục") },
+                    singleLine = true,
+                    isError = nameError != null,
+                    supportingText = nameError?.let { { Text(it) } },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        FormSection("Biểu tượng") {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val iconEntries = remember { CategoryIcons.all.entries.toList() }
+                iconEntries.chunked(5).forEach { rowEntries ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        rowEntries.forEach { (key, vector) ->
+                            val on = key == selectedIcon
+                            Surface(
+                                onClick = { selectedIcon = key },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .heightIn(min = 48.dp)
+                                    .semantics { this.selected = on },
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (on) MaterialTheme.colorScheme.secondaryContainer
+                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                border = if (on) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+                            ) {
+                                Box(
+                                    modifier = Modifier.padding(8.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        imageVector = vector,
+                                        contentDescription = key,
+                                        tint = if (on) MaterialTheme.colorScheme.onSecondaryContainer
+                                        else MaterialTheme.colorScheme.onSurface,
+                                    )
+                                }
+                            }
+                        }
+                        repeat(5 - rowEntries.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!isNew) {
+            FormSection("Khác") {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 48.dp),
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    OneLineText("Xóa danh mục", color = MaterialTheme.colorScheme.error)
-                }
-                Text(
-                    text = "Xóa vĩnh viễn, chỉ khi chưa có giao dịch",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                deleteError?.let {
+                    OutlinedButton(
+                    shape = RoundedCornerShape(16.dp),
+                        onClick = { showArchiveConfirm = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
+                    ) {
+                        OneLineText("Lưu trữ")
+                    }
                     Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = "Ẩn khỏi danh sách, giữ lịch sử, khôi phục trong Cài đặt > Lưu trữ",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+
+                    OutlinedButton(
+                    shape = RoundedCornerShape(16.dp),
+                        onClick = {
+                            deleteError = null
+                            showDeleteConfirm = true
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
+                    ) {
+                        OneLineText("Xóa danh mục", color = MaterialTheme.colorScheme.error)
+                    }
+                    Text(
+                        text = "Xóa vĩnh viễn, chỉ khi chưa có giao dịch",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    deleteError?.let {
+                        Text(
+                            text = it,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
                 }
             }
         }

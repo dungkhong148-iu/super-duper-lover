@@ -12,6 +12,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import com.superduperlover.finance.ui.theme.formAccent
+import com.superduperlover.finance.ui.theme.onFormAccent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,9 +43,15 @@ fun CheckRow(
             .heightIn(min = 48.dp)
             .toggleable(value = checked, enabled = enabled, role = Role.Checkbox, onValueChange = onChange),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(0.dp),
     ) {
-        Checkbox(checked = checked, onCheckedChange = null, enabled = enabled, modifier = Modifier.padding(horizontal = 12.dp))
+        Checkbox(
+            checked = checked,
+            onCheckedChange = null,
+            enabled = enabled,
+            modifier = Modifier.padding(end = 4.dp),
+            colors = CheckboxDefaults.colors(checkedColor = formAccent(), checkmarkColor = onFormAccent()),
+        )
         Column(Modifier.weight(1f).padding(vertical = 4.dp)) {
             Text(text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
             if (subtitle != null) {
@@ -72,14 +81,14 @@ fun ChoiceButtons(
                     .tapScale({ onSelect(i) })
                     .then(if (on) Modifier.v3Shadow(c.shadow1, shape) else Modifier)
                     .clip(shape)
-                    .background(if (on) c.accent else c.card)
+                    .background(if (on) formAccent() else formAccent().copy(alpha = 0.12f))
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     label,
                     style = MaterialTheme.typography.labelLarge,
-                    color = if (on) MaterialTheme.colorScheme.onPrimary else c.onCard,
+                    color = if (on) onFormAccent() else c.onCard,
                 )
             }
         }

@@ -2,13 +2,17 @@ package com.superduperlover.finance.ui.components
 
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Color
+import com.superduperlover.finance.ui.theme.ChiLiV3
+import com.superduperlover.finance.ui.theme.LocalFormAccent
+import com.superduperlover.finance.ui.theme.LocalOnFormAccent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,8 +35,17 @@ fun FormDialog(
     onSave: () -> Unit,
     saveEnabled: Boolean,
     hasChanges: Boolean,
+    feature: FormFeature = FormFeature.NEUTRAL,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val c = ChiLiV3.colors
+    val white = Color.White
+    val accent: Color? = when (feature) {
+        FormFeature.NEUTRAL -> null
+        FormFeature.JAR -> c.jarAccent
+        FormFeature.BUDGET -> c.budgetAccent
+        FormFeature.DEBT -> c.debtAccent
+    }
     var showDiscardConfirm by remember { mutableStateOf(false) }
     val handleClose = {
         if (hasChanges) {
@@ -42,6 +55,10 @@ fun FormDialog(
         }
     }
 
+    CompositionLocalProvider(
+        LocalFormAccent provides accent,
+        LocalOnFormAccent provides accent?.let { white },
+    ) {
     Dialog(
         onDismissRequest = handleClose,
         properties = DialogProperties(
@@ -49,11 +66,10 @@ fun FormDialog(
             decorFitsSystemWindows = false,
         ),
     ) {
+        // No systemBarsPadding here: the form's top bar paints the status bar area itself.
         Surface(
             color = MaterialTheme.colorScheme.background,
-            modifier = Modifier
-                .fillMaxSize()
-                .systemBarsPadding(),
+            modifier = Modifier.fillMaxSize(),
         ) {
             FullScreenForm(
                 title = title,
@@ -63,6 +79,7 @@ fun FormDialog(
                 content = content,
             )
         }
+    }
     }
 
     if (showDiscardConfirm) {

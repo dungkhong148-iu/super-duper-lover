@@ -49,9 +49,10 @@ import com.superduperlover.finance.core.periodRange
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.CurrencyChips
 import com.superduperlover.finance.ui.components.FormDialog
+import com.superduperlover.finance.ui.components.FormFeature
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.CheckRow
-import com.superduperlover.finance.ui.components.SectionHeaderBand
+import com.superduperlover.finance.ui.components.FormSection
 import com.superduperlover.finance.ui.components.dayMonth
 import com.superduperlover.finance.ui.components.dayMonthYear
 import com.superduperlover.finance.ui.theme.chiLiChipBorder
@@ -138,202 +139,206 @@ internal fun BudgetSheet(
     }
 
     FormDialog(
+        feature = FormFeature.BUDGET,
         title = if (isNew) "Thêm ngân sách" else "Sửa ngân sách",
         onClose = onDismiss,
         onSave = onSave,
         saveEnabled = saveEnabled,
         hasChanges = hasChanges,
     ) {
-        SectionHeaderBand("Phạm vi")
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            OneLineText("Tài khoản", style = MaterialTheme.typography.labelLarge)
-            Row(
-                Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FilterChip(
-                    shape = RoundedCornerShape(12.dp),
-                    selected = selectedAccountId == null,
-                    onClick = {
-                        selectedAccountId = null
-                        duplicateError = null
-                    },
-                    label = { OneLineText("Tất cả") },
-                    colors = chiLiChipColors(),
-                    border = chiLiChipBorder(selected = selectedAccountId == null),
-                )
-                val displayedAccounts = remember(accounts, budget.accountId) {
-                    accounts.filter { !it.archived || it.id == budget.accountId }
-                }
-                displayedAccounts.forEach { acc ->
-                    FilterChip(
-                    shape = RoundedCornerShape(12.dp),
-                        selected = selectedAccountId == acc.id,
-                        onClick = {
-                            selectedAccountId = acc.id
-                            duplicateError = null
-                        },
-                        label = { OneLineText("${acc.name} · ${acc.currency.name}") },
-                        colors = chiLiChipColors(),
-                        border = chiLiChipBorder(selected = selectedAccountId == acc.id),
-                    )
-                }
-            }
-
-            OneLineText("Danh mục", style = MaterialTheme.typography.labelLarge)
-            Row(
-                Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FilterChip(
-                    shape = RoundedCornerShape(12.dp),
-                    selected = selectedCategoryId == null,
-                    onClick = {
-                        selectedCategoryId = null
-                        duplicateError = null
-                    },
-                    label = { OneLineText("Tất cả") },
-                    colors = chiLiChipColors(),
-                    border = chiLiChipBorder(selected = selectedCategoryId == null),
-                )
-                val displayedCategories = remember(categories, budget.categoryId) {
-                    categories.filter { it.kind == CategoryKind.EXPENSE && (!it.archived || it.id == budget.categoryId) }
-                }
-                displayedCategories.forEach { cat ->
-                    FilterChip(
-                    shape = RoundedCornerShape(12.dp),
-                        selected = selectedCategoryId == cat.id,
-                        onClick = {
-                            selectedCategoryId = cat.id
-                            duplicateError = null
-                        },
-                        label = { OneLineText(cat.name) },
-                        colors = chiLiChipColors(),
-                        border = chiLiChipBorder(selected = selectedCategoryId == cat.id),
-                    )
-                }
-            }
-        }
-
-        SectionHeaderBand("Chu kỳ")
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            OneLineText("Chu kỳ", style = MaterialTheme.typography.labelLarge)
-            Row(
-                Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                BudgetPeriod.entries.forEach { p ->
-                    FilterChip(
-                    shape = RoundedCornerShape(12.dp),
-                        selected = selectedPeriod == p,
-                        onClick = {
-                            selectedPeriod = p
-                            duplicateError = null
-                        },
-                        label = { OneLineText(p.label()) },
-                        colors = chiLiChipColors(),
-                        border = chiLiChipBorder(selected = selectedPeriod == p),
-                    )
-                }
-            }
-
-            OneLineText("Ngày bắt đầu", style = MaterialTheme.typography.labelLarge)
-            OutlinedButton(
-                shape = RoundedCornerShape(16.dp),
-                onClick = { showDatePicker = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp),
-            ) {
-                OneLineText(selectedStartDate.dayMonthYear())
-            }
-
-            val periodIndex = remember(selectedPeriod, selectedStartDate, today) {
-                periodIndexAt(selectedPeriod, selectedStartDate, today) ?: 0
-            }
-            val currentRange = remember(selectedPeriod, selectedStartDate, periodIndex) {
-                periodRange(selectedPeriod, selectedStartDate, periodIndex)
-            }
-            val startStr = currentRange.start.dayMonth()
-            val endStr = currentRange.endInclusive.dayMonth()
-            val ruleExplain = if (selectedPeriod == BudgetPeriod.WEEK) "7 ngày từ ngày bắt đầu." else "Mỗi kỳ tính từ ngày bắt đầu."
-            Text(
-                text = "Kỳ hiện tại: $startStr – $endStr. $ruleExplain",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            CheckRow(
-                text = "Chuyển phần còn lại sang kỳ sau",
-                subtitle = "Tiền còn thừa được cộng vào hạn mức kỳ sau; chi vượt sẽ bị trừ đi.",
-                checked = rollover,
-                onChange = {
-                    rollover = it
-                    duplicateError = null
-                },
-            )
-        }
-
-        SectionHeaderBand("Hạn mức")
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            if (selectedAccountId == null) {
-                CurrencyChips(
-                    selected = pickedCurrency,
-                    onSelect = {
-                        pickedCurrency = it
-                        duplicateError = null
-                    },
-                    label = "Loại tiền (các tài khoản cùng loại)",
-                )
-            }
-            OutlinedTextField(
-                shape = RoundedCornerShape(16.dp),
-                value = limitInput,
-                onValueChange = {
-                    limitInput = it
-                    limitError = null
-                    duplicateError = null
-                },
-                label = { Text("Hạn mức (${currencySymbol(currency)})") },
-                singleLine = true,
-                isError = limitError != null || duplicateError != null,
-                supportingText = (limitError ?: duplicateError)?.let { { Text(it) } },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-
-        if (!isNew) {
-            SectionHeaderBand("Khác")
+        FormSection("Phạm vi") {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                OneLineText("Tài khoản", style = MaterialTheme.typography.labelLarge)
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FilterChip(
+                        shape = RoundedCornerShape(12.dp),
+                        selected = selectedAccountId == null,
+                        onClick = {
+                            selectedAccountId = null
+                            duplicateError = null
+                        },
+                        label = { OneLineText("Tất cả") },
+                        colors = chiLiChipColors(),
+                        border = chiLiChipBorder(selected = selectedAccountId == null),
+                    )
+                    val displayedAccounts = remember(accounts, budget.accountId) {
+                        accounts.filter { !it.archived || it.id == budget.accountId }
+                    }
+                    displayedAccounts.forEach { acc ->
+                        FilterChip(
+                        shape = RoundedCornerShape(12.dp),
+                            selected = selectedAccountId == acc.id,
+                            onClick = {
+                                selectedAccountId = acc.id
+                                duplicateError = null
+                            },
+                            label = { OneLineText("${acc.name} · ${acc.currency.name}") },
+                            colors = chiLiChipColors(),
+                            border = chiLiChipBorder(selected = selectedAccountId == acc.id),
+                        )
+                    }
+                }
+
+                OneLineText("Danh mục", style = MaterialTheme.typography.labelLarge)
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FilterChip(
+                        shape = RoundedCornerShape(12.dp),
+                        selected = selectedCategoryId == null,
+                        onClick = {
+                            selectedCategoryId = null
+                            duplicateError = null
+                        },
+                        label = { OneLineText("Tất cả") },
+                        colors = chiLiChipColors(),
+                        border = chiLiChipBorder(selected = selectedCategoryId == null),
+                    )
+                    val displayedCategories = remember(categories, budget.categoryId) {
+                        categories.filter { it.kind == CategoryKind.EXPENSE && (!it.archived || it.id == budget.categoryId) }
+                    }
+                    displayedCategories.forEach { cat ->
+                        FilterChip(
+                        shape = RoundedCornerShape(12.dp),
+                            selected = selectedCategoryId == cat.id,
+                            onClick = {
+                                selectedCategoryId = cat.id
+                                duplicateError = null
+                            },
+                            label = { OneLineText(cat.name) },
+                            colors = chiLiChipColors(),
+                            border = chiLiChipBorder(selected = selectedCategoryId == cat.id),
+                        )
+                    }
+                }
+            }
+        }
+
+        FormSection("Chu kỳ") {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    BudgetPeriod.entries.forEach { p ->
+                        FilterChip(
+                        shape = RoundedCornerShape(12.dp),
+                            selected = selectedPeriod == p,
+                            onClick = {
+                                selectedPeriod = p
+                                duplicateError = null
+                            },
+                            label = { OneLineText(p.label()) },
+                            colors = chiLiChipColors(),
+                            border = chiLiChipBorder(selected = selectedPeriod == p),
+                        )
+                    }
+                }
+
+                OneLineText("Ngày bắt đầu", style = MaterialTheme.typography.labelLarge)
                 OutlinedButton(
-                shape = RoundedCornerShape(16.dp),
-                    onClick = { showDeleteConfirm = true },
+                    shape = RoundedCornerShape(16.dp),
+                    onClick = { showDatePicker = true },
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 48.dp),
                 ) {
-                    OneLineText("Xóa ngân sách", color = MaterialTheme.colorScheme.error)
+                    OneLineText(selectedStartDate.dayMonthYear())
+                }
+
+                val periodIndex = remember(selectedPeriod, selectedStartDate, today) {
+                    periodIndexAt(selectedPeriod, selectedStartDate, today) ?: 0
+                }
+                val currentRange = remember(selectedPeriod, selectedStartDate, periodIndex) {
+                    periodRange(selectedPeriod, selectedStartDate, periodIndex)
+                }
+                val startStr = currentRange.start.dayMonth()
+                val endStr = currentRange.endInclusive.dayMonth()
+                val ruleExplain = if (selectedPeriod == BudgetPeriod.WEEK) "7 ngày từ ngày bắt đầu." else "Mỗi kỳ tính từ ngày bắt đầu."
+                Text(
+                    text = "Kỳ hiện tại: $startStr – $endStr. $ruleExplain",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                CheckRow(
+                    text = "Chuyển phần còn lại sang kỳ sau",
+                    subtitle = "Tiền còn thừa được cộng vào hạn mức kỳ sau; chi vượt sẽ bị trừ đi.",
+                    checked = rollover,
+                    onChange = {
+                        rollover = it
+                        duplicateError = null
+                    },
+                )
+            }
+        }
+
+        FormSection("Hạn mức") {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (selectedAccountId == null) {
+                    CurrencyChips(
+                        selected = pickedCurrency,
+                        onSelect = {
+                            pickedCurrency = it
+                            duplicateError = null
+                        },
+                        label = "Loại tiền (các tài khoản cùng loại)",
+                    )
+                }
+                OutlinedTextField(
+                    shape = RoundedCornerShape(16.dp),
+                    value = limitInput,
+                    onValueChange = {
+                        limitInput = it
+                        limitError = null
+                        duplicateError = null
+                    },
+                    label = { Text("Hạn mức (${currencySymbol(currency)})") },
+                    singleLine = true,
+                    isError = limitError != null || duplicateError != null,
+                    supportingText = (limitError ?: duplicateError)?.let { { Text(it) } },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        if (!isNew) {
+            FormSection("Khác") {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    OutlinedButton(
+                    shape = RoundedCornerShape(16.dp),
+                        onClick = { showDeleteConfirm = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
+                    ) {
+                        OneLineText("Xóa ngân sách", color = MaterialTheme.colorScheme.error)
+                    }
                 }
             }
         }

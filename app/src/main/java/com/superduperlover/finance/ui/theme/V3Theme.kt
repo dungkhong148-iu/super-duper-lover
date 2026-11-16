@@ -107,6 +107,10 @@ class V3Colors(
     val shadowFab: V3Shadow,
     val shadowHero: V3Shadow,
     val shadowSheet: V3Shadow,
+    /** Form top bar / chip / save colours per feature (white text on them). */
+    val jarAccent: Color,
+    val budgetAccent: Color,
+    val debtAccent: Color,
 )
 
 /** One Modifier.shadow: elevation + ambient / spot colour (Android 9+). */
@@ -188,6 +192,9 @@ val V3Light = V3Colors(
     shadowFab = V3Shadow(8.dp, Color(0x3D145358), Color(0x29000000)),
     shadowHero = V3Shadow(5.dp, Color(0x0F0F172A), Color(0x140F172A)),
     shadowSheet = V3Shadow(12.dp, Color(0x24002814), Color(0x24002814)),
+    jarAccent = Color(0xFF00854A),
+    budgetAccent = Color(0xFFC26A00),
+    debtAccent = Color(0xFFE11D48),
 )
 
 // Dark = neutral charcoal (user pick D1 option A): grey-black layers >= 1.3:1 apart, colour only on Hero, yellow block
@@ -245,6 +252,9 @@ val V3Dark = V3Colors(
     shadowFab = V3Shadow(8.dp, Color(0x99000000), Color(0x4010B981)),
     shadowHero = V3Shadow(6.dp, Color(0x73000000), Color(0x73000000)),
     shadowSheet = V3Shadow(12.dp, Color(0xA6000000), Color(0xA6000000)),
+    jarAccent = Color(0xFF059669),
+    budgetAccent = Color(0xFFB45309),
+    debtAccent = Color(0xFFBE123C),
 )
 
 private val LocalV3Colors = staticCompositionLocalOf { V3Light }
@@ -321,3 +331,13 @@ fun V3Theme(dark: Boolean, calibration: Float = V3_FONT_CALIBRATION, content: @C
         MaterialTheme(colorScheme = v3ColorScheme(colors, dark), typography = v3Typography(calibration), content = content)
     }
 }
+
+/** Colour of the form being shown (null = the neutral accent); set by FormDialog, read by chips, choice buttons, ticks. */
+val LocalFormAccent = androidx.compose.runtime.compositionLocalOf<Color?> { null }
+val LocalOnFormAccent = androidx.compose.runtime.compositionLocalOf<Color?> { null }
+
+@Composable
+fun formAccent(): Color = LocalFormAccent.current ?: MaterialTheme.colorScheme.primary
+
+@Composable
+fun onFormAccent(): Color = LocalOnFormAccent.current ?: MaterialTheme.colorScheme.onPrimary

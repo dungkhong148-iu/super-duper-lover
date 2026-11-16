@@ -90,34 +90,32 @@ fun accountTileColor(key: String): Color = lerp(accountColor(key), Color.Black, 
 /** Text and icons on an account tile. */
 val OnAccountTile = Color.White
 
-/**
- * Chip colours for every FilterChip: selected = 15% mint fill + mint label (Stitch "active chip").
- * Light mode keeps its old container/label roles.
- */
+/** Chip colours for every FilterChip: selected = solid accent fill + white text, idle = accent tint (no outline). */
 @Composable
 fun chiLiChipColors(): SelectableChipColors {
-    val c = MaterialTheme.colorScheme
+    val accent = formAccent()
+    val on = onFormAccent()
     return FilterChipDefaults.filterChipColors(
-        selectedContainerColor = c.secondaryContainer,
-        selectedLabelColor = c.onSecondaryContainer,
-        selectedLeadingIconColor = c.onSecondaryContainer,
-        selectedTrailingIconColor = c.onSecondaryContainer,
+        containerColor = accent.copy(alpha = 0.12f),
+        labelColor = MaterialTheme.colorScheme.onSurface,
+        selectedContainerColor = accent,
+        selectedLabelColor = on,
+        selectedLeadingIconColor = on,
+        selectedTrailingIconColor = on,
     )
 }
 
-/** Chip border for every FilterChip: 1dp outline when idle, 1dp mint outline when selected. */
+/** Chips have no border any more: the fill carries the state. */
 @Composable
-fun chiLiChipBorder(selected: Boolean, enabled: Boolean = true): BorderStroke {
-    val c = MaterialTheme.colorScheme
-    return FilterChipDefaults.filterChipBorder(
+fun chiLiChipBorder(selected: Boolean, enabled: Boolean = true): BorderStroke =
+    FilterChipDefaults.filterChipBorder(
         enabled = enabled,
         selected = selected,
-        borderColor = c.outlineVariant,
-        selectedBorderColor = c.primary,
-        borderWidth = 1.dp,
-        selectedBorderWidth = 1.dp,
+        borderColor = Color.Transparent,
+        selectedBorderColor = Color.Transparent,
+        borderWidth = 0.dp,
+        selectedBorderWidth = 0.dp,
     )
-}
 
 @Composable
 fun FinanceTheme(content: @Composable () -> Unit) {

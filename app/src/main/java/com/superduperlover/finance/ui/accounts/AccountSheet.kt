@@ -64,7 +64,7 @@ import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.CurrencyChips
 import com.superduperlover.finance.ui.components.FormDialog
 import com.superduperlover.finance.ui.components.OneLineText
-import com.superduperlover.finance.ui.components.SectionHeaderBand
+import com.superduperlover.finance.ui.components.FormSection
 import com.superduperlover.finance.ui.components.label
 import com.superduperlover.finance.ui.theme.OnAccountTile
 import com.superduperlover.finance.ui.theme.accountColor
@@ -154,163 +154,166 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
         saveEnabled = saveEnabled,
         hasChanges = hasChanges,
     ) {
-        SectionHeaderBand("Thông tin")
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            OutlinedTextField(
-                shape = RoundedCornerShape(16.dp),
-                value = name,
-                onValueChange = {
-                    name = it
-                    nameError = null
-                },
-                label = { Text("Tên tài khoản") },
-                singleLine = true,
-                isError = nameError != null,
-                supportingText = nameError?.let { { Text(it) } },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OneLineText("Loại", style = MaterialTheme.typography.labelLarge)
-            Row(
-                Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                AccountType.entries.forEach { t ->
-                    FilterChip(
-                    shape = RoundedCornerShape(12.dp),
-                        selected = type == t,
-                        onClick = {
-                            type = t
-                            if (!userPickedColor) {
-                                selectedColorKey = defaultAccountColorKey(t)
-                            }
-                        },
-                        label = { OneLineText(t.label()) },
-                        colors = chiLiChipColors(),
-                        border = chiLiChipBorder(selected = type == t),
-                    )
-                }
-            }
-        }
-
-        SectionHeaderBand("Tiền tệ và số dư")
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            CurrencyChips(
-                selected = currency,
-                onSelect = {
-                    currency = it
-                    openingError = null
-                },
-                enabled = isNew || !hasTxns,
-            )
-            if (!isNew && hasTxns) {
-                Text(
-                    "Không đổi được loại tiền vì tài khoản đã có giao dịch",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            OutlinedTextField(
-                shape = RoundedCornerShape(16.dp),
-                value = opening,
-                onValueChange = {
-                    opening = it
-                    openingError = null
-                },
-                label = { Text("Số dư ban đầu (${currencySymbol(currency)})") },
-                placeholder = { Text("0") },
-                singleLine = true,
-                isError = openingError != null,
-                supportingText = openingError?.let { { Text(it) } },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-
-        SectionHeaderBand("Màu sắc")
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Surface(
+        FormSection("Thông tin") {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 56.dp),
-                shape = RoundedCornerShape(16.dp),
-                color = accountTileColor(selectedColorKey),
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                OutlinedTextField(
+                    shape = RoundedCornerShape(16.dp),
+                    value = name,
+                    onValueChange = {
+                        name = it
+                        nameError = null
+                    },
+                    label = { Text("Tên tài khoản") },
+                    singleLine = true,
+                    isError = nameError != null,
+                    supportingText = nameError?.let { { Text(it) } },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OneLineText("Loại", style = MaterialTheme.typography.labelLarge)
                 Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    OneLineText(
-                        text = name.ifBlank { "Tên tài khoản" },
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = OnAccountTile,
-                        modifier = Modifier.weight(1f),
-                    )
-                    OneLineText(
-                        text = type.label(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = OnAccountTile.copy(alpha = 0.8f),
-                    )
+                    AccountType.entries.forEach { t ->
+                        FilterChip(
+                        shape = RoundedCornerShape(12.dp),
+                            selected = type == t,
+                            onClick = {
+                                type = t
+                                if (!userPickedColor) {
+                                    selectedColorKey = defaultAccountColorKey(t)
+                                }
+                            },
+                            label = { OneLineText(t.label()) },
+                            colors = chiLiChipColors(),
+                            border = chiLiChipBorder(selected = type == t),
+                        )
+                    }
                 }
             }
+        }
 
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
+        FormSection("Tiền tệ và số dư") {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                ACCOUNT_COLOR_KEYS.forEach { key ->
-                    val isSelected = key == selectedColorKey
-                    val desc = ColorDescriptions[key] ?: key
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clickable(onClickLabel = desc) {
-                                userPickedColor = true
-                                selectedColorKey = key
-                            }
-                            .semantics {
-                                selected = isSelected
-                                contentDescription = desc
-                            },
-                        contentAlignment = Alignment.Center,
+                CurrencyChips(
+                    selected = currency,
+                    onSelect = {
+                        currency = it
+                        openingError = null
+                    },
+                    enabled = isNew || !hasTxns,
+                )
+                if (!isNew && hasTxns) {
+                    Text(
+                        "Không đổi được loại tiền vì tài khoản đã có giao dịch",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                OutlinedTextField(
+                    shape = RoundedCornerShape(16.dp),
+                    value = opening,
+                    onValueChange = {
+                        opening = it
+                        openingError = null
+                    },
+                    label = { Text("Số dư ban đầu (${currencySymbol(currency)})") },
+                    placeholder = { Text("0") },
+                    singleLine = true,
+                    isError = openingError != null,
+                    supportingText = openingError?.let { { Text(it) } },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        FormSection("Màu sắc") {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = accountTileColor(selectedColorKey),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        if (isSelected) {
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
-                            )
-                        }
+                        OneLineText(
+                            text = name.ifBlank { "Tên tài khoản" },
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = OnAccountTile,
+                            modifier = Modifier.weight(1f),
+                        )
+                        OneLineText(
+                            text = type.label(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = OnAccountTile.copy(alpha = 0.8f),
+                        )
+                    }
+                }
+
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    ACCOUNT_COLOR_KEYS.forEach { key ->
+                        val isSelected = key == selectedColorKey
+                        val desc = ColorDescriptions[key] ?: key
                         Box(
                             modifier = Modifier
-                                .size(36.dp)
-                                .background(accountColor(key), CircleShape),
+                                .size(48.dp)
+                                .clickable(onClickLabel = desc) {
+                                    userPickedColor = true
+                                    selectedColorKey = key
+                                }
+                                .semantics {
+                                    selected = isSelected
+                                    contentDescription = desc
+                                },
                             contentAlignment = Alignment.Center,
                         ) {
                             if (isSelected) {
-                                Icon(
-                                    imageVector = Icons.Filled.Check,
-                                    contentDescription = null,
-                                    tint = OnAccountTile,
-                                    modifier = Modifier.size(20.dp),
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
                                 )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(accountColor(key), CircleShape),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Check,
+                                        contentDescription = null,
+                                        tint = OnAccountTile,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
                             }
                         }
                     }
@@ -319,67 +322,68 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
         }
 
         if (!isNew) {
-            SectionHeaderBand("Khác")
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                OutlinedButton(
-                shape = RoundedCornerShape(16.dp),
-                    onClick = { showReconcileDialog = true },
+            FormSection("Khác") {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 48.dp),
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    OneLineText("Điều chỉnh số dư")
-                }
-                if (reconciled) {
+                    OutlinedButton(
+                    shape = RoundedCornerShape(16.dp),
+                        onClick = { showReconcileDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
+                    ) {
+                        OneLineText("Điều chỉnh số dư")
+                    }
+                    if (reconciled) {
+                        Text(
+                            text = "Đã điều chỉnh số dư",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    OutlinedButton(
+                    shape = RoundedCornerShape(16.dp),
+                        onClick = {
+                            scope.launch {
+                                archiveBalance = accountBalance(account, repo.txns(accountId = account.id).first())
+                                showArchiveConfirm = true
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
+                    ) {
+                        OneLineText("Lưu trữ")
+                    }
                     Text(
-                        text = "Đã điều chỉnh số dư",
+                        text = "Ẩn khỏi danh sách, giữ lịch sử, khôi phục trong Cài đặt > Lưu trữ",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                }
-                OutlinedButton(
-                shape = RoundedCornerShape(16.dp),
-                    onClick = {
-                        scope.launch {
-                            archiveBalance = accountBalance(account, repo.txns(accountId = account.id).first())
-                            showArchiveConfirm = true
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp),
-                ) {
-                    OneLineText("Lưu trữ")
-                }
-                Text(
-                    text = "Ẩn khỏi danh sách, giữ lịch sử, khôi phục trong Cài đặt > Lưu trữ",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                OutlinedButton(
-                shape = RoundedCornerShape(16.dp),
-                    onClick = {
-                        deleteError = null
-                        showDeleteConfirm = true
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp),
-                ) {
-                    OneLineText("Xóa tài khoản", color = MaterialTheme.colorScheme.error)
-                }
-                Text(
-                    text = "Xóa vĩnh viễn, chỉ khi chưa có giao dịch",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                deleteError?.let {
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                    OutlinedButton(
+                    shape = RoundedCornerShape(16.dp),
+                        onClick = {
+                            deleteError = null
+                            showDeleteConfirm = true
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
+                    ) {
+                        OneLineText("Xóa tài khoản", color = MaterialTheme.colorScheme.error)
+                    }
+                    Text(
+                        text = "Xóa vĩnh viễn, chỉ khi chưa có giao dịch",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    deleteError?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
             }
         }

@@ -70,8 +70,9 @@ import com.superduperlover.finance.ui.components.CheckRow
 import com.superduperlover.finance.ui.components.ChoiceButtons
 import com.superduperlover.finance.ui.components.CurrencyChips
 import com.superduperlover.finance.ui.components.FormDialog
+import com.superduperlover.finance.ui.components.FormFeature
 import com.superduperlover.finance.ui.components.OneLineText
-import com.superduperlover.finance.ui.components.SectionHeaderBand
+import com.superduperlover.finance.ui.components.FormSection
 import com.superduperlover.finance.ui.components.dayMonthYear
 import com.superduperlover.finance.ui.home.moneyText
 import com.superduperlover.finance.ui.theme.ChiLiV3
@@ -148,203 +149,178 @@ fun CreateDebtDialog(
     }
 
     FormDialog(
+        feature = FormFeature.DEBT,
         title = "Thêm khoản nợ",
         onClose = onDismiss,
         onSave = onSave,
         saveEnabled = saveEnabled,
         hasChanges = hasChanges,
     ) {
-        SectionHeaderBand("Loại khoản nợ")
-        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-            ChoiceButtons(
-                options = listOf("Mình nợ", "Cho mượn"),
-                selectedIndex = if (kind == DebtKind.OWE) 0 else 1,
-                onSelect = { kind = if (it == 0) DebtKind.OWE else DebtKind.LENT },
-            )
+        FormSection("Loại khoản nợ") {
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                ChoiceButtons(
+                    options = listOf("Mình nợ", "Cho mượn"),
+                    selectedIndex = if (kind == DebtKind.OWE) 0 else 1,
+                    onSelect = { kind = if (it == 0) DebtKind.OWE else DebtKind.LENT },
+                )
+            }
         }
 
-        SectionHeaderBand("Thông tin")
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OutlinedTextField(
-                value = title,
-                onValueChange = {
-                    title = it
-                    titleError = null
-                },
-                label = { Text("Nội dung") },
-                placeholder = { Text("Ví dụ: Vay mua xe, Mượn tiền cơm...") },
-                singleLine = true,
-                isError = titleError != null,
-                supportingText = titleError?.let { { Text(it) } },
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = person,
-                onValueChange = {
-                    person = it
-                    personError = null
-                },
-                label = { Text(if (kind == DebtKind.OWE) "Chủ nợ (người bạn nợ)" else "Người vay (người mượn bạn)") },
-                placeholder = { Text("Tên người hoặc tổ chức") },
-                singleLine = true,
-                isError = personError != null,
-                supportingText = personError?.let { { Text(it) } },
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-
-        SectionHeaderBand("Số tiền")
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            CurrencyChips(
-                selected = currency,
-                onSelect = {
-                    currency = it
-                    selectedAccountId = null
-                },
-                label = "Loại tiền",
-            )
-            OutlinedTextField(
-                value = totalText,
-                onValueChange = {
-                    totalText = it
-                    totalError = null
-                },
-                label = { Text("Số tiền (${currencySymbol(currency)})") },
-                placeholder = { Text("0") },
-                singleLine = true,
-                isError = totalError != null,
-                supportingText = totalError?.let { { Text(it) } },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-
-        SectionHeaderBand("Tài khoản ghi nhận")
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            CheckRow(
-                text = "Chỉ ghi nhớ (khoản cũ, không đụng tài khoản)",
-                subtitle = "Khoản nợ từ trước, không tạo giao dịch thu/chi vào tài khoản",
-                checked = memoOnly,
-                onChange = {
-                    memoOnly = it
-                    if (it) {
-                        selectedAccountId = null
-                        accountError = null
-                    }
-                },
-            )
-            if (!memoOnly) {
-                val accountBorderColor = if (accountError != null) MaterialTheme.colorScheme.error else c.cardBorder
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .clickable { showAccountPicker = true },
+        FormSection("Thông tin") {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = {
+                        title = it
+                        titleError = null
+                    },
+                    label = { Text("Nội dung") },
+                    placeholder = { Text("Ví dụ: Vay mua xe, Mượn tiền cơm...") },
+                    singleLine = true,
+                    isError = titleError != null,
+                    supportingText = titleError?.let { { Text(it) } },
                     shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, accountBorderColor),
-                    color = c.cardActive,
-                ) {
-                    Row(
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = person,
+                    onValueChange = {
+                        person = it
+                        personError = null
+                    },
+                    label = { Text(if (kind == DebtKind.OWE) "Chủ nợ (người bạn nợ)" else "Người vay (người mượn bạn)") },
+                    placeholder = { Text("Tên người hoặc tổ chức") },
+                    singleLine = true,
+                    isError = personError != null,
+                    supportingText = personError?.let { { Text(it) } },
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        FormSection("Số tiền") {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                CurrencyChips(
+                    selected = currency,
+                    onSelect = {
+                        currency = it
+                        selectedAccountId = null
+                    },
+                    label = "Loại tiền",
+                )
+                OutlinedTextField(
+                    value = totalText,
+                    onValueChange = {
+                        totalText = it
+                        totalError = null
+                    },
+                    label = { Text("Số tiền (${currencySymbol(currency)})") },
+                    placeholder = { Text("0") },
+                    singleLine = true,
+                    isError = totalError != null,
+                    supportingText = totalError?.let { { Text(it) } },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        FormSection("Tài khoản ghi nhận") {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                CheckRow(
+                    text = "Chỉ ghi nhớ (khoản cũ, không đụng tài khoản)",
+                    subtitle = "Khoản nợ từ trước, không tạo giao dịch thu/chi vào tài khoản",
+                    checked = memoOnly,
+                    onChange = {
+                        memoOnly = it
+                        if (it) {
+                            selectedAccountId = null
+                            accountError = null
+                        }
+                    },
+                )
+                if (!memoOnly) {
+                    val accountBorderColor = if (accountError != null) MaterialTheme.colorScheme.error else c.cardBorder
+                    Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            .heightIn(min = 48.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .clickable { showAccountPicker = true },
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, accountBorderColor),
+                        color = c.cardActive,
                     ) {
-                        if (selectedAccount != null) {
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .clip(CircleShape)
-                                    .background(accountColor(selectedAccount.colorKey)),
-                            )
-                            Column(modifier = Modifier.weight(1f)) {
-                                OneLineText(
-                                    text = selectedAccount.name,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = c.onCard,
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            if (selectedAccount != null) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(12.dp)
+                                        .clip(CircleShape)
+                                        .background(accountColor(selectedAccount.colorKey)),
                                 )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    OneLineText(
+                                        text = selectedAccount.name,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = c.onCard,
+                                    )
+                                    OneLineText(
+                                        text = "Số dư: ${formatMoney(accountBalance(selectedAccount, allTxns), selectedAccount.currency)}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = c.onSheetMuted,
+                                    )
+                                }
+                            } else {
                                 OneLineText(
-                                    text = "Số dư: ${formatMoney(accountBalance(selectedAccount, allTxns), selectedAccount.currency)}",
-                                    style = MaterialTheme.typography.bodySmall,
+                                    text = "Chọn tài khoản ghi nhận",
+                                    style = MaterialTheme.typography.bodyLarge,
                                     color = c.onSheetMuted,
+                                    modifier = Modifier.weight(1f),
                                 )
                             }
-                        } else {
-                            OneLineText(
-                                text = "Chọn tài khoản ghi nhận",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = c.onSheetMuted,
-                                modifier = Modifier.weight(1f),
-                            )
                         }
                     }
-                }
-                if (accountError != null) {
-                    Text(
-                        text = accountError!!,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(start = 16.dp),
-                    )
+                    if (accountError != null) {
+                        Text(
+                            text = accountError!!,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(start = 16.dp),
+                        )
+                    }
                 }
             }
         }
 
-        SectionHeaderBand("Thời gian")
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .clickable { showStartDatePicker = true },
-                shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, c.cardBorder),
-                color = c.cardActive,
+        FormSection("Thời gian") {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    OneLineText("Ngày bắt đầu", style = MaterialTheme.typography.bodyMedium, color = c.onSheetMuted)
-                    OneLineText(startDate.dayMonthYear(), style = MaterialTheme.typography.bodyLarge, color = c.onCard)
-                }
-            }
-            CheckRow(
-                text = "Có ngày hẹn trả",
-                checked = hasDueDate,
-                onChange = {
-                    hasDueDate = it
-                    if (it && dueDate == null) dueDate = LocalDate.now().plusMonths(1)
-                },
-            )
-            if (hasDueDate) {
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 48.dp)
                         .clip(RoundedCornerShape(16.dp))
-                        .clickable { showDueDatePicker = true },
+                        .clickable { showStartDatePicker = true },
                     shape = RoundedCornerShape(16.dp),
                     border = BorderStroke(1.dp, c.cardBorder),
                     color = c.cardActive,
@@ -356,25 +332,57 @@ fun CreateDebtDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        OneLineText("Ngày hẹn trả", style = MaterialTheme.typography.bodyMedium, color = c.onSheetMuted)
-                        OneLineText((dueDate ?: LocalDate.now()).dayMonthYear(), style = MaterialTheme.typography.bodyLarge, color = c.onCard)
+                        OneLineText("Ngày bắt đầu", style = MaterialTheme.typography.bodyMedium, color = c.onSheetMuted)
+                        OneLineText(startDate.dayMonthYear(), style = MaterialTheme.typography.bodyLarge, color = c.onCard)
+                    }
+                }
+                CheckRow(
+                    text = "Có ngày hẹn trả",
+                    checked = hasDueDate,
+                    onChange = {
+                        hasDueDate = it
+                        if (it && dueDate == null) dueDate = LocalDate.now().plusMonths(1)
+                    },
+                )
+                if (hasDueDate) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .clickable { showDueDatePicker = true },
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, c.cardBorder),
+                        color = c.cardActive,
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            OneLineText("Ngày hẹn trả", style = MaterialTheme.typography.bodyMedium, color = c.onSheetMuted)
+                            OneLineText((dueDate ?: LocalDate.now()).dayMonthYear(), style = MaterialTheme.typography.bodyLarge, color = c.onCard)
+                        }
                     }
                 }
             }
         }
 
-        SectionHeaderBand("Ghi chú")
-        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-            OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
-                label = { Text("Ghi chú thêm (tùy chọn)") },
-                maxLines = 3,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth(),
-            )
+        FormSection("Ghi chú") {
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text("Ghi chú thêm (tùy chọn)") },
+                    maxLines = 3,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            Spacer(Modifier.height(16.dp))
         }
-        Spacer(Modifier.height(16.dp))
     }
 
     if (showAccountPicker) {
@@ -503,134 +511,137 @@ fun DebtDetailDialog(
     }
 
     FormDialog(
+        feature = FormFeature.DEBT,
         title = if (debt.kind == DebtKind.OWE) "Khoản nợ" else "Khoản cho mượn",
         onClose = onDismiss,
         onSave = onSave,
         saveEnabled = saveEnabled,
         hasChanges = hasChanges,
     ) {
-        SectionHeaderBand("Tiến độ")
-        val progShape = RoundedCornerShape(16.dp)
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .v3Shadow(c.shadow1, progShape)
-                .clip(progShape)
-                .background(c.cardActive)
-                .border(1.dp, c.cardBorder, progShape)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val paidLabel = if (debt.kind == DebtKind.OWE) "Đã trả: " else "Đã thu: "
-                Text(
-                    text = paidLabel + moneyText(paid, debt.currency, prefs.hideBalance),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = c.onSheetMuted,
-                )
-                Text(
-                    text = "Tổng: " + moneyText(debt.total, debt.currency, prefs.hideBalance),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = c.onSheetMuted,
-                )
-            }
-            Text(
-                text = "Còn lại: " + moneyText(remaining, debt.currency, prefs.hideBalance),
-                style = MaterialTheme.typography.headlineSmall,
-                color = if (isSettled) c.accent else c.onCard,
-            )
-            LinearProgressIndicator(
-                progress = { progress },
+        FormSection("Tiến độ") {
+            val progShape = RoundedCornerShape(16.dp)
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp)),
-                color = if (debt.kind == DebtKind.OWE) c.expense else c.accent,
-                trackColor = c.card,
-            )
+                    .padding(horizontal = 16.dp)
+                    .v3Shadow(c.shadow1, progShape)
+                    .clip(progShape)
+                    .background(c.cardActive)
+                    .border(1.dp, c.cardBorder, progShape)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val paidLabel = if (debt.kind == DebtKind.OWE) "Đã trả: " else "Đã thu: "
+                    Text(
+                        text = paidLabel + moneyText(paid, debt.currency, prefs.hideBalance),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = c.onSheetMuted,
+                    )
+                    Text(
+                        text = "Tổng: " + moneyText(debt.total, debt.currency, prefs.hideBalance),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = c.onSheetMuted,
+                    )
+                }
+                Text(
+                    text = "Còn lại: " + moneyText(remaining, debt.currency, prefs.hideBalance),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = if (isSettled) c.accent else c.onCard,
+                )
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = if (debt.kind == DebtKind.OWE) c.expense else c.accent,
+                    trackColor = c.card,
+                )
+            }
         }
 
-        SectionHeaderBand("Lịch sử thanh toán")
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            val actionText = if (debt.kind == DebtKind.OWE) "Ghi trả" else "Ghi thu"
-            Button(
-                onClick = { showRecordPayment = true },
-                enabled = !isSettled,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp),
-                shape = RoundedCornerShape(16.dp),
+        FormSection("Lịch sử thanh toán") {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(actionText, style = MaterialTheme.typography.labelLarge)
-            }
-            if (isSettled) {
-                Text(
-                    text = "Khoản nợ đã được thanh toán xong",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = c.accent,
-                    modifier = Modifier.padding(vertical = 4.dp),
-                )
-            }
-            if (thisPayments.isEmpty()) {
-                Text(
-                    text = "Chưa có lượt thanh toán nào.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = c.onSheetMuted,
-                    modifier = Modifier.padding(vertical = 8.dp),
-                )
-            } else {
-                thisPayments.forEach { payment ->
-                    val payShape = RoundedCornerShape(12.dp)
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(payShape),
-                        shape = payShape,
-                        color = c.card,
-                        border = BorderStroke(1.dp, c.cardBorder),
-                    ) {
-                        Row(
+                val actionText = if (debt.kind == DebtKind.OWE) "Ghi trả" else "Ghi thu"
+                Button(
+                    onClick = { showRecordPayment = true },
+                    enabled = !isSettled,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                    shape = RoundedCornerShape(16.dp),
+                ) {
+                    Text(actionText, style = MaterialTheme.typography.labelLarge)
+                }
+                if (isSettled) {
+                    Text(
+                        text = "Khoản nợ đã được thanh toán xong",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = c.accent,
+                        modifier = Modifier.padding(vertical = 4.dp),
+                    )
+                }
+                if (thisPayments.isEmpty()) {
+                    Text(
+                        text = "Chưa có lượt thanh toán nào.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = c.onSheetMuted,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                } else {
+                    thisPayments.forEach { payment ->
+                        val payShape = RoundedCornerShape(12.dp)
+                        Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                .clip(payShape),
+                            shape = payShape,
+                            color = c.card,
+                            border = BorderStroke(1.dp, c.cardBorder),
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                OneLineText(
-                                    text = payment.date.dayMonthYear(),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = c.onSheetMuted,
-                                )
-                                val accName = payment.accountId?.let { accountMap[it]?.name } ?: "Chỉ ghi nhớ"
-                                OneLineText(
-                                    text = accName,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = c.onCard,
-                                )
-                            }
-                            Text(
-                                text = moneyText(payment.amount, debt.currency, prefs.hideBalance),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = if (debt.kind == DebtKind.OWE) c.expense else c.income,
-                            )
-                            IconButton(
-                                onClick = { paymentToDelete = payment },
-                                modifier = Modifier.size(48.dp),
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Close,
-                                    contentDescription = "Xóa",
-                                    tint = c.onSheetMuted,
+                                Column(modifier = Modifier.weight(1f)) {
+                                    OneLineText(
+                                        text = payment.date.dayMonthYear(),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = c.onSheetMuted,
+                                    )
+                                    val accName = payment.accountId?.let { accountMap[it]?.name } ?: "Chỉ ghi nhớ"
+                                    OneLineText(
+                                        text = accName,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = c.onCard,
+                                    )
+                                }
+                                Text(
+                                    text = moneyText(payment.amount, debt.currency, prefs.hideBalance),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = if (debt.kind == DebtKind.OWE) c.expense else c.income,
                                 )
+                                IconButton(
+                                    onClick = { paymentToDelete = payment },
+                                    modifier = Modifier.size(48.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Close,
+                                        contentDescription = "Xóa",
+                                        tint = c.onSheetMuted,
+                                    )
+                                }
                             }
                         }
                     }
@@ -638,96 +649,98 @@ fun DebtDetailDialog(
             }
         }
 
-        SectionHeaderBand("Thông tin khoản nợ")
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Nội dung") },
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = person,
-                onValueChange = { person = it },
-                label = { Text(if (debt.kind == DebtKind.OWE) "Chủ nợ" else "Người vay") },
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = totalText,
-                onValueChange = {
-                    totalText = it
-                    totalError = null
-                },
-                label = { Text("Tổng tiền (${currencySymbol(debt.currency)})") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                isError = totalError != null,
-                supportingText = totalError?.let { { Text(it) } } ?: { Text("Tối thiểu: ${moneyText(paid, debt.currency, false)}") },
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            CheckRow(
-                text = "Có ngày hẹn trả",
-                checked = hasDueDate,
-                onChange = {
-                    hasDueDate = it
-                    if (it && dueDate == null) dueDate = LocalDate.now().plusMonths(1)
-                },
-            )
-            if (hasDueDate) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .clickable { showDueDatePicker = true },
+        FormSection("Thông tin khoản nợ") {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Nội dung") },
+                    singleLine = true,
                     shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, c.cardBorder),
-                    color = c.cardActive,
-                ) {
-                    Row(
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = person,
+                    onValueChange = { person = it },
+                    label = { Text(if (debt.kind == DebtKind.OWE) "Chủ nợ" else "Người vay") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = totalText,
+                    onValueChange = {
+                        totalText = it
+                        totalError = null
+                    },
+                    label = { Text("Tổng tiền (${currencySymbol(debt.currency)})") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = totalError != null,
+                    supportingText = totalError?.let { { Text(it) } } ?: { Text("Tối thiểu: ${moneyText(paid, debt.currency, false)}") },
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                CheckRow(
+                    text = "Có ngày hẹn trả",
+                    checked = hasDueDate,
+                    onChange = {
+                        hasDueDate = it
+                        if (it && dueDate == null) dueDate = LocalDate.now().plusMonths(1)
+                    },
+                )
+                if (hasDueDate) {
+                    Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                            .heightIn(min = 48.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .clickable { showDueDatePicker = true },
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, c.cardBorder),
+                        color = c.cardActive,
                     ) {
-                        OneLineText("Ngày hẹn trả", style = MaterialTheme.typography.bodyMedium, color = c.onSheetMuted)
-                        OneLineText((dueDate ?: LocalDate.now()).dayMonthYear(), style = MaterialTheme.typography.bodyLarge, color = c.onCard)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            OneLineText("Ngày hẹn trả", style = MaterialTheme.typography.bodyMedium, color = c.onSheetMuted)
+                            OneLineText((dueDate ?: LocalDate.now()).dayMonthYear(), style = MaterialTheme.typography.bodyLarge, color = c.onCard)
+                        }
                     }
                 }
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text("Ghi chú") },
+                    maxLines = 3,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
-            OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
-                label = { Text("Ghi chú") },
-                maxLines = 3,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
 
-        SectionHeaderBand("Xóa")
-        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-            OutlinedButton(
-                onClick = { showDeleteDebtConfirm = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp),
-                shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
-            ) {
-                Text("Xóa khoản nợ", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelLarge)
+        FormSection("Xóa") {
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                OutlinedButton(
+                    onClick = { showDeleteDebtConfirm = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+                ) {
+                    Text("Xóa khoản nợ", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelLarge)
+                }
             }
+            Spacer(Modifier.height(16.dp))
         }
-        Spacer(Modifier.height(16.dp))
     }
 
     if (paymentToDelete != null) {
