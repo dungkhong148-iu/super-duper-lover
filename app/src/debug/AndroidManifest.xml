@@ -12,6 +12,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- Debug-only N2 demo of the v3 redesign (font, colours, Home mock-up, collapsing sheet). -->
+        <activity
+            android:name=".v3demo.V3DemoActivity"
+            android:exported="true"
+            android:label="ChiLi v3">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>
