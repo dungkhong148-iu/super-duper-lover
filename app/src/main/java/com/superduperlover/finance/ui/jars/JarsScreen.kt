@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -85,7 +84,6 @@ fun JarsScreen(
     val totalReserved = remember(jarSavings) { jarSavings.filter { it.goal.isReserving() }.sumOf { it.saved } }
     var selectedTab by remember { mutableStateOf(JarTab.SAVINGS) }
 
-    var selectedJarId by remember { mutableStateOf<Long?>(null) }
     var showCreateGoalSheet by remember { mutableStateOf(false) }
 
     Column(
@@ -200,60 +198,6 @@ fun JarsScreen(
 
         when (selectedTab) {
             JarTab.SAVINGS -> {
-                if (jarSavings.isNotEmpty()) {
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        items(jarSavings, key = { it.goal.id }) { jar ->
-                            JarTile(
-                                jar = jar,
-                                selected = selectedJarId == jar.goal.id,
-                                onClick = {
-                                    selectedJarId = if (selectedJarId == jar.goal.id) null else jar.goal.id
-                                },
-                            )
-                        }
-                    }
-                }
-
-                if (selectedJarId != null) {
-                    val selectedJar = jarSavings.firstOrNull { it.goal.id == selectedJarId }
-                    if (selectedJar != null) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            OneLineText(
-                                text = "Đang lọc: ${selectedJar.goal.name}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = c.onSheetMuted,
-                                modifier = Modifier.weight(1f),
-                            )
-                            TextButton(
-                                onClick = { selectedJarId = null },
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                            ) {
-                                OneLineText(
-                                    text = "Xóa bộ lọc",
-                                    color = c.accent,
-                                    style = MaterialTheme.typography.labelMedium,
-                                )
-                            }
-                        }
-                    }
-                }
-
-                val displayedJars = if (selectedJarId == null) {
-                    jarSavings
-                } else {
-                    jarSavings.filter { it.goal.id == selectedJarId }
-                }
-
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -296,24 +240,12 @@ fun JarsScreen(
                             }
                         }
 
-                        if (displayedJars.isEmpty()) {
-                            item(key = "empty_filter") {
-                                EmptyState(
-                                    icon = painterResource(R.drawable.ic_savings),
-                                    title = "Không có hũ phù hợp",
-                                    message = "Không tìm thấy hũ với bộ lọc đã chọn.",
-                                    actionLabel = "Xóa bộ lọc",
-                                    onAction = { selectedJarId = null },
-                                )
-                            }
-                        } else {
-                            items(displayedJars, key = { it.goal.id }) { jar ->
-                                JarDetailCard(
-                                    jar = jar,
-                                    accountName = jar.goal.sourceAccountId?.let { accountMap[it]?.name },
-                                    onClick = { onOpenJar(jar.goal.id) },
-                                )
-                            }
+                        items(jarSavings, key = { it.goal.id }) { jar ->
+                            JarDetailCard(
+                                jar = jar,
+                                accountName = jar.goal.sourceAccountId?.let { accountMap[it]?.name },
+                                onClick = { onOpenJar(jar.goal.id) },
+                            )
                         }
                     }
                 }
