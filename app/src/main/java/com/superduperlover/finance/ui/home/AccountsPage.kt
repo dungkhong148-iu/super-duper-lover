@@ -35,6 +35,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.layout.layout
@@ -59,6 +60,7 @@ import com.superduperlover.finance.core.CURRENCY_DISPLAY_ORDER
 import com.superduperlover.finance.core.JarSaving
 import com.superduperlover.finance.core.JarStatus
 import com.superduperlover.finance.core.MAIN_CURRENCY
+import com.superduperlover.finance.core.TxRange
 import com.superduperlover.finance.core.TxnKind
 import com.superduperlover.finance.core.TxnTotals
 import com.superduperlover.finance.core.accountBalance
@@ -67,6 +69,8 @@ import com.superduperlover.finance.core.balancesByCurrency
 import com.superduperlover.finance.core.budgetUsage
 import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.core.freeByCurrency
+import com.superduperlover.finance.core.inTxRange
+import com.superduperlover.finance.core.shiftTxAnchor
 import com.superduperlover.finance.core.reservedByCurrency
 import com.superduperlover.finance.core.txnTotals
 import com.superduperlover.finance.ui.LocalRepo
@@ -97,7 +101,9 @@ private val FullWidth: (androidx.compose.foundation.lazy.grid.LazyGridItemSpanSc
  */
 @Composable
 fun AccountsPage(
-    onOpenAccountTransactions: (Long) -> Unit,
+    /** Full list; the id (when an account is selected) opens it filtered to that account. */
+    onOpenTransactions: (Long?) -> Unit,
+    onEditTxn: (Long) -> Unit,
     onOpenPlan: () -> Unit,
     onOpenGoal: (Long) -> Unit = {},
     onOpenJars: () -> Unit = {},
@@ -122,6 +128,14 @@ fun AccountsPage(
     // v3: Hero in the main currency; a selected account of another currency shows its own.
     val selectedCurrency = selected?.currency ?: MAIN_CURRENCY
     val hidden = prefs.hideBalance
+    // Yellow block state; the Thu nhập / Chi tiêu pills of the Hero set typeName.
+    var typeName by rememberSaveable { mutableStateOf<String?>(null) }
+    var rangeName by rememberSaveable { mutableStateOf(TxRange.MONTH.name) }
+    var anchorDay by rememberSaveable { mutableLongStateOf(LocalDate.now().toEpochDay()) }
+    var expanded by rememberSaveable { mutableStateOf(true) }
+    val typeFilter = TxnKind.entries.firstOrNull { it.name == typeName }
+    val range = TxRange.valueOf(rangeName)
+    val anchor = LocalDate.ofEpochDay(anchorDay)
 
     // budgets repeat every period: their usage needs every expense since the start date
     val usages = budgets.map { it to budgetUsage(it, allTxns, allAccounts, today) }
@@ -199,10 +213,35 @@ fun AccountsPage(
                 income = selectedTotals.income,
                 expense = selectedTotals.expense,
                 currency = selectedCurrency,
+                typeFilter = typeFilter,
+                onTypeFilter = { typeName = if (typeFilter == it) null else it.name },
                 hidden = hidden,
                 onToggleHidden = { prefs.hideBalance = !prefs.hideBalance },
                 onOpenBudgets = onOpenPlan,
                 onOpenJars = onOpenJars,
+            )
+        }
+
+        item(key = "yellow", span = FullWidth) {
+            val listed = allTxns.filter {
+                (selected == null || it.accountId == selected.id || it.toAccountId == selected.id) &&
+                    (typeFilter == null || it.kind == typeFilter) && inTxRange(it.date, range, anchor)
+            }
+            YellowBlock(
+                txns = listed,
+                accounts = allAccounts.associateBy { it.id },
+                categories = categories.associateBy { it.id },
+                range = range,
+                anchor = anchor,
+                expanded = expanded,
+                typeFilter = typeFilter,
+                hidden = hidden,
+                onToggle = { expanded = !expanded },
+                onRange = { rangeName = it.name },
+                onShift = { anchorDay = shiftTxAnchor(range, anchor, it).toEpochDay() },
+                onClearFilter = { typeName = null },
+                onOpenTxn = onEditTxn,
+                onOpenAll = { onOpenTransactions(selected?.id) },
             )
         }
 

@@ -1,6 +1,7 @@
 package com.superduperlover.finance.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,6 +59,9 @@ fun HeroCard(
     income: Long,
     expense: Long,
     currency: Currency,
+    /** Thu nhập / Chi tiêu pill that filters the yellow block; null = none. */
+    typeFilter: TxnKind?,
+    onTypeFilter: (TxnKind) -> Unit,
     hidden: Boolean,
     onToggleHidden: () -> Unit,
     onOpenBudgets: () -> Unit,
@@ -124,18 +128,20 @@ fun HeroCard(
             Spacer(Modifier.height(12.dp))
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                TypePill("Thu nhập", "+" + money(income), TxnKind.INCOME, c.incomePill, Modifier.weight(1f))
-                TypePill("Chi tiêu", "-" + money(expense), TxnKind.EXPENSE, c.expensePill, Modifier.weight(1f))
+                TypePill("Thu nhập", "+" + money(income), TxnKind.INCOME, c.incomePill, typeFilter == TxnKind.INCOME, Modifier.weight(1f)) { onTypeFilter(TxnKind.INCOME) }
+                TypePill("Chi tiêu", "-" + money(expense), TxnKind.EXPENSE, c.expensePill, typeFilter == TxnKind.EXPENSE, Modifier.weight(1f)) { onTypeFilter(TxnKind.EXPENSE) }
             }
         }
     }
 }
 
 @Composable
-private fun TypePill(label: String, value: String, kind: TxnKind, fill: Color, modifier: Modifier) {
+private fun TypePill(label: String, value: String, kind: TxnKind, fill: Color, active: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val c = ChiLiV3.colors
     Row(
-        modifier.v3Shadow(c.shadow2, CircleShape).clip(CircleShape).background(fill).padding(horizontal = 10.dp, vertical = 8.dp),
+        modifier.v3Shadow(c.shadow2, CircleShape).clip(CircleShape).background(fill)
+            .border(2.dp, if (active) Color.White else Color.Transparent, CircleShape)
+            .clickable(onClick = onClick).padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {

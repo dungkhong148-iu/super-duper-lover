@@ -138,9 +138,10 @@ fun FinanceApp() {
         ) {
             composable(Tab.HOME.route) {
                 HomeScreen(
-                    onOpenAccountTransactions = { id ->
-                        navController.navigate("transactions?accountId=$id") { launchSingleTop = true }
+                    onOpenTransactions = { id ->
+                        navController.navigate(if (id == null) "transactions" else "transactions?accountId=$id") { launchSingleTop = true }
                     },
+                    onEditTxn = { id -> navController.navigate("add/$id") },
                     onOpenBudgets = { openTab(Tab.BUDGET) },
                     onOpenGoal = { id -> navController.navigate("goal/$id") },
                     onOpenJars = { openTab(Tab.JARS) },

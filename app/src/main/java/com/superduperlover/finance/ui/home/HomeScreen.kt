@@ -37,7 +37,8 @@ private val PAGE_TITLES = listOf("Tài khoản", "Lịch")
  */
 @Composable
 fun HomeScreen(
-    onOpenAccountTransactions: (Long) -> Unit,
+    onOpenTransactions: (Long?) -> Unit,
+    onEditTxn: (Long) -> Unit,
     onOpenGoal: (Long) -> Unit,
     onOpenBudgets: () -> Unit,
     onOpenJars: () -> Unit = {},
@@ -93,7 +94,8 @@ fun HomeScreen(
         ) { page ->
             when (page) {
                 0 -> AccountsPage(
-                    onOpenAccountTransactions = onOpenAccountTransactions,
+                    onOpenTransactions = onOpenTransactions,
+                    onEditTxn = onEditTxn,
                     onOpenPlan = onOpenBudgets,
                     onOpenGoal = onOpenGoal,
                     onOpenJars = onOpenJars,
