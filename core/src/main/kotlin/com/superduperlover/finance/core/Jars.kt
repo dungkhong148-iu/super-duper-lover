@@ -151,6 +151,23 @@ object ScheduleEngine {
     }
 }
 
+/**
+ * The jar that follows [goal] after it was settled on [settledOn]: same name, target, duration, account, category and
+ * auto-deduct, nothing saved, plan starting [settledOn]. null when the jar does not repeat or has no plan.
+ */
+fun nextJarCycle(goal: Goal, settledOn: LocalDate): Goal? {
+    val plan = goal.plan ?: return null
+    if (!goal.repeat) return null
+    return goal.copy(
+        id = 0,
+        deadline = null,
+        archived = false,
+        completedAt = null,
+        status = JarStatus.ACTIVE,
+        plan = JarPlan(plan.duration, settledOn, 0L, settledOn),
+    )
+}
+
 /** A jar and what it has saved (the sum of its contributions, see [jarSaved]). */
 data class JarSaving(val goal: Goal, val saved: Long)
 

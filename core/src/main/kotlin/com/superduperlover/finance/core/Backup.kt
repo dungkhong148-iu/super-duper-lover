@@ -7,26 +7,32 @@ import java.time.format.DateTimeParseException
 /**
  * Written by export. Import also accepts version 1 (before currencies: no currency, colorKey or toAmount; VND)
  * and version 2 (budgets have `month` instead of period / startDate / rollover; goals have no completedAt)
- * and version 3 (goals have no jar fields, contributions no type: they read as plain saving goals).
+ * and version 3 (goals have no jar fields, contributions no type: they read as plain saving goals)
+ * and version 4 (no debts, debtPayments, txns.debtId or goals.repeat: they read as empty / null / false).
+ * The tables `debts` and `debtPayments` are optional: a missing one means no rows.
  */
-const val BACKUP_VERSION = 4
+const val BACKUP_VERSION = 5
 
 /** Value of the `app` field in the header of an exported file. */
 const val BACKUP_APP_NAME = "ChiLi"
 const val OLDEST_SUPPORTED_BACKUP_VERSION = 1
 val BACKUP_TABLES = listOf("accounts", "categories", "txns", "budgets", "goals", "goalContributions")
 
+val OPTIONAL_BACKUP_TABLES = listOf("debts", "debtPayments")
+
 private val TABLE_INTEGER_FIELDS = mapOf(
     "accounts" to listOf("id", "openingBalance"),
     "categories" to listOf("id"),
-    "txns" to listOf("id", "amount", "toAmount", "accountId", "toAccountId", "categoryId"),
+    "txns" to listOf("id", "amount", "toAmount", "accountId", "toAccountId", "categoryId", "debtId"),
     "budgets" to listOf("id", "accountId", "categoryId", "limit"),
     "goals" to listOf("id", "target", "sourceAccountId", "categoryId", "durationCount", "planBase"),
     "goalContributions" to listOf("id", "goalId", "amount", "txnId", "periodIndex"),
+    "debts" to listOf("id", "total", "accountId", "originTxnId"),
+    "debtPayments" to listOf("id", "debtId", "amount", "accountId", "txnId"),
 )
 
 /** Tables whose rows may carry a `currency` string (version 2). */
-private val TABLES_WITH_CURRENCY = setOf("accounts", "budgets", "goals")
+private val TABLES_WITH_CURRENCY = setOf("accounts", "budgets", "goals", "debts")
 
 fun validateBackup(root: Map<String, Any?>): List<String> {
     val errors = mutableListOf<String>()
@@ -45,8 +51,9 @@ fun validateBackup(root: Map<String, Any?>): List<String> {
         errors.add("Phiên bản sao lưu không được hỗ trợ")
     }
 
-    for (tableName in BACKUP_TABLES) {
+    for (tableName in BACKUP_TABLES + OPTIONAL_BACKUP_TABLES) {
         val tableData = root[tableName]
+        if (tableData == null && tableName in OPTIONAL_BACKUP_TABLES) continue
         if (tableData !is List<*>) {
             errors.add("Thiếu bảng: $tableName")
         } else {
@@ -79,6 +86,19 @@ fun validateBackup(root: Map<String, Any?>): List<String> {
                         checkEnum(row["durationUnit"], DurationUnit.entries, "goals.durationUnit", errors)
                         val autoDeduct = row["autoDeduct"]
                         if (autoDeduct != null && autoDeduct !is Boolean) errors.add("Giá trị không hợp lệ: goals.autoDeduct")
+                        val repeat = row["repeat"]
+                        if (repeat != null && repeat !is Boolean) errors.add("Giá trị không hợp lệ: goals.repeat")
+                    }
+                    if (tableName == "debts") {
+                        checkEnum(row["kind"], DebtKind.entries, "debts.kind", errors)
+                        for (field in listOf("startDate", "dueDate")) {
+                            val value = row[field]
+                            if (value != null && parseIsoDate(value) == null) errors.add("Ngày không hợp lệ: debts.$field")
+                        }
+                    }
+                    if (tableName == "debtPayments") {
+                        val date = row["date"]
+                        if (date != null && parseIsoDate(date) == null) errors.add("Ngày không hợp lệ: debtPayments.date")
                     }
                     if (tableName == "goalContributions") {
                         checkEnum(row["type"], ContributionType.entries, "goalContributions.type", errors)
@@ -126,6 +146,9 @@ fun jarKindFromBackup(raw: Any?): JarKind =
 fun jarStatusFromBackup(raw: Any?, completedAt: Any?): JarStatus =
     (raw as? String)?.let { name -> JarStatus.entries.firstOrNull { it.name == name } }
         ?: if (completedAt != null) JarStatus.COMPLETED else JarStatus.ACTIVE
+
+fun debtKindFromBackup(raw: Any?): DebtKind =
+    (raw as? String)?.let { name -> DebtKind.entries.firstOrNull { it.name == name } } ?: DebtKind.OWE
 
 fun contributionTypeFromBackup(raw: Any?): ContributionType =
     (raw as? String)?.let { name -> ContributionType.entries.firstOrNull { it.name == name } } ?: ContributionType.MANUAL

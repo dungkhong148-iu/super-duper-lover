@@ -50,7 +50,7 @@ fun dailyFlows(
     val income = HashMap<LocalDate, Long>()
     val expense = HashMap<LocalDate, Long>()
     for (t in txns) {
-        if (t.accountId !in ids || t.date.isBefore(from) || t.date.isAfter(to)) continue
+        if (t.debtId != null || t.accountId !in ids || t.date.isBefore(from) || t.date.isAfter(to)) continue
         when (t.kind) {
             TxnKind.INCOME -> income[t.date] = (income[t.date] ?: 0L) + t.amount
             TxnKind.EXPENSE -> expense[t.date] = (expense[t.date] ?: 0L) + t.amount

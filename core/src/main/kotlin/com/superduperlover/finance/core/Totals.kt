@@ -12,6 +12,7 @@ fun txnTotals(txns: List<Txn>, accounts: List<Account>): Map<Currency, TxnTotals
     val income = HashMap<Currency, Long>()
     val expense = HashMap<Currency, Long>()
     for (t in txns) {
+        if (t.debtId != null) continue
         val currency = currencyOfAccount[t.accountId] ?: continue
         when (t.kind) {
             TxnKind.INCOME -> income[currency] = (income[currency] ?: 0L) + t.amount

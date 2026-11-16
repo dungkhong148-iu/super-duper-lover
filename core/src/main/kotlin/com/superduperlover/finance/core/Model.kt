@@ -46,6 +46,8 @@ data class Txn(
     val note: String = "",
     /** TRANSFER only: amount received, in the target account's currency. null = same as [amount]. */
     val toAmount: Long? = null,
+    /** Set when a debt moved this money (borrow, lend, repay, collect): real for the account, never spending or income. */
+    val debtId: Long? = null,
 )
 
 /** How often a budget repeats. Periods are counted from [Budget.startDate] (see [periodRange]). */
@@ -91,6 +93,8 @@ data class Goal(
     /** true: the app settles a full jar by itself; false: it waits for the user (PENDING_SETTLEMENT). */
     val autoDeduct: Boolean = false,
     val plan: JarPlan? = null,
+    /** true: once settled, the jar starts a new cycle with the same target, duration and account (see [nextJarCycle]). */
+    val repeat: Boolean = false,
 )
 
 data class GoalContribution(

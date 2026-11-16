@@ -19,7 +19,7 @@ fun budgetUsage(budget: Budget, txns: List<Txn>, accounts: List<Account>, today:
 
     val spentByPeriod = HashMap<Int, Long>()
     for (t in txns) {
-        if (t.kind != TxnKind.EXPENSE) continue
+        if (t.kind != TxnKind.EXPENSE || t.debtId != null) continue
         val onAccount = if (budget.accountId != null) {
             t.accountId == budget.accountId
         } else {

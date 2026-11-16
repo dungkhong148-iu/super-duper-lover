@@ -60,8 +60,8 @@ class BackupTest {
     }
 
     @Test
-    fun version5Fails() {
-        val errors = validateBackup(minimalValidBackup(version = 5))
+    fun version6Fails() {
+        val errors = validateBackup(minimalValidBackup(version = 6))
         assertTrue(errors.isNotEmpty())
         assertTrue(errors.any { it.contains("Phiên bản") })
     }
@@ -264,5 +264,30 @@ class BackupTest {
         assertEquals(JarStatus.ACTIVE, jarStatusFromBackup(null, null))
         assertEquals(JarStatus.COMPLETED, jarStatusFromBackup(null, "2026-11-08"))
         assertEquals(ContributionType.MANUAL, contributionTypeFromBackup(null))
+    }
+
+    @Test
+    fun version4FileWithoutDebtTablesIsStillValid() {
+        // the required tables are the v4 set; debts / debtPayments / txns.debtId / goals.repeat are optional
+        assertEquals(emptyList<String>(), validateBackup(minimalValidBackup(version = 4)))
+        assertEquals(emptyList<String>(), validateBackup(minimalValidBackup(version = BACKUP_VERSION)))
+    }
+
+    @Test
+    fun debtTablesAreValidatedWhenPresent() {
+        val ok = minimalValidBackup(version = 5)
+        ok["debts"] = listOf(
+            mapOf("id" to 1, "kind" to "LENT", "title" to "x", "person" to "y", "total" to 100L, "currency" to "TWD",
+                "startDate" to "2026-11-01", "dueDate" to null),
+        )
+        ok["debtPayments"] = listOf(mapOf("id" to 1, "debtId" to 1, "amount" to 10L, "date" to "2026-11-02"))
+        assertEquals(emptyList<String>(), validateBackup(ok))
+
+        val bad = minimalValidBackup(version = 5)
+        bad["debts"] = listOf(mapOf("id" to 1, "kind" to "GIFT", "total" to 1.5, "startDate" to "nope"))
+        val errors = validateBackup(bad)
+        assertTrue(errors.any { it.contains("debts.kind") })
+        assertTrue(errors.any { it.contains("debts.total") })
+        assertTrue(errors.any { it.contains("debts.startDate") })
     }
 }
