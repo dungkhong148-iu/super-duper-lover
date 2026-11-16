@@ -12,13 +12,12 @@ import com.superduperlover.finance.FinanceApplication
 import com.superduperlover.finance.ui.theme.AppPrefs
 import com.superduperlover.finance.ui.theme.FinanceTheme
 import com.superduperlover.finance.ui.theme.LocalAppPrefs
-import com.superduperlover.finance.ui.theme.isDark
 
 /** Edge-to-edge content with the app theme, Repo and prefs provided. Shared by every Compose activity. */
 fun ComponentActivity.setChiLiContent(content: @Composable () -> Unit) {
     val prefs = AppPrefs(applicationContext)
     setContent {
-        val dark = prefs.themeMode.isDark()
+        val dark = prefs.dark
         DisposableEffect(dark) {
             enableEdgeToEdge(
                 statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { dark },

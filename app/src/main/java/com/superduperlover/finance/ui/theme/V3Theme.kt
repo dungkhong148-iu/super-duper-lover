@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.sp
 import com.superduperlover.finance.R
 
 // ChiLi v3 redesign tokens (raw/redesign mock v3): light by default + a soft dark version of the same roles, and the
-// UVN Ai Cap Nhe font. No screen uses this file yet (N2: only the debug "ChiLi v3" demo); N3 wires it into FinanceTheme.
+// UVN Ai Cap Nhe font. FinanceTheme (Theme.kt) wraps V3Theme; the debug "ChiLi v3" demo uses it too.
 
 /** Every colour role of the v3 mock. Read with [ChiLiV3.colors]; screens never use raw hex. */
 @Immutable
@@ -173,22 +173,36 @@ fun v3Typography(calibration: Float = V3_FONT_CALIBRATION): Typography {
     )
 }
 
-private fun v3ColorScheme(c: V3Colors, dark: Boolean): ColorScheme =
-    (if (dark) darkColorScheme() else lightColorScheme()).copy(
+private fun v3ColorScheme(c: V3Colors, dark: Boolean): ColorScheme {
+    val container = if (dark) Color(0xFF14532D) else Color(0xFFD1FAE5)
+    val onContainer = if (dark) Color(0xFFBBF7D0) else Color(0xFF064E3B)
+    return (if (dark) darkColorScheme() else lightColorScheme()).copy(
         primary = c.accent,
         onPrimary = if (dark) Color(0xFF003828) else Color.White,
-        secondaryContainer = c.yellowChip,
-        onSecondaryContainer = c.onSheet,
+        primaryContainer = container,
+        onPrimaryContainer = onContainer,
+        secondary = c.accent,
+        onSecondary = if (dark) Color(0xFF003828) else Color.White,
+        secondaryContainer = container,
+        onSecondaryContainer = onContainer,
         background = c.sheet,
         onBackground = c.onSheet,
-        surface = c.sheet,
+        // surface = card colour (screens draw cards with `surface`).
+        surface = c.cardActive,
         onSurface = c.onSheet,
         surfaceVariant = c.card,
         onSurfaceVariant = c.onSheetMuted,
+        surfaceTint = c.accent,
         outline = c.onSheetMuted,
         outlineVariant = c.cardBorder,
         error = c.expense,
+        surfaceContainerLowest = c.sheet,
+        surfaceContainerLow = c.cardActive,
+        surfaceContainer = c.cardActive,
+        surfaceContainerHigh = c.card,
+        surfaceContainerHighest = c.card,
     )
+}
 
 /** v3 theme: colour tokens, Material scheme and the UVN type scale. */
 @Composable

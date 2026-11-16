@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,7 +24,6 @@ import com.superduperlover.finance.ui.components.ChiLiTopBar
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.SectionCard
 import com.superduperlover.finance.ui.theme.LocalAppPrefs
-import com.superduperlover.finance.ui.theme.ThemeMode
 
 /** "Khác" tab: a list of settings entries (docs/ui-layout.md section 1). */
 @Composable
@@ -31,16 +31,9 @@ fun SettingsTabScreen(
     onOpenTransactions: () -> Unit,
     onOpenCategories: () -> Unit,
     onOpenBackup: () -> Unit,
-    onOpenAppearance: () -> Unit,
     onOpenArchive: () -> Unit,
 ) {
     val prefs = LocalAppPrefs.current
-    val themeSubtitle = when (prefs.themeMode) {
-        ThemeMode.SYSTEM -> "Theo hệ thống"
-        ThemeMode.LIGHT -> "Sáng"
-        ThemeMode.DARK -> "Tối"
-    }
-
     Column(Modifier.fillMaxSize()) {
         ChiLiTopBar("Khác")
         Column(
@@ -50,7 +43,9 @@ fun SettingsTabScreen(
             SectionCard {
                 SettingsRow("Tra cứu sổ giao dịch", "Tìm, lọc theo ngày, tài khoản, danh mục", onOpenTransactions)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                SettingsRow("Giao diện", themeSubtitle, onOpenAppearance)
+                SwitchRow("Chế độ tối", "Giao diện tối dịu mắt", prefs.dark) { prefs.dark = it }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                SwitchRow("Ẩn số dư", "Che số tiền trên Trang chủ (cùng nút con mắt)", prefs.hideBalance) { prefs.hideBalance = it }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 SettingsRow("Danh mục", "Thêm, đổi tên danh mục chi tiêu và thu nhập", onOpenCategories)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -91,5 +86,29 @@ private fun SettingsRow(title: String, subtitle: String, onClick: () -> Unit) {
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+@Composable
+private fun SwitchRow(title: String, subtitle: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .clickable { onChange(!checked) }
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            OneLineText(text = title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Switch(checked = checked, onCheckedChange = onChange)
     }
 }

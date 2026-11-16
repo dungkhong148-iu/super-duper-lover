@@ -7,18 +7,26 @@ import com.superduperlover.finance.core.Currency
 import com.superduperlover.finance.core.TxnKind
 import java.time.LocalDate
 
-enum class ThemeMode { SYSTEM, LIGHT, DARK }
-
 /** Wraps SharedPreferences for user-selected theme and currency preferences. */
 class AppPrefs(context: Context) {
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    private val _themeMode = mutableStateOf(readThemeMode())
-    var themeMode: ThemeMode
-        get() = _themeMode.value
+    // v3: light by default; the dark switch lives in Khác.
+    private val _dark = mutableStateOf(prefs.getBoolean(KEY_DARK, false))
+    var dark: Boolean
+        get() = _dark.value
         set(value) {
-            _themeMode.value = value
-            prefs.edit().putString(KEY_THEME_MODE, value.name).apply()
+            _dark.value = value
+            prefs.edit().putBoolean(KEY_DARK, value).apply()
+        }
+
+    /** Hide money amounts on Home (the eye of the Hero and the switch in Khác share this flag). */
+    private val _hideBalance = mutableStateOf(prefs.getBoolean(KEY_HIDE_BALANCE, false))
+    var hideBalance: Boolean
+        get() = _hideBalance.value
+        set(value) {
+            _hideBalance.value = value
+            prefs.edit().putBoolean(KEY_HIDE_BALANCE, value).apply()
         }
 
     private val _summaryCurrency = mutableStateOf<Currency?>(readSummaryCurrency())
@@ -73,11 +81,6 @@ class AppPrefs(context: Context) {
 
     private fun lastAccountKey(kind: TxnKind) = "last_account_${kind.name.lowercase()}"
 
-    private fun readThemeMode(): ThemeMode {
-        val stored = prefs.getString(KEY_THEME_MODE, null) ?: return ThemeMode.SYSTEM
-        return runCatching { ThemeMode.valueOf(stored) }.getOrDefault(ThemeMode.SYSTEM)
-    }
-
     private fun readSummaryCurrency(): Currency? {
         val stored = prefs.getString(KEY_SUMMARY_CURRENCY, null) ?: return null
         return runCatching { Currency.valueOf(stored) }.getOrNull()
@@ -85,7 +88,8 @@ class AppPrefs(context: Context) {
 
     companion object {
         private const val PREFS_NAME = "chili_prefs"
-        private const val KEY_THEME_MODE = "theme_mode"
+        private const val KEY_DARK = "dark_mode"
+        private const val KEY_HIDE_BALANCE = "hide_balance"
         private const val KEY_SUMMARY_CURRENCY = "summary_currency"
         private const val KEY_LAST_TO_ACCOUNT = "last_to_account_transfer"
         private const val KEY_LAST_BACKUP = "last_backup_epoch_day"

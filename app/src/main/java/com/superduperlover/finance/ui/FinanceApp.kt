@@ -36,10 +36,10 @@ import com.superduperlover.finance.ui.goals.GoalDetailScreen
 import com.superduperlover.finance.ui.home.HomeScreen
 import com.superduperlover.finance.ui.home.PlanPage
 import com.superduperlover.finance.ui.jars.JarsScreen
-import com.superduperlover.finance.ui.settings.AppearanceScreen
 import com.superduperlover.finance.ui.settings.ArchiveScreen
 import com.superduperlover.finance.ui.settings.SettingsScreen
 import com.superduperlover.finance.ui.settings.SettingsTabScreen
+import com.superduperlover.finance.ui.theme.ChiLiV3
 import com.superduperlover.finance.ui.transactions.TransactionsScreen
 
 // Bottom bar: 4 tabs (docs/ui-layout.md section 1).
@@ -58,7 +58,6 @@ private enum class Tab(
 private const val ADD_ROUTE = "add/{txnId}"
 private const val CATEGORIES_ROUTE = "categories"
 private const val BACKUP_ROUTE = "backup"
-private const val APPEARANCE_ROUTE = "appearance"
 private const val ARCHIVE_ROUTE = "archive"
 
 // Full transaction list (no longer a tab): Home "Xem chi tiết", Khác > "Tra cứu sổ giao dịch"; the optional argument opens it filtered to one account.
@@ -122,7 +121,11 @@ fun FinanceApp() {
         floatingActionButton = {
             // "+" on Trang chủ only.
             if (currentTab == Tab.HOME) {
-                FloatingActionButton(onClick = { navController.navigate("add/0") }) {
+                FloatingActionButton(
+                    onClick = { navController.navigate("add/0") },
+                    containerColor = ChiLiV3.colors.fab,
+                    contentColor = ChiLiV3.colors.onFab,
+                ) {
                     Icon(Icons.Filled.Add, contentDescription = "Thêm giao dịch")
                 }
             }
@@ -172,11 +175,9 @@ fun FinanceApp() {
                     onOpenTransactions = { navController.navigate("transactions") { launchSingleTop = true } },
                     onOpenCategories = { navController.navigate(CATEGORIES_ROUTE) },
                     onOpenBackup = { navController.navigate(BACKUP_ROUTE) },
-                    onOpenAppearance = { navController.navigate(APPEARANCE_ROUTE) },
                     onOpenArchive = { navController.navigate(ARCHIVE_ROUTE) },
                 )
             }
-            composable(APPEARANCE_ROUTE) { AppearanceScreen(onBack = { navController.popBackStack() }) }
             composable(BACKUP_ROUTE) { SettingsScreen(onBack = { navController.popBackStack() }) }
             composable(CATEGORIES_ROUTE) { CategoriesScreen(onBack = { navController.popBackStack() }) }
             composable(ARCHIVE_ROUTE) { ArchiveScreen(onBack = { navController.popBackStack() }) }

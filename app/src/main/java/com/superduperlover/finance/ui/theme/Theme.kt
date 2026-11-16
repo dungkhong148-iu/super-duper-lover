@@ -1,13 +1,9 @@
 package com.superduperlover.finance.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableChipColors
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
@@ -39,94 +35,31 @@ class ChiLiColors(
     val transferContainer: Color,
 )
 
-// Dark tokens follow the Stitch reference (raw/stitch_reference DESIGN.md); table in docs/ui-layout.md section 3.
+// Roles that Material 3 has no slot for, on the v3 palette (V3Theme.kt). Table: docs/ui-layout.md section 3.
 private val DarkTokens = ChiLiColors(
-    income = Color(0xFF44EDB7),
-    expense = Color(0xFFFFB3B0),
-    transfer = Color(0xFF9EDBFF),
+    income = V3Dark.income,
+    expense = V3Dark.expense,
+    transfer = Color(0xFF93C5FD),
     warn = Color(0xFFFBBF24),
-    over = Color(0xFFFFB3B0),
-    outline = Color(0x993C4A43),
-    incomeContainer = Color(0x2644EDB7),
-    expenseContainer = Color(0xFF881D24),
-    onExpenseContainer = Color(0xFFFFDAD8),
-    transferContainer = Color(0x269EDBFF),
+    over = V3Dark.expense,
+    outline = V3Dark.cardBorder,
+    incomeContainer = V3Dark.income.copy(alpha = 0.16f),
+    expenseContainer = V3Dark.expense.copy(alpha = 0.16f),
+    onExpenseContainer = V3Dark.expense,
+    transferContainer = Color(0xFF93C5FD).copy(alpha = 0.16f),
 )
 
 private val LightTokens = ChiLiColors(
-    income = Color(0xFF059669),
-    expense = Color(0xFFDC2626),
+    income = V3Light.income,
+    expense = V3Light.expense,
     transfer = Color(0xFF475569),
     warn = Color(0xFFB45309),
-    over = Color(0xFFDC2626),
-    outline = Color(0xFFD5E0D9),
-    incomeContainer = Color(0x29059669),
-    expenseContainer = Color(0x29DC2626),
-    onExpenseContainer = Color(0xFFDC2626),
-    transferContainer = Color(0x29475569),
-)
-
-private val DarkScheme: ColorScheme = darkColorScheme(
-    primary = Color(0xFF44EDB7),
-    onPrimary = Color(0xFF003828),
-    // FAB / filled brand container. On-colour is darker than Stitch's #00533C: 6.6:1 instead of 4.56:1.
-    primaryContainer = Color(0xFF00D09C),
-    onPrimaryContainer = Color(0xFF003828),
-    // Selected chips, nav indicator, tinted icon circles: 15% mint fill + mint content.
-    secondary = Color(0xFF44EDB7),
-    onSecondary = Color(0xFF003828),
-    secondaryContainer = Color(0x2644EDB7),
-    onSecondaryContainer = Color(0xFF44EDB7),
-    tertiary = Color(0xFF9EDBFF),
-    onTertiary = Color(0xFF00354A),
-    tertiaryContainer = Color(0x269EDBFF),
-    onTertiaryContainer = Color(0xFF9EDBFF),
-    background = Color(0xFF10141A),
-    onBackground = Color(0xFFDFE2EB),
-    // surface = card colour (screens draw cards with `surface`).
-    surface = Color(0xFF1C2026),
-    onSurface = Color(0xFFDFE2EB),
-    surfaceVariant = Color(0xFF262A31),
-    onSurfaceVariant = Color(0xFFBACAC1),
-    surfaceTint = Color(0xFF44EDB7),
-    outline = Color(0xFF85948C),
-    outlineVariant = Color(0xFF3C4A43),
-    error = Color(0xFFFFB4AB),
-    onError = Color(0xFF690005),
-    errorContainer = Color(0xFF93000A),
-    onErrorContainer = Color(0xFFFFDAD6),
-    surfaceContainerLowest = Color(0xFF0A0E14),
-    surfaceContainerLow = Color(0xFF181C22),
-    surfaceContainer = Color(0xFF1C2026),
-    surfaceContainerHigh = Color(0xFF262A31),
-    surfaceContainerHighest = Color(0xFF31353C),
-)
-
-private val LightScheme: ColorScheme = lightColorScheme(
-    primary = Color(0xFF047857),
-    onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFD1FAE5),
-    onPrimaryContainer = Color(0xFF064E3B),
-    secondary = Color(0xFF047857),
-    onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = Color(0xFFD1FAE5),
-    onSecondaryContainer = Color(0xFF064E3B),
-    background = Color(0xFFF6FAF7),
-    onBackground = Color(0xFF0F1F17),
-    surface = Color(0xFFFFFFFF),
-    onSurface = Color(0xFF0F1F17),
-    surfaceVariant = Color(0xFFE7EFEA),
-    onSurfaceVariant = Color(0xFF4B5B53),
-    surfaceTint = Color(0xFF047857),
-    outline = Color(0xFF8FA398),
-    outlineVariant = Color(0xFFD5E0D9),
-    error = Color(0xFFDC2626),
-    onError = Color(0xFFFFFFFF),
-    surfaceContainerLowest = Color(0xFFFFFFFF),
-    surfaceContainerLow = Color(0xFFFFFFFF),
-    surfaceContainer = Color(0xFFFFFFFF),
-    surfaceContainerHigh = Color(0xFFE7EFEA),
-    surfaceContainerHighest = Color(0xFFE7EFEA),
+    over = V3Light.expense,
+    outline = Color(0xFFE2E8F0),
+    incomeContainer = V3Light.income.copy(alpha = 0.14f),
+    expenseContainer = V3Light.expense.copy(alpha = 0.14f),
+    onExpenseContainer = V3Light.expense,
+    transferContainer = Color(0xFF475569).copy(alpha = 0.14f),
 )
 
 private val LocalChiLiColors = staticCompositionLocalOf { DarkTokens }
@@ -187,16 +120,9 @@ fun chiLiChipBorder(selected: Boolean, enabled: Boolean = true): BorderStroke {
 }
 
 @Composable
-fun ThemeMode.isDark(): Boolean = when (this) {
-    ThemeMode.SYSTEM -> isSystemInDarkTheme()
-    ThemeMode.LIGHT -> false
-    ThemeMode.DARK -> true
-}
-
-@Composable
 fun FinanceTheme(content: @Composable () -> Unit) {
-    val dark = LocalAppPrefs.current.themeMode.isDark()
+    val dark = LocalAppPrefs.current.dark
     CompositionLocalProvider(LocalChiLiColors provides if (dark) DarkTokens else LightTokens) {
-        MaterialTheme(colorScheme = if (dark) DarkScheme else LightScheme, content = content)
+        V3Theme(dark = dark, content = content)
     }
 }
