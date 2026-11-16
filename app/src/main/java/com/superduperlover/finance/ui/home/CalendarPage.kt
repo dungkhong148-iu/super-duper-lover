@@ -123,7 +123,7 @@ fun CalendarPage(accountId: Long?, scroll: ScrollState) {
                             .padding(horizontal = 12.dp, vertical = 6.dp),
                     ) {
                         Text(
-                            "${health.score} / 100 điểm",
+                            if (health.savingsRate == null) "— / 100 điểm" else "${health.score} / 100 điểm",
                             style = MaterialTheme.typography.labelMedium,
                             color = c.onHeader,
                         )
