@@ -162,6 +162,7 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             OutlinedTextField(
+                shape = RoundedCornerShape(16.dp),
                 value = name,
                 onValueChange = {
                     name = it
@@ -180,6 +181,7 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
             ) {
                 AccountType.entries.forEach { t ->
                     FilterChip(
+                    shape = RoundedCornerShape(12.dp),
                         selected = type == t,
                         onClick = {
                             type = t
@@ -218,6 +220,7 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
                 )
             }
             OutlinedTextField(
+                shape = RoundedCornerShape(16.dp),
                 value = opening,
                 onValueChange = {
                     opening = it
@@ -244,7 +247,7 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 56.dp),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 color = accountTileColor(selectedColorKey),
             ) {
                 Row(
@@ -324,6 +327,7 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 OutlinedButton(
+                shape = RoundedCornerShape(16.dp),
                     onClick = { showReconcileDialog = true },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -339,6 +343,7 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
                     )
                 }
                 OutlinedButton(
+                shape = RoundedCornerShape(16.dp),
                     onClick = {
                         scope.launch {
                             archiveBalance = accountBalance(account, repo.txns(accountId = account.id).first())
@@ -357,6 +362,7 @@ internal fun AccountSheet(account: Account, onDismiss: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 OutlinedButton(
+                shape = RoundedCornerShape(16.dp),
                     onClick = {
                         deleteError = null
                         showDeleteConfirm = true
@@ -495,6 +501,7 @@ private fun ReconcileDialog(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 OutlinedTextField(
+                shape = RoundedCornerShape(16.dp),
                     value = realText,
                     onValueChange = { realText = it },
                     label = { Text("Số dư thực tế (${currencySymbol(account.currency)})") },

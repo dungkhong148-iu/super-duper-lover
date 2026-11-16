@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -49,6 +50,7 @@ import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.CurrencyChips
 import com.superduperlover.finance.ui.components.FormDialog
 import com.superduperlover.finance.ui.components.OneLineText
+import com.superduperlover.finance.ui.components.CheckRow
 import com.superduperlover.finance.ui.components.SectionHeaderBand
 import com.superduperlover.finance.ui.components.dayMonth
 import com.superduperlover.finance.ui.components.dayMonthYear
@@ -155,6 +157,7 @@ internal fun BudgetSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 FilterChip(
+                    shape = RoundedCornerShape(12.dp),
                     selected = selectedAccountId == null,
                     onClick = {
                         selectedAccountId = null
@@ -169,6 +172,7 @@ internal fun BudgetSheet(
                 }
                 displayedAccounts.forEach { acc ->
                     FilterChip(
+                    shape = RoundedCornerShape(12.dp),
                         selected = selectedAccountId == acc.id,
                         onClick = {
                             selectedAccountId = acc.id
@@ -187,6 +191,7 @@ internal fun BudgetSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 FilterChip(
+                    shape = RoundedCornerShape(12.dp),
                     selected = selectedCategoryId == null,
                     onClick = {
                         selectedCategoryId = null
@@ -201,6 +206,7 @@ internal fun BudgetSheet(
                 }
                 displayedCategories.forEach { cat ->
                     FilterChip(
+                    shape = RoundedCornerShape(12.dp),
                         selected = selectedCategoryId == cat.id,
                         onClick = {
                             selectedCategoryId = cat.id
@@ -228,6 +234,7 @@ internal fun BudgetSheet(
             ) {
                 BudgetPeriod.entries.forEach { p ->
                     FilterChip(
+                    shape = RoundedCornerShape(12.dp),
                         selected = selectedPeriod == p,
                         onClick = {
                             selectedPeriod = p
@@ -242,6 +249,7 @@ internal fun BudgetSheet(
 
             OneLineText("Ngày bắt đầu", style = MaterialTheme.typography.labelLarge)
             OutlinedButton(
+                shape = RoundedCornerShape(16.dp),
                 onClick = { showDatePicker = true },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -265,42 +273,15 @@ internal fun BudgetSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .toggleable(
-                        value = rollover,
-                        role = Role.Switch,
-                        onValueChange = {
-                            rollover = it
-                            duplicateError = null
-                        },
-                    ),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 16.dp),
-                ) {
-                    OneLineText(
-                        text = "Chuyển phần còn lại sang kỳ sau",
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = "Tiền còn thừa được cộng vào hạn mức kỳ sau; chi vượt sẽ bị trừ đi.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Switch(
-                    checked = rollover,
-                    onCheckedChange = null,
-                    modifier = Modifier.heightIn(min = 48.dp),
-                )
-            }
+            CheckRow(
+                text = "Chuyển phần còn lại sang kỳ sau",
+                subtitle = "Tiền còn thừa được cộng vào hạn mức kỳ sau; chi vượt sẽ bị trừ đi.",
+                checked = rollover,
+                onChange = {
+                    rollover = it
+                    duplicateError = null
+                },
+            )
         }
 
         SectionHeaderBand("Hạn mức")
@@ -321,6 +302,7 @@ internal fun BudgetSheet(
                 )
             }
             OutlinedTextField(
+                shape = RoundedCornerShape(16.dp),
                 value = limitInput,
                 onValueChange = {
                     limitInput = it
@@ -345,6 +327,7 @@ internal fun BudgetSheet(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 OutlinedButton(
+                shape = RoundedCornerShape(16.dp),
                     onClick = { showDeleteConfirm = true },
                     modifier = Modifier
                         .fillMaxWidth()

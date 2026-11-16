@@ -118,6 +118,7 @@ internal fun CategorySheet(
                 OneLineText("Loại", style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
+                    shape = RoundedCornerShape(12.dp),
                         selected = kind == CategoryKind.EXPENSE,
                         onClick = {
                             kind = CategoryKind.EXPENSE
@@ -128,6 +129,7 @@ internal fun CategorySheet(
                         border = chiLiChipBorder(selected = kind == CategoryKind.EXPENSE),
                     )
                     FilterChip(
+                    shape = RoundedCornerShape(12.dp),
                         selected = kind == CategoryKind.INCOME,
                         onClick = {
                             kind = CategoryKind.INCOME
@@ -154,6 +156,7 @@ internal fun CategorySheet(
             }
 
             OutlinedTextField(
+                shape = RoundedCornerShape(16.dp),
                 value = name,
                 onValueChange = {
                     name = it
@@ -188,7 +191,7 @@ internal fun CategorySheet(
                                 .weight(1f)
                                 .heightIn(min = 48.dp)
                                 .semantics { this.selected = on },
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(12.dp),
                             color = if (on) MaterialTheme.colorScheme.secondaryContainer
                             else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                             border = if (on) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
@@ -222,6 +225,7 @@ internal fun CategorySheet(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 OutlinedButton(
+                shape = RoundedCornerShape(16.dp),
                     onClick = { showArchiveConfirm = true },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -236,6 +240,7 @@ internal fun CategorySheet(
                 )
 
                 OutlinedButton(
+                shape = RoundedCornerShape(16.dp),
                     onClick = {
                         deleteError = null
                         showDeleteConfirm = true
