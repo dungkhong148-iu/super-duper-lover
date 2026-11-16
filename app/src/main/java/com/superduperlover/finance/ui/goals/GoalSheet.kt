@@ -29,7 +29,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -67,6 +66,7 @@ import com.superduperlover.finance.ui.components.CategoryIcons
 import com.superduperlover.finance.ui.components.CurrencyChips
 import com.superduperlover.finance.ui.components.FormDialog
 import com.superduperlover.finance.ui.components.OneLineText
+import com.superduperlover.finance.ui.components.CheckRow
 import com.superduperlover.finance.ui.components.SectionHeaderBand
 import com.superduperlover.finance.ui.components.dayMonthYear
 import com.superduperlover.finance.ui.theme.ChiLiTheme
@@ -117,6 +117,7 @@ fun GoalSheet(
     var sourceAccountId by remember { mutableStateOf(goal.sourceAccountId) }
     var categoryId by remember { mutableStateOf(goal.categoryId) }
     var autoDeduct by remember { mutableStateOf(goal.autoDeduct) }
+    var repeat by remember { mutableStateOf(goal.repeat) }
 
     // New jars always have a plan; existing jars without plan show a switch (default OFF).
     var hasPlan by remember { mutableStateOf(isNew || goal.plan != null) }
@@ -170,6 +171,7 @@ fun GoalSheet(
             sourceAccountId != goal.sourceAccountId ||
             categoryId != goal.categoryId ||
             autoDeduct != goal.autoDeduct ||
+            repeat != goal.repeat ||
             (hasPlan != (goalPlan != null)) ||
             (hasPlan && goalPlan != null && duration != goalPlan.duration) ||
             (!hasPlan && manualDeadline != goal.deadline)
@@ -215,6 +217,7 @@ fun GoalSheet(
                             sourceAccountId = sourceAccountId,
                             categoryId = categoryId,
                             autoDeduct = autoDeduct,
+                            repeat = repeat,
                             plan = plan,
                         )
                     } else {
@@ -228,6 +231,7 @@ fun GoalSheet(
                             sourceAccountId = sourceAccountId,
                             categoryId = categoryId,
                             autoDeduct = autoDeduct,
+                            repeat = repeat,
                         )
                     }
                 } else {
@@ -241,6 +245,7 @@ fun GoalSheet(
                         sourceAccountId = null,
                         categoryId = null,
                         autoDeduct = false,
+                        repeat = false,
                         plan = null,
                     )
                 }
@@ -313,26 +318,17 @@ fun GoalSheet(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OneLineText(
-                        text = "Đặt kế hoạch trích tiền",
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                    Switch(
-                        checked = hasPlan,
-                        onCheckedChange = {
-                            hasPlan = it
-                            if (!it) {
-                                accountError = null
-                                categoryError = null
-                            }
-                        },
-                    )
-                }
+                CheckRow(
+                    text = "Đặt kế hoạch trích tiền",
+                    checked = hasPlan,
+                    onChange = {
+                        hasPlan = it
+                        if (!it) {
+                            accountError = null
+                            categoryError = null
+                        }
+                    },
+                )
             }
         }
 
@@ -656,23 +652,17 @@ fun GoalSheet(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OneLineText(
-                        text = "Tự động trừ tiền khi đủ",
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 16.dp),
-                    )
-                    Switch(
-                        checked = autoDeduct,
-                        onCheckedChange = { autoDeduct = it },
-                    )
-                }
+                CheckRow(
+                    text = "Tự động trừ tiền khi đủ",
+                    checked = autoDeduct,
+                    onChange = { autoDeduct = it },
+                )
+                CheckRow(
+                    text = "Lặp lại mỗi kỳ",
+                    subtitle = "Sau khi chốt, hũ tự mở kỳ mới với cùng số tiền, thời hạn và tài khoản",
+                    checked = repeat,
+                    onChange = { repeat = it },
+                )
             }
         }
 

@@ -19,7 +19,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -34,6 +33,8 @@ import com.superduperlover.finance.core.MAIN_CURRENCY
 import com.superduperlover.finance.core.balancesByCurrency
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.ChiLiTopBar
+import com.superduperlover.finance.ui.components.CheckRow
+import com.superduperlover.finance.ui.components.ChoiceButtons
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.home.moneyText
 import com.superduperlover.finance.ui.theme.ChiLiV3
@@ -135,9 +136,12 @@ fun SettingsTabScreen(
             ) {
                 SettingsRow("Tra cứu sổ giao dịch", "Tìm, lọc theo ngày, tài khoản, danh mục", onOpenTransactions)
                 HorizontalDivider(color = c.cardBorder)
-                SwitchRow("Chế độ tối", "Giao diện tối dịu mắt", prefs.dark) { prefs.dark = it }
+                Column(Modifier.padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OneLineText(text = "Giao diện", style = MaterialTheme.typography.titleMedium, color = c.onCard)
+                    ChoiceButtons(options = listOf("Sáng", "Tối"), selectedIndex = if (prefs.dark) 1 else 0, onSelect = { prefs.dark = it == 1 })
+                }
                 HorizontalDivider(color = c.cardBorder)
-                SwitchRow("Ẩn số dư", "Che số tiền trên Trang chủ (cùng nút con mắt)", prefs.hideBalance) { prefs.hideBalance = it }
+                CheckRow(text = "Ẩn số dư", subtitle = "Che số tiền trên Trang chủ (cùng nút con mắt)", checked = prefs.hideBalance, onChange = { prefs.hideBalance = it })
                 HorizontalDivider(color = c.cardBorder)
                 SettingsRow("Danh mục", "Thêm, đổi tên danh mục chi tiêu và thu nhập", onOpenCategories)
                 HorizontalDivider(color = c.cardBorder)
@@ -179,34 +183,5 @@ private fun SettingsRow(title: String, subtitle: String, onClick: () -> Unit) {
             contentDescription = null,
             tint = c.onSheetMuted,
         )
-    }
-}
-
-@Composable
-private fun SwitchRow(title: String, subtitle: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    val c = ChiLiV3.colors
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .clickable { onChange(!checked) }
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            OneLineText(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = c.onCard,
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = c.onSheetMuted,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Switch(checked = checked, onCheckedChange = onChange)
     }
 }

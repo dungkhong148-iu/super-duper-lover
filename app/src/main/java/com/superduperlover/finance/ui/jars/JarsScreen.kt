@@ -1,6 +1,8 @@
 package com.superduperlover.finance.ui.jars
 
 import androidx.compose.foundation.background
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.superduperlover.finance.ui.home.PlanPage
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -62,7 +64,7 @@ import com.superduperlover.finance.ui.theme.ChiLiV3
 import com.superduperlover.finance.ui.theme.LocalAppPrefs
 import com.superduperlover.finance.ui.theme.v3Shadow
 
-enum class JarTab { SAVINGS, RECURRING, DEBTS }
+enum class JarTab { SAVINGS, BUDGET, DEBTS }
 
 /**
  * Kho hũ bottom tab screen (docs/ui-layout.md, specs/H3.txt step 5, specs/H5.txt, specs/N5.txt).
@@ -72,6 +74,7 @@ fun JarsScreen(
     onOpenJar: (Long) -> Unit,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
+    initialTab: JarTab = JarTab.SAVINGS,
 ) {
     val repo = LocalRepo.current
     val prefs = LocalAppPrefs.current
@@ -82,7 +85,7 @@ fun JarsScreen(
     val accountMap = remember(accounts) { accounts.associateBy { it.id } }
 
     val totalReserved = remember(jarSavings) { jarSavings.filter { it.goal.isReserving() }.sumOf { it.saved } }
-    var selectedTab by remember { mutableStateOf(JarTab.SAVINGS) }
+    var selectedTab by rememberSaveable(initialTab) { mutableStateOf(initialTab) }
 
     var showCreateGoalSheet by remember { mutableStateOf(false) }
 
@@ -93,7 +96,7 @@ fun JarsScreen(
             title = "Kho hũ",
             onBack = onBack,
             actions = {
-                TextButton(onClick = { showCreateGoalSheet = true }) {
+                if (selectedTab == JarTab.SAVINGS) TextButton(onClick = { showCreateGoalSheet = true }) {
                     Icon(
                         Icons.Filled.Add,
                         contentDescription = null,
@@ -106,7 +109,7 @@ fun JarsScreen(
         )
 
         val summaryShape = RoundedCornerShape(26.dp)
-        Column(
+        if (selectedTab == JarTab.SAVINGS) Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 6.dp)
@@ -166,7 +169,7 @@ fun JarsScreen(
                 val tabShape = RoundedCornerShape(12.dp)
                 val label = when (tab) {
                     JarTab.SAVINGS -> "Tiết kiệm"
-                    JarTab.RECURRING -> "Thường kỳ"
+                    JarTab.BUDGET -> "Ngân sách"
                     JarTab.DEBTS -> "Sổ nợ"
                 }
                 val tabModifier = if (selected) {
@@ -250,71 +253,7 @@ fun JarsScreen(
                     }
                 }
             }
-            JarTab.RECURRING -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                        .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
-                ) {
-                    val lockShape = RoundedCornerShape(24.dp)
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .v3Shadow(c.shadow2, lockShape)
-                            .clip(lockShape)
-                            .background(c.cardActive)
-                            .border(1.dp, c.cardBorder, lockShape)
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(56.dp)
-                                .clip(CircleShape)
-                                .background(c.card),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_savings),
-                                contentDescription = null,
-                                tint = c.accent,
-                                modifier = Modifier.size(28.dp),
-                            )
-                        }
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(
-                                text = "Hũ thường kỳ",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = c.onCard,
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(c.card)
-                                    .padding(horizontal = 8.dp, vertical = 2.dp),
-                            ) {
-                                Text(
-                                    text = "Sắp có",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = c.onSheetMuted,
-                                )
-                            }
-                        }
-                        Text(
-                            text = "Tự động phân bổ tiền theo chu kỳ cho hóa đơn, tiền nhà, học phí và các chi phí định kỳ.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = c.onSheetMuted,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                }
-            }
+            JarTab.BUDGET -> Box(Modifier.fillMaxWidth().weight(1f)) { PlanPage() }
             JarTab.DEBTS -> {
                 Column(
                     modifier = Modifier
@@ -440,6 +379,11 @@ private fun JarDetailCard(
                 modifier = Modifier.weight(1f),
             )
 
+            if (jar.goal.repeat) {
+                Box(Modifier.clip(RoundedCornerShape(8.dp)).background(c.card).padding(horizontal = 8.dp, vertical = 2.dp)) {
+                    Text("Lặp lại", style = MaterialTheme.typography.labelSmall, color = c.accent)
+                }
+            }
             OneLineText(
                 text = statusLabel,
                 style = MaterialTheme.typography.labelSmall,

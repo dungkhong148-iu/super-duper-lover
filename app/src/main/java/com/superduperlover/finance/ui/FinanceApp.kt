@@ -34,7 +34,7 @@ import com.superduperlover.finance.ui.components.ChiLiTopBar
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.goals.GoalDetailScreen
 import com.superduperlover.finance.ui.home.HomeScreen
-import com.superduperlover.finance.ui.home.PlanPage
+import com.superduperlover.finance.ui.jars.JarTab
 import com.superduperlover.finance.ui.jars.JarsScreen
 import com.superduperlover.finance.ui.settings.ArchiveScreen
 import com.superduperlover.finance.ui.settings.SettingsScreen
@@ -50,7 +50,6 @@ private enum class Tab(
     val iconRes: Int? = null,
 ) {
     HOME("home", "Trang chủ", icon = Icons.Filled.Home),
-    BUDGET("budget", "Ngân sách", iconRes = R.drawable.ic_wallet),
     JARS("jars", "Kho hũ", iconRes = R.drawable.ic_savings),
     MORE("more", "Khác", icon = Icons.Filled.Menu),
 }
@@ -142,7 +141,13 @@ fun FinanceApp() {
                         navController.navigate(if (id == null) "transactions" else "transactions?accountId=$id") { launchSingleTop = true }
                     },
                     onEditTxn = { id -> navController.navigate("add/$id") },
-                    onOpenBudgets = { openTab(Tab.BUDGET) },
+                    onOpenBudgets = {
+                        // Kho hũ > Ngân sách (the argument picks the tab; no restoreState so it applies)
+                        navController.navigate("jars?tab=budget") {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                        }
+                    },
                     onOpenGoal = { id -> navController.navigate("goal/$id") },
                     onOpenJars = { openTab(Tab.JARS) },
                 )
@@ -165,12 +170,6 @@ fun FinanceApp() {
                     )
                 }
             }
-            composable(Tab.BUDGET.route) {
-                Column {
-                    ChiLiTopBar("Ngân sách")
-                    PlanPage()
-                }
-            }
             composable(Tab.MORE.route) {
                 SettingsTabScreen(
                     onOpenTransactions = { navController.navigate("transactions") { launchSingleTop = true } },
@@ -182,9 +181,17 @@ fun FinanceApp() {
             composable(BACKUP_ROUTE) { SettingsScreen(onBack = { navController.popBackStack() }) }
             composable(CATEGORIES_ROUTE) { CategoriesScreen(onBack = { navController.popBackStack() }) }
             composable(ARCHIVE_ROUTE) { ArchiveScreen(onBack = { navController.popBackStack() }) }
-            composable(Tab.JARS.route) {
+            composable(
+                "jars?tab={tab}",
+                arguments = listOf(navArgument("tab") { type = NavType.StringType; defaultValue = "savings" }),
+            ) { entry ->
                 JarsScreen(
                     onBack = null,
+                    initialTab = when (entry.arguments?.getString("tab")) {
+                        "budget" -> JarTab.BUDGET
+                        "debts" -> JarTab.DEBTS
+                        else -> JarTab.SAVINGS
+                    },
                     onOpenJar = { id -> navController.navigate("goal/$id") },
                 )
             }
