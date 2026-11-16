@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -92,15 +93,14 @@ import com.superduperlover.finance.ui.theme.chiLiChipColors
 import java.time.LocalDate
 import java.time.YearMonth
 
-private val FullWidth: (androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope.() -> GridItemSpan) =
-    { GridItemSpan(maxLineSpan) }
-
 /**
  * "Tài khoản" page of the home tab (docs/ui-layout.md section 1 & 2b): summary card, account tile grid,
  * and "Ngân sách cần chú ý". Every number comes from `:core` (accountBalance, budgetUsage, txnTotals).
  */
 @Composable
 fun AccountsPage(
+    selectedId: Long?,
+    onSelectedChange: (Long?) -> Unit,
     /** Full list; the id (when an account is selected) opens it filtered to that account. */
     onOpenTransactions: (Long?) -> Unit,
     onEditTxn: (Long) -> Unit,
@@ -122,8 +122,7 @@ fun AccountsPage(
     // null = sheet closed; id 0 = new account
     var editing by remember { mutableStateOf<Account?>(null) }
 
-    // Home filter: the selected account (null = all). A card that vanished (archived / deleted) means "all".
-    var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
+    // Home filter: [selectedId] (null = all, held by HomeScreen for the header label). A card that vanished (archived / deleted) means "all".
     val selected = accounts.firstOrNull { it.id == selectedId }
     // v3: Hero in the main currency; a selected account of another currency shows its own.
     val selectedCurrency = selected?.currency ?: MAIN_CURRENCY
@@ -163,14 +162,22 @@ fun AccountsPage(
     val accountNames = allAccounts.associate { it.id to it.name }
     val categoryNames = categories.associate { it.id to it.name }
 
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(104.dp),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        item(key = "accounts", span = FullWidth) {
+    CollapsingSheetPage(
+        carousel = {
+            AccountCarousel(
+                accounts = balances,
+                selectedId = selected?.id,
+                hidden = hidden,
+                onSelect = { onSelectedChange(if (selectedId == it) null else it) },
+                onEdit = { editing = it },
+                onAdd = { editing = Account(0, "", AccountType.CASH, 0) },
+            )
+        },
+    ) { scroll ->
+        Column(
+            Modifier.fillMaxSize().verticalScroll(scroll).padding(start = 16.dp, end = 16.dp, bottom = 96.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
             if (balances.isEmpty()) {
                 EmptyState(
                     icon = painterResource(R.drawable.ic_wallet),
@@ -179,29 +186,10 @@ fun AccountsPage(
                     actionLabel = "Thêm tài khoản",
                     onAction = { editing = Account(0, "", AccountType.CASH, 0) },
                 )
-            } else {
-                // Full-bleed: cancel the grid side padding (16dp each side) so the row scrolls edge to edge.
-                AccountCarousel(
-                    accounts = balances,
-                    selectedId = selected?.id,
-                    hidden = hidden,
-                    onSelect = { selectedId = if (selectedId == it) null else it },
-                    onEdit = { editing = it },
-                    onAdd = { editing = Account(0, "", AccountType.CASH, 0) },
-                    modifier = Modifier.layout { m, cons ->
-                        val extra = 32.dp.roundToPx()
-                        val p = m.measure(cons.copy(minWidth = cons.maxWidth + extra, maxWidth = cons.maxWidth + extra))
-                        layout(cons.maxWidth, p.height) { p.place(-extra / 2, 0) }
-                    },
-                )
             }
-        }
-        for (jar in pendingJars) {
-            item(key = "pending-jar-${jar.goal.id}", span = FullWidth) {
+            for (jar in pendingJars) {
                 PendingJarBanner(jar = jar, hidden = hidden, onClick = { onOpenGoal(jar.goal.id) })
             }
-        }
-        item(key = "hero", span = FullWidth) {
             HeroCard(
                 balance = selectedBalance,
                 free = selectedFree,
@@ -220,9 +208,7 @@ fun AccountsPage(
                 onOpenBudgets = onOpenPlan,
                 onOpenJars = onOpenJars,
             )
-        }
 
-        item(key = "yellow", span = FullWidth) {
             val listed = allTxns.filter {
                 (selected == null || it.accountId == selected.id || it.toAccountId == selected.id) &&
                     (typeFilter == null || it.kind == typeFilter) && inTxRange(it.date, range, anchor)
@@ -243,10 +229,8 @@ fun AccountsPage(
                 onOpenTxn = onEditTxn,
                 onOpenAll = { onOpenTransactions(selected?.id) },
             )
-        }
 
-        if (attention.isNotEmpty()) {
-            item(key = "attention", span = FullWidth) {
+            if (attention.isNotEmpty()) {
                 SectionCard(title = "Ngân sách cần chú ý", onAction = onOpenPlan) {
                     attention.forEach { (budget, usage) ->
                         val account = budget.accountId?.let { accountNames[it] ?: "?" } ?: "Tất cả tài khoản (${budget.currency.name})"
@@ -284,7 +268,6 @@ fun AccountsPage(
                 }
             }
         }
-
     }
 
     editing?.let { account ->

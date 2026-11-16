@@ -70,6 +70,7 @@ fun FinanceApp() {
     val currentRoute = backStackEntry?.destination?.route?.substringBefore('?')
     val currentTab = Tab.entries.firstOrNull { it.route == currentRoute }
     val onTab = currentTab != null
+    LocalGreenStatusBar.current.value = currentTab == Tab.HOME
 
     fun openTab(tab: Tab) {
         navController.navigate(tab.route) {
@@ -80,7 +81,8 @@ fun FinanceApp() {
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        // Home has a green header that runs under the status bar.
+        containerColor = if (currentTab == Tab.HOME) ChiLiV3.colors.headerTop else MaterialTheme.colorScheme.background,
         bottomBar = {
             if (onTab) {
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
