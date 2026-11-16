@@ -1,7 +1,11 @@
 package com.superduperlover.finance.ui.budgets
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,10 +15,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -23,6 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.painterResource
@@ -33,23 +40,29 @@ import com.superduperlover.finance.core.BudgetPeriod
 import com.superduperlover.finance.core.BudgetStatus
 import com.superduperlover.finance.core.BudgetUsage
 import com.superduperlover.finance.core.CategoryKind
+import com.superduperlover.finance.core.MAIN_CURRENCY
+import com.superduperlover.finance.core.budgetPace
 import com.superduperlover.finance.core.budgetUsage
-import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.EmptyState
 import com.superduperlover.finance.ui.components.OneLineText
-import com.superduperlover.finance.ui.components.SectionCard
 import com.superduperlover.finance.ui.components.dayMonth
-import com.superduperlover.finance.ui.components.expenseColor
+import com.superduperlover.finance.ui.home.moneyText
 import com.superduperlover.finance.ui.theme.ChiLiTheme
+import com.superduperlover.finance.ui.theme.ChiLiV3
+import com.superduperlover.finance.ui.theme.LocalAppPrefs
+import com.superduperlover.finance.ui.theme.v3Shadow
 import java.time.LocalDate
 import kotlin.math.abs
 
 @Composable
-internal fun budgetStatusColor(status: BudgetStatus): Color = when (status) {
-    BudgetStatus.OK -> ChiLiTheme.colors.income
-    BudgetStatus.WARN -> ChiLiTheme.colors.warn
-    BudgetStatus.OVER -> ChiLiTheme.colors.over
+internal fun budgetStatusColor(status: BudgetStatus): Color {
+    val c = ChiLiV3.colors
+    return when (status) {
+        BudgetStatus.OK -> c.income
+        BudgetStatus.WARN -> ChiLiTheme.colors.warn
+        BudgetStatus.OVER -> c.expense
+    }
 }
 
 internal fun BudgetStatus.statusLabel(): String = when (this) {
@@ -77,6 +90,8 @@ internal fun BudgetPeriod.recurringLabel(): String = when (this) {
 @Composable
 fun BudgetsScreen() {
     val repo = LocalRepo.current
+    val prefs = LocalAppPrefs.current
+    val c = ChiLiV3.colors
 
     val today = remember { LocalDate.now() }
     val budgets by remember(repo) { repo.budgets() }.collectAsState(initial = emptyList())
@@ -104,6 +119,8 @@ fun BudgetsScreen() {
         )
     }
 
+    val totalEntries = sortedBudgetsWithUsage.filter { (b, _) -> b.categoryId == null && b.currency == MAIN_CURRENCY }
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
@@ -111,6 +128,133 @@ fun BudgetsScreen() {
                 .padding(start = 16.dp, end = 16.dp, top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            val totalShape = RoundedCornerShape(26.dp)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .v3Shadow(c.shadow3, totalShape)
+                    .clip(totalShape)
+                    .background(Brush.linearGradient(listOf(c.headerTop, c.headerBottom)))
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (totalEntries.isEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            text = "Tổng ngân sách",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = c.onHeader,
+                        )
+                    }
+                    Text(
+                        text = "Chưa có ngân sách tổng",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = c.onHeader,
+                    )
+                } else {
+                    val totalSpent = totalEntries.sumOf { it.second.spent }
+                    val totalLimit = totalEntries.sumOf { it.second.limit }
+                    val totalRemaining = totalEntries.sumOf { it.second.remaining }
+                    val totalCarried = totalEntries.sumOf { it.second.carried }
+                    val effectiveLimit = totalLimit + totalCarried
+                    val ratio = if (effectiveLimit > 0) {
+                        totalSpent.toDouble() / effectiveLimit.toDouble()
+                    } else if (totalSpent == 0L) {
+                        0.0
+                    } else {
+                        1.0
+                    }
+                    val statuses = totalEntries.map { it.second.status }
+                    val worstStatus = when {
+                        BudgetStatus.OVER in statuses -> BudgetStatus.OVER
+                        BudgetStatus.WARN in statuses -> BudgetStatus.WARN
+                        else -> BudgetStatus.OK
+                    }
+                    val totalUsage = BudgetUsage(
+                        spent = totalSpent,
+                        limit = totalLimit,
+                        remaining = totalRemaining,
+                        ratio = ratio,
+                        status = worstStatus,
+                        range = totalEntries.first().second.range,
+                        carried = totalCarried,
+                    )
+                    val pace = budgetPace(totalUsage, today)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            text = "Tổng ngân sách",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = c.onHeader,
+                        )
+                        val paceShape = RoundedCornerShape(12.dp)
+                        Box(
+                            modifier = Modifier
+                                .clip(paceShape)
+                                .background(Color(0x33FFFFFF))
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                        ) {
+                            Text(
+                                text = if (pace.onPace) "Đúng tiến độ" else "Chi tiêu nhanh",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = c.onHeader,
+                            )
+                        }
+                    }
+
+                    val remainingPrefix = if (totalUsage.remaining >= 0) "Còn lại " else "Vượt "
+                    val displayRemaining = if (totalUsage.remaining >= 0) totalUsage.remaining else -totalUsage.remaining
+                    Text(
+                        text = "$remainingPrefix${moneyText(displayRemaining, MAIN_CURRENCY, prefs.hideBalance)}",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = c.onHeader,
+                    )
+
+                    Text(
+                        text = "Chi tiêu an toàn: ${moneyText(pace.safePerDay, MAIN_CURRENCY, prefs.hideBalance)} / ngày (còn ${pace.daysLeft} ngày)",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = c.onHeader,
+                    )
+
+                    val progressVal = totalUsage.ratio.toFloat().coerceIn(0f, 1f)
+                    LinearProgressIndicator(
+                        progress = { progressVal },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp),
+                        color = c.onHeader,
+                        trackColor = Color(0x40FFFFFF),
+                        strokeCap = StrokeCap.Round,
+                    )
+
+                    val percentInt = (progressVal * 100).toInt()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "${moneyText(totalUsage.spent, MAIN_CURRENCY, prefs.hideBalance)} / ${moneyText(totalUsage.effectiveLimit, MAIN_CURRENCY, prefs.hideBalance)}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = c.onHeader,
+                        )
+                        Text(
+                            text = "$percentInt%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = c.onHeader,
+                        )
+                    }
+                }
+            }
+
             if (budgets.isEmpty()) {
                 EmptyState(
                     icon = painterResource(R.drawable.ic_savings),
@@ -132,10 +276,17 @@ fun BudgetsScreen() {
                     val startStr = range.start.dayMonth()
                     val endStr = range.endInclusive.dayMonth()
 
-                    SectionCard(
+                    val cardShape = RoundedCornerShape(24.dp)
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { editingBudget = budget },
+                            .v3Shadow(c.shadow2, cardShape)
+                            .clip(cardShape)
+                            .background(c.cardActive)
+                            .border(1.dp, c.cardBorder, cardShape)
+                            .clickable { editingBudget = budget }
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -145,7 +296,7 @@ fun BudgetsScreen() {
                             OneLineText(
                                 text = "$accountName · $categoryName",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = c.onCard,
                                 modifier = Modifier.weight(1f, fill = false),
                             )
                             Spacer(Modifier.width(8.dp))
@@ -158,44 +309,44 @@ fun BudgetsScreen() {
                         OneLineText(
                             text = "${budget.period.recurringLabel()} · $startStr – $endStr",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = c.onSheetMuted,
                         )
                         LinearProgressIndicator(
                             progress = { usage.ratio.toFloat().coerceIn(0f, 1f) },
                             color = statusColor,
-                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            trackColor = c.card,
                             strokeCap = StrokeCap.Round,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(8.dp),
                         )
                         OneLineText(
-                            text = "Đã chi ${formatMoney(usage.spent, budget.currency)} / ${formatMoney(usage.effectiveLimit, budget.currency)}",
+                            text = "Đã chi ${moneyText(usage.spent, budget.currency, prefs.hideBalance)} / ${moneyText(usage.effectiveLimit, budget.currency, prefs.hideBalance)}",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = c.onCard,
                         )
                         if (usage.carried != 0L) {
                             val sign = if (usage.carried > 0) "+" else "-"
-                            val carriedStr = "$sign${formatMoney(abs(usage.carried), budget.currency)}"
+                            val carriedStr = "$sign${moneyText(abs(usage.carried), budget.currency, prefs.hideBalance)}"
                             OneLineText(
-                                text = "Hạn mức ${formatMoney(budget.limit, budget.currency)} · chuyển từ kỳ trước $carriedStr",
+                                text = "Hạn mức ${moneyText(budget.limit, budget.currency, prefs.hideBalance)} · chuyển từ kỳ trước $carriedStr",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = c.onSheetMuted,
                             )
                         }
                         OneLineText(
                             text = if (usage.remaining >= 0) {
-                                "Còn lại ${formatMoney(usage.remaining, budget.currency)}"
+                                "Còn lại ${moneyText(usage.remaining, budget.currency, prefs.hideBalance)}"
                             } else {
-                                "Vượt ${formatMoney(-usage.remaining, budget.currency)}"
+                                "Vượt ${moneyText(-usage.remaining, budget.currency, prefs.hideBalance)}"
                             },
                             style = MaterialTheme.typography.bodyMedium,
-                            color = if (usage.remaining >= 0) MaterialTheme.colorScheme.onSurfaceVariant else expenseColor(),
+                            color = if (usage.remaining >= 0) c.onSheetMuted else c.expense,
                         )
                     }
                 }
 
-                FilledTonalButton(
+                Button(
                     onClick = {
                         editingBudget = newBudget(today)
                     },
@@ -203,12 +354,17 @@ fun BudgetsScreen() {
                         .fillMaxWidth()
                         .heightIn(min = 48.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = c.cardActive,
+                        contentColor = c.accent,
                     ),
+                    border = BorderStroke(1.dp, c.cardBorder),
                 ) {
-                    OneLineText("Thêm ngân sách", style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        text = "Thêm ngân sách",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = c.accent,
+                    )
                 }
             }
         }
