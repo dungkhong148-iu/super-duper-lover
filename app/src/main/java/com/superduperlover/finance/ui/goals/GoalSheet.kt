@@ -80,11 +80,9 @@ import kotlinx.coroutines.launch
 
 private fun isQuickDuration(d: JarDuration): Boolean =
     d == JarDuration(7, DurationUnit.DAY) ||
-    d == JarDuration(30, DurationUnit.DAY) ||
     d == JarDuration(1, DurationUnit.MONTH) ||
     d == JarDuration(6, DurationUnit.MONTH) ||
-    d == JarDuration(1, DurationUnit.YEAR) ||
-    (d.unit == DurationUnit.MONTH && d.count == 12)
+    d == JarDuration(1, DurationUnit.YEAR)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -125,7 +123,7 @@ fun GoalSheet(
     var manualDeadline by remember { mutableStateOf(goal.deadline) }
 
     val initialDuration = remember(goal) {
-        goal.plan?.duration ?: JarDuration(30, DurationUnit.DAY)
+        goal.plan?.duration ?: JarDuration(1, DurationUnit.MONTH)
     }
     var duration by remember { mutableStateOf(initialDuration) }
     var customCountText by remember { mutableStateOf(initialDuration.count.toString()) }
@@ -523,7 +521,7 @@ fun GoalSheet(
                             colors = chiLiChipColors(),
                             border = chiLiChipBorder(selected = quickSelected && duration == JarDuration(7, DurationUnit.DAY)),
                         )
-                        val oneMonth = quickSelected && (duration == JarDuration(1, DurationUnit.MONTH) || duration == JarDuration(30, DurationUnit.DAY))
+                        val oneMonth = quickSelected && duration == JarDuration(1, DurationUnit.MONTH)
                         FilterChip(
                             selected = oneMonth,
                             onClick = {
@@ -547,7 +545,7 @@ fun GoalSheet(
                             border = chiLiChipBorder(selected = quickSelected && duration == JarDuration(6, DurationUnit.MONTH)),
                         )
                         FilterChip(
-                            selected = quickSelected && (duration == JarDuration(1, DurationUnit.YEAR) || (duration.unit == DurationUnit.MONTH && duration.count == 12)),
+                            selected = quickSelected && duration == JarDuration(1, DurationUnit.YEAR),
                             onClick = {
                                 duration = JarDuration(1, DurationUnit.YEAR)
                                 customCountText = "1"
@@ -555,7 +553,7 @@ fun GoalSheet(
                             },
                             label = { OneLineText("1 năm") },
                             colors = chiLiChipColors(),
-                            border = chiLiChipBorder(selected = quickSelected && (duration == JarDuration(1, DurationUnit.YEAR) || (duration.unit == DurationUnit.MONTH && duration.count == 12))),
+                            border = chiLiChipBorder(selected = quickSelected && duration == JarDuration(1, DurationUnit.YEAR)),
                         )
                         val customSelected = isCustom || !isQuickDuration(duration)
                         FilterChip(
