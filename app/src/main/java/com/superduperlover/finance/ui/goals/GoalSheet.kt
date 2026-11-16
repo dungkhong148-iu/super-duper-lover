@@ -54,7 +54,6 @@ import com.superduperlover.finance.core.SegmentedBarModel
 import com.superduperlover.finance.core.accountBalance
 import com.superduperlover.finance.core.amountToInput
 import com.superduperlover.finance.core.currencySymbol
-import com.superduperlover.finance.core.durationOfPeriods
 import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.core.goalProgress
 import com.superduperlover.finance.core.jarSchedule
@@ -81,7 +80,7 @@ import kotlinx.coroutines.launch
 private fun isQuickDuration(d: JarDuration): Boolean =
     d == JarDuration(7, DurationUnit.DAY) ||
     d == JarDuration(30, DurationUnit.DAY) ||
-    d == JarDuration(3, DurationUnit.MONTH) ||
+    d == JarDuration(1, DurationUnit.MONTH) ||
     d == JarDuration(6, DurationUnit.MONTH) ||
     d == JarDuration(1, DurationUnit.YEAR) ||
     (d.unit == DurationUnit.MONTH && d.count == 12)
@@ -520,27 +519,17 @@ fun GoalSheet(
                         colors = chiLiChipColors(),
                         border = chiLiChipBorder(selected = quickSelected && duration == JarDuration(7, DurationUnit.DAY)),
                     )
+                    val oneMonth = quickSelected && (duration == JarDuration(1, DurationUnit.MONTH) || duration == JarDuration(30, DurationUnit.DAY))
                     FilterChip(
-                        selected = quickSelected && duration == JarDuration(30, DurationUnit.DAY),
+                        selected = oneMonth,
                         onClick = {
-                            duration = JarDuration(30, DurationUnit.DAY)
-                            customCountText = "30"
+                            duration = JarDuration(1, DurationUnit.MONTH)
+                            customCountText = "1"
                             isCustom = false
                         },
                         label = { OneLineText("1 tháng") },
                         colors = chiLiChipColors(),
-                        border = chiLiChipBorder(selected = quickSelected && duration == JarDuration(30, DurationUnit.DAY)),
-                    )
-                    FilterChip(
-                        selected = quickSelected && duration == JarDuration(3, DurationUnit.MONTH),
-                        onClick = {
-                            duration = JarDuration(3, DurationUnit.MONTH)
-                            customCountText = "3"
-                            isCustom = false
-                        },
-                        label = { OneLineText("3 tháng") },
-                        colors = chiLiChipColors(),
-                        border = chiLiChipBorder(selected = quickSelected && duration == JarDuration(3, DurationUnit.MONTH)),
+                        border = chiLiChipBorder(selected = oneMonth),
                     )
                     FilterChip(
                         selected = quickSelected && duration == JarDuration(6, DurationUnit.MONTH),
@@ -578,11 +567,6 @@ fun GoalSheet(
                 }
 
                 if (isCustom || !isQuickDuration(duration)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
                         OutlinedTextField(
                             value = customCountText,
                             onValueChange = { input ->
@@ -598,61 +582,63 @@ fun GoalSheet(
                             label = { Text("Số lượng") },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.fillMaxWidth(),
                         )
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            FilterChip(
-                                selected = duration.unit == DurationUnit.DAY,
-                                onClick = {
-                                    val max = maxDurationCount(DurationUnit.DAY)
-                                    val newCount = duration.count.coerceIn(1, max)
-                                    duration = JarDuration(newCount, DurationUnit.DAY)
-                                    customCountText = newCount.toString()
-                                },
-                                label = { OneLineText("Ngày") },
-                                colors = chiLiChipColors(),
-                                border = chiLiChipBorder(selected = duration.unit == DurationUnit.DAY),
-                            )
-                            FilterChip(
-                                selected = duration.unit == DurationUnit.MONTH,
-                                onClick = {
-                                    val max = maxDurationCount(DurationUnit.MONTH)
-                                    val newCount = duration.count.coerceIn(1, max)
-                                    duration = JarDuration(newCount, DurationUnit.MONTH)
-                                    customCountText = newCount.toString()
-                                },
-                                label = { OneLineText("Tháng") },
-                                colors = chiLiChipColors(),
-                                border = chiLiChipBorder(selected = duration.unit == DurationUnit.MONTH),
-                            )
-                            FilterChip(
-                                selected = duration.unit == DurationUnit.YEAR,
-                                onClick = {
-                                    val max = maxDurationCount(DurationUnit.YEAR)
-                                    val newCount = duration.count.coerceIn(1, max)
-                                    duration = JarDuration(newCount, DurationUnit.YEAR)
-                                    customCountText = newCount.toString()
-                                },
-                                label = { OneLineText("Năm") },
-                                colors = chiLiChipColors(),
-                                border = chiLiChipBorder(selected = duration.unit == DurationUnit.YEAR),
-                            )
-                        }
-                    }
                 }
+                // Unit of the plan: the slider below counts in this unit (days up to 30, months up to 12, years up to 3).
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    FilterChip(
+                        selected = duration.unit == DurationUnit.DAY,
+                        onClick = {
+                            val max = maxDurationCount(DurationUnit.DAY)
+                            val newCount = duration.count.coerceIn(1, max)
+                            duration = JarDuration(newCount, DurationUnit.DAY)
+                            customCountText = newCount.toString()
+                        },
+                        label = { OneLineText("Ngày") },
+                        colors = chiLiChipColors(),
+                        border = chiLiChipBorder(selected = duration.unit == DurationUnit.DAY),
+                    )
+                    FilterChip(
+                        selected = duration.unit == DurationUnit.MONTH,
+                        onClick = {
+                            val max = maxDurationCount(DurationUnit.MONTH)
+                            val newCount = duration.count.coerceIn(1, max)
+                            duration = JarDuration(newCount, DurationUnit.MONTH)
+                            customCountText = newCount.toString()
+                        },
+                        label = { OneLineText("Tháng") },
+                        colors = chiLiChipColors(),
+                        border = chiLiChipBorder(selected = duration.unit == DurationUnit.MONTH),
+                    )
+                    FilterChip(
+                        selected = duration.unit == DurationUnit.YEAR,
+                        onClick = {
+                            val max = maxDurationCount(DurationUnit.YEAR)
+                            val newCount = duration.count.coerceIn(1, max)
+                            duration = JarDuration(newCount, DurationUnit.YEAR)
+                            customCountText = newCount.toString()
+                        },
+                        label = { OneLineText("Năm") },
+                        colors = chiLiChipColors(),
+                        border = chiLiChipBorder(selected = duration.unit == DurationUnit.YEAR),
+                    )
+                }
+
 
                 SegmentedVolumeSlider(
                     schedule = schedule,
                     bar = bar,
                     currency = currency,
-                    onPeriodsChange = { newPeriods ->
-                        val newDuration = durationOfPeriods(schedule.cycle, newPeriods)
-                        duration = newDuration
-                        customCountText = newDuration.count.toString()
-                        isCustom = !isQuickDuration(newDuration)
+                    unit = duration.unit,
+                    count = duration.count,
+                    onCountChange = { n ->
+                        duration = JarDuration(n, duration.unit)
+                        customCountText = n.toString()
+                        isCustom = !isQuickDuration(duration)
                     },
                     target = parsedTarget ?: 0L,
                     baseSaved = savedSoFar,

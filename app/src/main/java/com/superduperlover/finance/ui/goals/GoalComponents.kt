@@ -28,7 +28,9 @@ import com.superduperlover.finance.core.Currency
 import com.superduperlover.finance.core.Goal
 import com.superduperlover.finance.core.GoalProgress
 import com.superduperlover.finance.core.JarPlanCalculator
+import com.superduperlover.finance.core.DurationUnit
 import com.superduperlover.finance.core.JarSchedule
+import com.superduperlover.finance.core.maxDurationCount
 import com.superduperlover.finance.core.ReserveCycle
 import com.superduperlover.finance.core.SegmentedBar
 import com.superduperlover.finance.core.formatMoney
@@ -90,7 +92,10 @@ fun SegmentedVolumeSlider(
     schedule: JarSchedule,
     bar: SegmentedBar,
     currency: Currency,
-    onPeriodsChange: (Int) -> Unit,
+    /** The slider moves the plan's count in its unit: 1..30 days, 1..12 months or 1..3 years. */
+    unit: DurationUnit,
+    count: Int,
+    onCountChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
     target: Long = bar.thisJar,
     baseSaved: Long = 0L,
@@ -101,13 +106,12 @@ fun SegmentedVolumeSlider(
         Box(modifier = Modifier.padding(vertical = 8.dp)) {
             SegmentedBarVisual(bar = bar)
         }
-        val valueRange = if (schedule.cycle == ReserveCycle.DAILY) 1f..30f else 2f..36f
-        val steps = if (schedule.cycle == ReserveCycle.DAILY) 28 else 33
+        val max = maxDurationCount(unit)
         Slider(
-            value = schedule.periods.toFloat().coerceIn(valueRange),
-            onValueChange = { onPeriodsChange(it.roundToInt()) },
-            valueRange = valueRange,
-            steps = steps,
+            value = count.toFloat().coerceIn(1f, max.toFloat()),
+            onValueChange = { onCountChange(it.roundToInt()) },
+            valueRange = 1f..max.toFloat(),
+            steps = (max - 2).coerceAtLeast(0),
             modifier = Modifier.fillMaxWidth(),
         )
         val perPeriodAmount = JarPlanCalculator.amounts(target, baseSaved, schedule).firstOrNull() ?: 0L
