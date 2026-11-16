@@ -56,6 +56,9 @@ fun HeroCard(
     title: String,
     /** False when one account is selected: free / jar money is not per account. */
     showFree: Boolean,
+    /** Still open: money owed / lent (the line shows only when one of them is above 0). */
+    debtOwe: Long = 0L,
+    debtLent: Long = 0L,
     periodLabel: String,
     income: Long,
     expense: Long,
@@ -117,6 +120,16 @@ fun HeroCard(
                             style = MaterialTheme.typography.labelMedium,
                         )
                         Icon(Icons.Filled.KeyboardArrowRight, null, Modifier.size(16.dp), tint = c.onHeroChip)
+                    }
+                }
+                if (debtOwe > 0 || debtLent > 0) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Đang nợ", color = c.onHero, style = MaterialTheme.typography.labelSmall)
+                        Text(money(debtOwe), color = c.onHero, style = MaterialTheme.typography.labelLarge)
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text("Cho mượn", color = c.onHero, style = MaterialTheme.typography.labelSmall)
+                        Text(money(debtLent), color = c.onHero, style = MaterialTheme.typography.labelLarge)
                     }
                 }
                 if (showFree) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

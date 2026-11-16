@@ -30,7 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.core.MAIN_CURRENCY
-import com.superduperlover.finance.core.balancesByCurrency
+import com.superduperlover.finance.core.netWorthByCurrency
 import com.superduperlover.finance.ui.LocalRepo
 import com.superduperlover.finance.ui.components.ChiLiTopBar
 import com.superduperlover.finance.ui.components.CheckRow
@@ -55,7 +55,10 @@ fun SettingsTabScreen(
 
     val accounts by remember(repo) { repo.accounts(includeArchived = false) }.collectAsState(initial = emptyList())
     val txns by remember(repo) { repo.txns() }.collectAsState(initial = emptyList())
-    val balances = remember(accounts, txns) { balancesByCurrency(accounts, txns) }
+    val debts by remember(repo) { repo.debts() }.collectAsState(initial = emptyList())
+    val debtPayments by remember(repo) { repo.debtPayments() }.collectAsState(initial = emptyList())
+    // Net worth: balances + what is lent - what is owed (same number as the Hero total).
+    val balances = remember(accounts, txns, debts, debtPayments) { netWorthByCurrency(accounts, txns, debts, debtPayments) }
     val mainBalance = balances[MAIN_CURRENCY] ?: 0L
 
     Column(Modifier.fillMaxSize()) {

@@ -68,6 +68,8 @@ import com.superduperlover.finance.core.TxnTotals
 import com.superduperlover.finance.core.accountBalance
 import com.superduperlover.finance.core.backupReminder
 import com.superduperlover.finance.core.balancesByCurrency
+import com.superduperlover.finance.core.debtTotals
+import com.superduperlover.finance.core.netWorthByCurrency
 import com.superduperlover.finance.core.budgetUsage
 import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.core.freeByCurrency
@@ -120,6 +122,8 @@ fun HomeBody(
     val allTxns by remember(repo) { repo.txns() }.collectAsState(initial = emptyList())
     val accounts by remember(repo) { repo.accounts() }.collectAsState(initial = emptyList())
     val allAccounts by remember(repo) { repo.accounts(includeArchived = true) }.collectAsState(initial = emptyList())
+    val debts by remember(repo) { repo.debts() }.collectAsState(initial = emptyList())
+    val debtPayments by remember(repo) { repo.debtPayments() }.collectAsState(initial = emptyList())
     val categories by remember(repo) { repo.categories(includeArchived = true) }.collectAsState(initial = emptyList())
     // null = sheet closed; id 0 = new account
     var editing by remember { mutableStateOf<Account?>(null) }
@@ -154,11 +158,18 @@ fun HomeBody(
     val totals = txnTotals(if (selected != null) monthTxns.filter { it.accountId == selected.id } else monthTxns, accounts)
     val selectedTotals = totals[selectedCurrency] ?: TxnTotals(0L, 0L)
     val balanceByCurrency = balancesByCurrency(scopeAccounts, allTxns)
-    val selectedBalance = balanceByCurrency[selectedCurrency] ?: 0L
+    // All accounts: the Hero total is the net worth (balances + lent - owed); one account: just its balance.
+    val openDebts = debtTotals(debts, debtPayments)[selectedCurrency]
+    val selectedBalance = if (selected == null) {
+        netWorthByCurrency(accounts, allTxns, debts, debtPayments)[selectedCurrency] ?: 0L
+    } else {
+        balanceByCurrency[selectedCurrency] ?: 0L
+    }
+    val cashBalance = balanceByCurrency[selectedCurrency] ?: 0L
     val reservedMap = reservedByCurrency(jarSavings)
     val freeMap = freeByCurrency(balanceByCurrency, reservedMap)
     val selectedReserved = reservedMap[selectedCurrency] ?: 0L
-    val selectedFree = freeMap[selectedCurrency] ?: selectedBalance
+    val selectedFree = freeMap[selectedCurrency] ?: cashBalance
     val pendingJars = jarSavings.filter { it.goal.status == JarStatus.PENDING_SETTLEMENT && !it.goal.archived }
     val balances = accounts.map { it to accountBalance(it, allTxns) }
     val accountNames = allAccounts.associate { it.id to it.name }
@@ -204,6 +215,8 @@ fun HomeBody(
                 budgetLeft = currencyTotalBudgets.takeIf { it.isNotEmpty() }?.sumOf { (_, u) -> u.remaining },
                 title = selected?.name ?: "Tổng số dư",
                 showFree = selected == null,
+                debtOwe = if (selected == null) openDebts?.owe ?: 0L else 0L,
+                debtLent = if (selected == null) openDebts?.lent ?: 0L else 0L,
                 periodLabel = periodLabel,
                 income = selectedTotals.income,
                 expense = selectedTotals.expense,
