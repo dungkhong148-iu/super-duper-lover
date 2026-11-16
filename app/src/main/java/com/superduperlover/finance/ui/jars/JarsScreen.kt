@@ -2,6 +2,7 @@ package com.superduperlover.finance.ui.jars
 
 import androidx.compose.foundation.background
 import androidx.compose.runtime.saveable.rememberSaveable
+import com.superduperlover.finance.ui.debts.DebtsTab
 import com.superduperlover.finance.ui.home.PlanPage
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -254,71 +255,7 @@ fun JarsScreen(
                 }
             }
             JarTab.BUDGET -> Box(Modifier.fillMaxWidth().weight(1f)) { PlanPage() }
-            JarTab.DEBTS -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                        .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
-                ) {
-                    val lockShape = RoundedCornerShape(24.dp)
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .v3Shadow(c.shadow2, lockShape)
-                            .clip(lockShape)
-                            .background(c.cardActive)
-                            .border(1.dp, c.cardBorder, lockShape)
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(56.dp)
-                                .clip(CircleShape)
-                                .background(c.card),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_wallet),
-                                contentDescription = null,
-                                tint = c.accent,
-                                modifier = Modifier.size(28.dp),
-                            )
-                        }
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(
-                                text = "Sổ nợ",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = c.onCard,
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(c.card)
-                                    .padding(horizontal = 8.dp, vertical = 2.dp),
-                            ) {
-                                Text(
-                                    text = "Sắp có",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = c.onSheetMuted,
-                                )
-                            }
-                        }
-                        Text(
-                            text = "Theo dõi các khoản vay, nợ phải trả và cho vay, nhắc lịch thanh toán.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = c.onSheetMuted,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                }
-            }
+            JarTab.DEBTS -> Box(Modifier.fillMaxWidth().weight(1f)) { DebtsTab() }
         }
     }
 
