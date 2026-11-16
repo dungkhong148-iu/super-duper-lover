@@ -82,7 +82,7 @@ fun HeroCard(
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(title, color = c.onHero, style = MaterialTheme.typography.labelLarge)
                 Box(
-                    Modifier.size(36.dp).clip(CircleShape).background(Color(0x1A000000)).clickable(onClick = onToggleHidden),
+                    Modifier.size(36.dp).clip(CircleShape).background(c.heroButton).clickable(onClick = onToggleHidden),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
@@ -107,16 +107,16 @@ fun HeroCard(
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Còn được tiêu $periodLabel", Modifier.weight(1f), color = c.onHero, style = MaterialTheme.typography.labelLarge)
                     Row(
-                        Modifier.clip(CircleShape).background(Color(0xBFFFFFFF)).clickable(onClick = onOpenBudgets)
+                        Modifier.clip(CircleShape).background(c.heroChip).clickable(onClick = onOpenBudgets)
                             .padding(start = 10.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             if (budgetLeft == null) "Tạo ngân sách" else money(budgetLeft),
-                            color = if (budgetLeft != null && budgetLeft < 0) c.expense else Color(0xFF0F172A),
+                            color = if (budgetLeft != null && budgetLeft < 0) c.expense else c.onHeroChip,
                             style = MaterialTheme.typography.labelMedium,
                         )
-                        Icon(Icons.Filled.KeyboardArrowRight, null, Modifier.size(16.dp), tint = Color(0xFF0F172A))
+                        Icon(Icons.Filled.KeyboardArrowRight, null, Modifier.size(16.dp), tint = c.onHeroChip)
                     }
                 }
                 if (showFree) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -70,6 +70,16 @@ class V3Colors(
     val yellowChipSelected: Color,
     val txRow: Color,
     val onTxRow: Color,
+    /** Icon well on account cards. */
+    val iconWell: Color,
+    /** Round button on the Hero (eye). */
+    val heroButton: Color,
+    /** "Còn được tiêu" chip on the Hero and its text. */
+    val heroChip: Color,
+    val onHeroChip: Color,
+    /** "Xem chi tiết" button on the yellow block and its text. */
+    val yellowAction: Color,
+    val onYellowAction: Color,
     /** Embossed text shadow of the big Hero balance (light only). */
     val heroBalanceShadow: Shadow,
     val income: Color,
@@ -141,6 +151,12 @@ val V3Light = V3Colors(
     yellowChipSelected = Color(0xFFFFFFFF),
     txRow = Color(0xE6FFFFFF),
     onTxRow = Color(0xFF0F172A),
+    iconWell = Color(0xCCFFFFFF),
+    heroButton = Color(0x1A000000),
+    heroChip = Color(0xBFFFFFFF),
+    onHeroChip = Color(0xFF0F172A),
+    yellowAction = Color(0xE60F172A),
+    onYellowAction = Color.White,
     heroBalanceShadow = Shadow(Color(0x73FFFFFF), Offset(0f, 2f), 0f),
     income = Color(0xFF047857),
     expense = Color(0xFFE11D48),
@@ -185,6 +201,12 @@ val V3Dark = V3Colors(
     yellowChipSelected = Color(0x40F59E0B),
     txRow = Color(0xE61F2925),
     onTxRow = Color(0xFFE2EBE6),
+    iconWell = Color(0xFF22332D),
+    heroButton = Color(0x1AFFFFFF),
+    heroChip = Color(0xCC022C22),
+    onHeroChip = Color(0xFF6EE7B7),
+    yellowAction = Color(0x33FBBF24),
+    onYellowAction = Color(0xFFFDE68A),
     heroBalanceShadow = Shadow.None,
     income = Color(0xFF4ADE80),
     expense = Color(0xFFFB7185),

@@ -43,9 +43,7 @@ fun SectionCard(
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (title != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val titleStyle = MaterialTheme.typography.titleMedium.let {
-                        if (it.fontSize.isSpecified && it.fontSize > 18.sp) it.copy(fontSize = 18.sp) else it
-                    }
+                    val titleStyle = MaterialTheme.typography.titleMedium
                     OneLineText(
                         text = title,
                         style = titleStyle,

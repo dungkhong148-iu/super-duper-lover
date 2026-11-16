@@ -77,14 +77,14 @@ fun JarTile(
             ) {
                 OneLineText(
                     text = jar.goal.name,
-                    style = MaterialTheme.typography.titleSmall.copy(fontSize = 14.sp),
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                 )
                 OneLineText(
                     text = statusLabel,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                    style = MaterialTheme.typography.labelSmall,
                     color = statusColor,
                     minFontSize = 9.sp,
                 )
@@ -102,7 +102,7 @@ fun JarTile(
 
             OneLineText(
                 text = "${formatMoney(jar.saved, jar.goal.currency)} / ${formatMoney(jar.goal.target, jar.goal.currency)}",
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 minFontSize = 9.sp,
             )

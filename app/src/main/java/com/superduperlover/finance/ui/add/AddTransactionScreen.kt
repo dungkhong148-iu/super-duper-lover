@@ -520,7 +520,7 @@ fun AddTransactionScreen(
                 ) {
                     OneLineText(
                         text = "Số tiền nhận (${currencySymbol(targetAccount.currency)})",
-                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+                        style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     BasicTextField(
@@ -533,7 +533,6 @@ fun AddTransactionScreen(
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         textStyle = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface,
                         ),
                         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
@@ -561,7 +560,7 @@ fun AddTransactionScreen(
                     if (rate != null && !receivedEdited) {
                         Text(
                             text = "Tự điền theo lần chuyển gần nhất, bạn có thể sửa",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             modifier = Modifier.padding(start = 4.dp, top = 2.dp),
@@ -621,7 +620,7 @@ fun AddTransactionScreen(
                     Spacer(Modifier.width(8.dp))
                     OneLineText(
                         text = if (date == LocalDate.now()) "Hôm nay" else date.display(),
-                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
                         minFontSize = 10.sp,
@@ -634,7 +633,6 @@ fun AddTransactionScreen(
                 onValueChange = { note = it },
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurface,
                 ),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
@@ -659,7 +657,7 @@ fun AddTransactionScreen(
                             if (note.isEmpty()) {
                                 Text(
                                     text = "Ghi chú...",
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                                    style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,
                                 )
@@ -802,7 +800,7 @@ private fun TypeTabs(
         ) {
             val density = LocalDensity.current
             val textMeasurer = rememberTextMeasurer()
-            val labelStyle = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp)
+            val labelStyle = MaterialTheme.typography.labelMedium
             val longestWidth = remember(density) {
                 val res = textMeasurer.measure(
                     text = "Chuyển khoản",
@@ -927,7 +925,7 @@ private fun AmountHeader(
         ) {
             OneLineText(
                 text = displayText,
-                style = MaterialTheme.typography.displayMedium.copy(fontSize = 28.sp),
+                style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = contentColor,
                 minFontSize = 20.sp,
@@ -977,13 +975,13 @@ private fun PickerButton(
         ) {
             OneLineText(
                 text = label,
-                style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(2.dp))
             OneLineText(
                 text = value,
-                style = MaterialTheme.typography.titleSmall.copy(fontSize = 14.sp),
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = valueColor,
             )
@@ -1164,7 +1162,7 @@ private fun CategoryGridCell(
             Spacer(Modifier.height(2.dp))
             OneLineText(
                 text = category.name,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                 color = contentColor,
                 minFontSize = 10.sp,
@@ -1206,7 +1204,7 @@ private fun CategoryGridMoreCell(
             Spacer(Modifier.height(2.dp))
             OneLineText(
                 text = "Khác...",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 minFontSize = 10.sp,
                 textAlign = TextAlign.Center,

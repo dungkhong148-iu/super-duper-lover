@@ -106,9 +106,7 @@ fun FinanceApp() {
                             ),
                             // One line, never wrapped: shrinks on large system font scales.
                             label = {
-                                val labelStyle = MaterialTheme.typography.labelMedium.let {
-                                    if (it.fontSize.isSpecified && it.fontSize > 12.sp) it.copy(fontSize = 12.sp) else it
-                                }
+                                val labelStyle = MaterialTheme.typography.labelMedium
                                 OneLineText(
                                     tab.label,
                                     style = labelStyle,

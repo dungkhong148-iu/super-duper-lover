@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -31,12 +32,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.ui.theme.ChiLiV3
@@ -99,6 +102,13 @@ fun CollapsingSheetPage(
     ) {
         Box(Modifier.fillMaxWidth().onSizeChanged { carouselPx = it.height }) { carousel() }
 
+        // Shadow that falls UPWARD from the plate's top edge (the mock's 0 -8px 24px): Modifier.shadow only falls down.
+        val strip = 28.dp
+        Box(
+            Modifier.fillMaxWidth().height(strip)
+                .offset { IntOffset(0, (carouselPx + offset - strip.toPx()).roundToInt()) }
+                .background(Brush.verticalGradient(listOf(Color.Transparent, c.shadowSheet.spot))),
+        )
         Surface(
             Modifier.layout { m, cons ->
                 val top = (carouselPx + offset).roundToInt().coerceIn(0, cons.maxHeight)

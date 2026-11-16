@@ -30,7 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.superduperlover.finance.core.Currency
@@ -98,7 +98,6 @@ fun AmountPad(
                                         onClick = onBackspace,
                                         onLongClick = onClear,
                                         contentDescription = "Xóa số cuối",
-                                        fontSize = 20.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
                                         contentColor = MaterialTheme.colorScheme.onSurface,
@@ -111,7 +110,6 @@ fun AmountPad(
                                     PadKey(
                                         text = ".",
                                         onClick = onDot,
-                                        fontSize = 22.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
                                         contentColor = MaterialTheme.colorScheme.onSurface,
@@ -124,7 +122,6 @@ fun AmountPad(
                                     PadKey(
                                         text = key,
                                         onClick = { onDigit(key) },
-                                        fontSize = 18.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
                                         contentColor = MaterialTheme.colorScheme.onSurface,
@@ -137,7 +134,6 @@ fun AmountPad(
                                     PadKey(
                                         text = key,
                                         onClick = { onDigit(key) },
-                                        fontSize = 22.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
                                         contentColor = MaterialTheme.colorScheme.onSurface,
@@ -163,7 +159,6 @@ fun AmountPad(
                     text = "÷",
                     onClick = { onOperator('/') },
                     contentDescription = "Chia",
-                    fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.primary,
@@ -175,7 +170,6 @@ fun AmountPad(
                     text = "×",
                     onClick = { onOperator('*') },
                     contentDescription = "Nhân",
-                    fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.primary,
@@ -187,7 +181,6 @@ fun AmountPad(
                     text = "−",
                     onClick = { onOperator('-') },
                     contentDescription = "Trừ",
-                    fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.primary,
@@ -199,7 +192,6 @@ fun AmountPad(
                     text = "+",
                     onClick = { onOperator('+') },
                     contentDescription = "Cộng",
-                    fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.primary,
@@ -211,7 +203,6 @@ fun AmountPad(
                     text = "=",
                     onClick = onEquals,
                     contentDescription = "Bằng",
-                    fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -249,7 +240,7 @@ fun AmountPad(
                     Spacer(Modifier.width(8.dp))
                     OneLineText(
                         text = "Lưu",
-                        style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
@@ -267,7 +258,7 @@ private fun PadKey(
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
     contentDescription: String? = null,
-    fontSize: TextUnit = 22.sp,
+    style: TextStyle = MaterialTheme.typography.titleLarge,
     fontWeight: FontWeight = FontWeight.SemiBold,
     containerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
@@ -300,7 +291,7 @@ private fun PadKey(
         ) {
             Text(
                 text = text,
-                fontSize = fontSize,
+                style = style,
                 fontWeight = fontWeight,
                 color = contentColor,
             )

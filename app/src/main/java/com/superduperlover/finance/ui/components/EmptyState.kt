@@ -65,9 +65,7 @@ fun EmptyState(
                     )
                 }
             }
-            val titleStyle = MaterialTheme.typography.titleMedium.let {
-                if (it.fontSize.isSpecified && it.fontSize > 18.sp) it.copy(fontSize = 18.sp) else it
-            }.copy(fontWeight = FontWeight.SemiBold)
+            val titleStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
             Text(
                 text = title,
                 style = titleStyle,
@@ -76,7 +74,7 @@ fun EmptyState(
             )
             Text(
                 text = message,
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 maxLines = 3,

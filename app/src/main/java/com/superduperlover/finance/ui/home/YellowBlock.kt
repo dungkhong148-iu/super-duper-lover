@@ -142,8 +142,8 @@ fun YellowBlock(
                         if (txns.size > MAX_ROWS) "Hiện $MAX_ROWS / ${txns.size} giao dịch" else "${txns.size} giao dịch",
                         Modifier.weight(1f), color = c.onYellow, style = MaterialTheme.typography.labelMedium,
                     )
-                    Box(Modifier.tapScale(onOpenAll).clip(CircleShape).background(Color(0xE60F172A)).padding(horizontal = 14.dp, vertical = 8.dp)) {
-                        Text("Xem chi tiết", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                    Box(Modifier.tapScale(onOpenAll).clip(CircleShape).background(c.yellowAction).padding(horizontal = 14.dp, vertical = 8.dp)) {
+                        Text("Xem chi tiết", color = c.onYellowAction, style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }

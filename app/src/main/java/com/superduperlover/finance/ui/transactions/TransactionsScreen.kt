@@ -219,9 +219,7 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                                     modifier = Modifier.size(18.dp),
                                 )
                                 Spacer(Modifier.width(6.dp))
-                                val titleStyle = MaterialTheme.typography.titleMedium.let {
-                                    if (it.fontSize.isSpecified && it.fontSize > 18.sp) it.copy(fontSize = 18.sp) else it
-                                }
+                                val titleStyle = MaterialTheme.typography.titleMedium
                                 OneLineText(
                                     text = rangeText,
                                     style = titleStyle,
@@ -259,9 +257,7 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                                     modifier = Modifier.size(18.dp),
                                 )
                                 Spacer(Modifier.width(8.dp))
-                                val titleStyle = MaterialTheme.typography.titleMedium.let {
-                                    if (it.fontSize.isSpecified && it.fontSize > 18.sp) it.copy(fontSize = 18.sp) else it
-                                }
+                                val titleStyle = MaterialTheme.typography.titleMedium
                                 OneLineText(
                                     text = "Tháng ${month.monthValue}/${month.year}",
                                     style = titleStyle,
@@ -430,9 +426,7 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                         .padding(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    val valueStyle = MaterialTheme.typography.titleMedium.let {
-                        if (it.fontSize.isSpecified && it.fontSize > 18.sp) it.copy(fontSize = 18.sp) else it
-                    }
+                    val valueStyle = MaterialTheme.typography.titleMedium
                     // Income tile
                     Surface(
                         modifier = Modifier.weight(1f),
@@ -458,7 +452,7 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                                 )
                                 OneLineText(
                                     text = "Thu nhập",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+                                    style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     minFontSize = 10.sp,
                                 )
@@ -498,7 +492,7 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, initialAccountId: Long? = null) {
                                 )
                                 OneLineText(
                                     text = "Chi tiêu",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+                                    style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     minFontSize = 10.sp,
                                 )

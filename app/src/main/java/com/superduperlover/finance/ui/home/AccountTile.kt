@@ -27,12 +27,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.core.Account
 import com.superduperlover.finance.ui.components.iconRes
 import com.superduperlover.finance.ui.theme.ChiLiV3
+import com.superduperlover.finance.ui.theme.accountColor
 import com.superduperlover.finance.ui.theme.accountTileColor
 import com.superduperlover.finance.ui.theme.v3Shadow
 
@@ -81,8 +83,10 @@ private fun AccountCard(account: Account, balance: Long, active: Boolean, hidden
     ) {
         if (active) Box(Modifier.align(Alignment.TopEnd).size(8.dp).clip(CircleShape).background(c.accent))
         Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(Modifier.size(width = 44.dp, height = 36.dp).clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.8f)), contentAlignment = Alignment.Center) {
-                Icon(painterResource(account.type.iconRes()), null, Modifier.size(24.dp), tint = accountTileColor(account.colorKey))
+            Box(Modifier.size(width = 44.dp, height = 36.dp).clip(RoundedCornerShape(12.dp)).background(c.iconWell), contentAlignment = Alignment.Center) {
+                // Dark: the plain account colour reads on the dark well; light: the darkened one reads on white.
+                val tint = if (c.sheet.luminance() < 0.5f) accountColor(account.colorKey) else accountTileColor(account.colorKey)
+                Icon(painterResource(account.type.iconRes()), null, Modifier.size(24.dp), tint = tint)
             }
             Text(account.name, color = c.onCard, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(moneyText(balance, account.currency, hidden), color = if (balance < 0) c.expense else c.accent, style = MaterialTheme.typography.labelMedium)
