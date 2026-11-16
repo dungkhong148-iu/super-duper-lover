@@ -281,7 +281,7 @@ fun CalendarPage(accountId: Long?, scroll: ScrollState) {
                                             Text(
                                                 "$dayNum",
                                                 style = MaterialTheme.typography.labelMedium,
-                                                color = if (isSelected) Color.White else c.onCard,
+                                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else c.onCard,
                                             )
                                             Row(
                                                 Modifier.height(5.dp),
@@ -293,7 +293,7 @@ fun CalendarPage(accountId: Long?, scroll: ScrollState) {
                                                         Modifier
                                                             .size(4.dp)
                                                             .clip(CircleShape)
-                                                            .background(if (isSelected) Color.White else c.incomePill),
+                                                            .background(if (isSelected) MaterialTheme.colorScheme.onPrimary else c.incomePill),
                                                     )
                                                 }
                                                 if (hasExpense) {
@@ -301,7 +301,7 @@ fun CalendarPage(accountId: Long?, scroll: ScrollState) {
                                                         Modifier
                                                             .size(4.dp)
                                                             .clip(CircleShape)
-                                                            .background(if (isSelected) Color(0xFFFFB3B0) else c.expensePill),
+                                                            .background(if (isSelected) c.onAccentExpense else c.expensePill),
                                                     )
                                                 }
                                             }

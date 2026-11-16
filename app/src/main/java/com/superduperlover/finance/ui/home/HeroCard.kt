@@ -145,12 +145,12 @@ private fun TypePill(label: String, value: String, kind: TxnKind, fill: Color, a
     val c = ChiLiV3.colors
     Row(
         modifier.tapScale(onClick).v3Shadow(c.shadow2, CircleShape).clip(CircleShape).background(fill)
-            .border(2.dp, if (active) Color.White else Color.Transparent, CircleShape)
+            .border(2.dp, if (active) c.onPill else Color.Transparent, CircleShape)
             .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(Modifier.size(28.dp).clip(CircleShape).background(Color(0x59CBD5E1)), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(28.dp).clip(CircleShape).background(c.pillIconWell), contentAlignment = Alignment.Center) {
             Icon(kind.icon(), null, Modifier.size(16.dp), tint = c.onPill)
         }
         Column(Modifier.weight(1f)) {
