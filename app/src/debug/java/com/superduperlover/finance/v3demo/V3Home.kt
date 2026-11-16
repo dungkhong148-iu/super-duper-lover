@@ -25,6 +25,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.LocalOverscrollFactory
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,6 +41,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -182,6 +185,7 @@ private fun V3AccountsPage(data: HomeData, selected: Long?, onSelect: (Long) -> 
     var carouselPx by remember { mutableIntStateOf(0) }
     var offset by remember { mutableFloatStateOf(0f) }
     val scope = rememberCoroutineScope()
+    val scroll = rememberScrollState()
 
     suspend fun snap() {
         val target = if (offset < -carouselPx / 2f) -carouselPx.toFloat() else 0f
@@ -193,9 +197,19 @@ private fun V3AccountsPage(data: HomeData, selected: Long?, onSelect: (Long) -> 
     val connection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (available.y >= 0f || offset <= -carouselPx.toFloat()) return Offset.Zero
-                val new = (offset + available.y).coerceAtLeast(-carouselPx.toFloat())
-                return Offset(0f, new - offset).also { offset = new }
+                val max = carouselPx.toFloat()
+                if (available.y < 0f && offset > -max) {
+                    val new = (offset + available.y).coerceAtLeast(-max)
+                    return Offset(0f, new - offset).also { offset = new }
+                }
+                // Swipe down while the plate covers the carousel: scroll the inner list back to its top first, then the
+                // rest moves the plate. Done here (not left to the list) so it works with short content and ignores overscroll.
+                if (available.y > 0f && offset < 0f) {
+                    val back = -scroll.dispatchRawDelta(-available.y.coerceAtMost(scroll.value.toFloat()))
+                    val new = (offset + available.y - back).coerceAtMost(0f)
+                    return Offset(0f, back + (new - offset)).also { offset = new }
+                }
+                return Offset.Zero
             }
 
             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
@@ -251,7 +265,7 @@ private fun V3AccountsPage(data: HomeData, selected: Long?, onSelect: (Long) -> 
                 Box(Modifier.fillMaxWidth().then(handleMod).padding(top = 10.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
                     Box(Modifier.width(40.dp).height(6.dp).clip(CircleShape).background(c.onSheetMuted.copy(alpha = 0.35f)))
                 }
-                SheetContent(data, selected, accountsShown)
+                CompositionLocalProvider(LocalOverscrollFactory provides null) { SheetContent(data, selected, accountsShown, scroll) }
             }
         }
     }
@@ -303,7 +317,7 @@ private fun Range.contains(d: LocalDate, today: LocalDate): Boolean = when (this
 }
 
 @Composable
-private fun SheetContent(data: HomeData, selected: Long?, accountsShown: List<Account>) {
+private fun SheetContent(data: HomeData, selected: Long?, accountsShown: List<Account>, scroll: ScrollState) {
     val c = ChiLiV3.colors
     val today = remember { LocalDate.now() }
     var hidden by remember { mutableStateOf(false) }
@@ -323,7 +337,7 @@ private fun SheetContent(data: HomeData, selected: Long?, accountsShown: List<Ac
     fun money(v: Long) = if (hidden) "•••••" else formatMoney(v, MAIN_CURRENCY)
 
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 96.dp),
+        Modifier.fillMaxSize().verticalScroll(scroll).padding(start = 16.dp, end = 16.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         // Hero
