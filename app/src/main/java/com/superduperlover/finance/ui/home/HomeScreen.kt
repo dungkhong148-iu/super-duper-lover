@@ -86,13 +86,7 @@ fun HomeScreen(
                     onOpenGoal = onOpenGoal,
                     onOpenJars = onOpenJars,
                 )
-                else -> Box(
-                    Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(c.headerTop, c.headerBottom))),
-                ) {
-                    Box(Modifier.fillMaxSize().clip(SheetShape).background(c.sheet), contentAlignment = Alignment.Center) {
-                        Text("Lịch: sắp có", color = c.onSheetMuted, style = MaterialTheme.typography.bodyLarge)
-                    }
-                }
+                else -> CalendarPage()
             }
         }
     }
