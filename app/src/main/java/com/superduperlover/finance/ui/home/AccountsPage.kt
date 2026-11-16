@@ -36,6 +36,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.layout.layout
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -114,8 +116,12 @@ fun AccountsPage(
     // null = sheet closed; id 0 = new account
     var editing by remember { mutableStateOf<Account?>(null) }
 
-    // v3: main currency only (no currency chips); other-currency accounts keep their own tiles below.
-    val selectedCurrency = MAIN_CURRENCY
+    // Home filter: the selected account (null = all). A card that vanished (archived / deleted) means "all".
+    var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val selected = accounts.firstOrNull { it.id == selectedId }
+    // v3: Hero in the main currency; a selected account of another currency shows its own.
+    val selectedCurrency = selected?.currency ?: MAIN_CURRENCY
+    val hidden = prefs.hideBalance
 
     // budgets repeat every period: their usage needs every expense since the start date
     val usages = budgets.map { it to budgetUsage(it, allTxns, allAccounts, today) }
@@ -129,9 +135,10 @@ fun AccountsPage(
             compareByDescending<Pair<Budget, BudgetUsage>> { it.second.status.ordinal }
                 .thenByDescending { it.second.ratio },
         )
-    val totals = txnTotals(monthTxns, accounts)
+    val scopeAccounts = if (selected != null) listOf(selected) else accounts
+    val totals = txnTotals(if (selected != null) monthTxns.filter { it.accountId == selected.id } else monthTxns, accounts)
     val selectedTotals = totals[selectedCurrency] ?: TxnTotals(0L, 0L)
-    val balanceByCurrency = balancesByCurrency(accounts, allTxns)
+    val balanceByCurrency = balancesByCurrency(scopeAccounts, allTxns)
     val selectedBalance = balanceByCurrency[selectedCurrency] ?: 0L
     val reservedMap = reservedByCurrency(jarSavings)
     val freeMap = freeByCurrency(balanceByCurrency, reservedMap)
@@ -149,9 +156,35 @@ fun AccountsPage(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
+        item(key = "accounts", span = FullWidth) {
+            if (balances.isEmpty()) {
+                EmptyState(
+                    icon = painterResource(R.drawable.ic_wallet),
+                    title = "Chưa có tài khoản",
+                    message = "Thêm ví, ngân hàng hoặc thẻ để bắt đầu ghi chép.",
+                    actionLabel = "Thêm tài khoản",
+                    onAction = { editing = Account(0, "", AccountType.CASH, 0) },
+                )
+            } else {
+                // Full-bleed: cancel the grid side padding (16dp each side) so the row scrolls edge to edge.
+                AccountCarousel(
+                    accounts = balances,
+                    selectedId = selected?.id,
+                    hidden = hidden,
+                    onSelect = { selectedId = if (selectedId == it) null else it },
+                    onEdit = { editing = it },
+                    onAdd = { editing = Account(0, "", AccountType.CASH, 0) },
+                    modifier = Modifier.layout { m, cons ->
+                        val extra = 32.dp.roundToPx()
+                        val p = m.measure(cons.copy(minWidth = cons.maxWidth + extra, maxWidth = cons.maxWidth + extra))
+                        layout(cons.maxWidth, p.height) { p.place(-extra / 2, 0) }
+                    },
+                )
+            }
+        }
         for (jar in pendingJars) {
             item(key = "pending-jar-${jar.goal.id}", span = FullWidth) {
-                PendingJarBanner(jar = jar, onClick = { onOpenGoal(jar.goal.id) })
+                PendingJarBanner(jar = jar, hidden = hidden, onClick = { onOpenGoal(jar.goal.id) })
             }
         }
         item(key = "hero", span = FullWidth) {
@@ -160,53 +193,17 @@ fun AccountsPage(
                 free = selectedFree,
                 reserved = selectedReserved,
                 budgetLeft = currencyTotalBudgets.takeIf { it.isNotEmpty() }?.sumOf { (_, u) -> u.remaining },
+                title = selected?.name ?: "Tổng số dư",
+                showFree = selected == null,
                 periodLabel = periodLabel,
                 income = selectedTotals.income,
                 expense = selectedTotals.expense,
                 currency = selectedCurrency,
-                hidden = prefs.hideBalance,
+                hidden = hidden,
                 onToggleHidden = { prefs.hideBalance = !prefs.hideBalance },
                 onOpenBudgets = onOpenPlan,
                 onOpenJars = onOpenJars,
             )
-        }
-
-        item(key = "accounts-title", span = FullWidth) {
-            val titleStyle = MaterialTheme.typography.titleMedium.let {
-                if (it.fontSize.isSpecified && it.fontSize > 18.sp) it.copy(fontSize = 18.sp) else it
-            }
-            OneLineText(
-                text = "Ví và tài khoản",
-                style = titleStyle,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 4.dp),
-            )
-        }
-
-        if (balances.isEmpty()) {
-            item(key = "no-accounts", span = FullWidth) {
-                EmptyState(
-                    icon = painterResource(R.drawable.ic_wallet),
-                    title = "Chưa có tài khoản",
-                    message = "Thêm ví, ngân hàng hoặc thẻ để bắt đầu ghi chép.",
-                    actionLabel = "Thêm tài khoản",
-                    onAction = { editing = Account(0, "", AccountType.CASH, 0) },
-                )
-            }
-        } else {
-            items(balances, key = { "account-${it.first.id}" }) { (account, balance) ->
-                AccountTile(
-                    account = account,
-                    balance = balance,
-                    onClick = { onOpenAccountTransactions(account.id) },
-                    onLongClick = { editing = account },
-                )
-            }
-            item(key = "add-account") {
-                AddAccountTile(onClick = { editing = Account(0, "", AccountType.CASH, 0) })
-            }
         }
 
         if (attention.isNotEmpty()) {
@@ -236,9 +233,9 @@ fun AccountsPage(
                             )
                             OneLineText(
                                 text = if (usage.remaining >= 0) {
-                                    "Đã chi ${formatMoney(usage.spent, budget.currency)} / ${formatMoney(usage.effectiveLimit, budget.currency)}"
+                                    "Đã chi ${moneyText(usage.spent, budget.currency, hidden)} / ${moneyText(usage.effectiveLimit, budget.currency, hidden)}"
                                 } else {
-                                    "Vượt ${formatMoney(-usage.remaining, budget.currency)}"
+                                    "Vượt ${moneyText(-usage.remaining, budget.currency, hidden)}"
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -259,6 +256,7 @@ fun AccountsPage(
 @Composable
 private fun PendingJarBanner(
     jar: JarSaving,
+    hidden: Boolean,
     onClick: () -> Unit,
 ) {
     Surface(
@@ -301,7 +299,7 @@ private fun PendingJarBanner(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "Đã tích lũy đủ ${formatMoney(jar.saved, jar.goal.currency)} / ${formatMoney(jar.goal.target, jar.goal.currency)} — chạm để xác nhận chi tiêu",
+                    text = "Đã tích lũy đủ ${moneyText(jar.saved, jar.goal.currency, hidden)} / ${moneyText(jar.goal.target, jar.goal.currency, hidden)} — chạm để xác nhận chi tiêu",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

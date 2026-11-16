@@ -36,6 +36,9 @@ import com.superduperlover.finance.ui.theme.v3Shadow
 
 private const val MASK = "•••••"
 
+/** Amount text for Home: masked when the balance is hidden. */
+fun moneyText(amount: Long, currency: Currency, hidden: Boolean): String = if (hidden) MASK else formatMoney(amount, currency)
+
 /**
  * v3 Hero (docs/ui-layout.md section 1): total balance with the eye, "Còn tiêu được kỳ này", Tự do / Trong hũ and the
  * Thu nhập / Chi tiêu pills. Text always wraps instead of being cut off ([hidden] masks every amount).
@@ -47,6 +50,10 @@ fun HeroCard(
     reserved: Long,
     /** Remaining of the total budget(s) of this period; null = no total budget yet. */
     budgetLeft: Long?,
+    /** Account name when one account is selected, else "Tổng số dư". */
+    title: String,
+    /** False when one account is selected: free / jar money is not per account. */
+    showFree: Boolean,
     periodLabel: String,
     income: Long,
     expense: Long,
@@ -58,7 +65,7 @@ fun HeroCard(
     modifier: Modifier = Modifier,
 ) {
     val c = ChiLiV3.colors
-    fun money(v: Long) = if (hidden) MASK else formatMoney(v, currency)
+    fun money(v: Long) = moneyText(v, currency, hidden)
     val outer = RoundedCornerShape(28.dp)
     Box(modifier.v3Shadow(c.shadowHero, outer).clip(outer).background(c.heroOuter).padding(5.dp)) {
         Column(
@@ -68,7 +75,7 @@ fun HeroCard(
                 .padding(16.dp),
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Tổng số dư", color = c.onHero, style = MaterialTheme.typography.labelLarge)
+                Text(title, color = c.onHero, style = MaterialTheme.typography.labelLarge)
                 Box(
                     Modifier.size(36.dp).clip(CircleShape).background(Color(0x1A000000)).clickable(onClick = onToggleHidden),
                     contentAlignment = Alignment.Center,
@@ -103,7 +110,7 @@ fun HeroCard(
                         Icon(Icons.Filled.KeyboardArrowRight, null, Modifier.size(16.dp), tint = Color(0xFF0F172A))
                     }
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (showFree) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Column(Modifier.weight(1f)) {
                         Text("Tự do", color = c.onHero, style = MaterialTheme.typography.labelSmall)
                         Text(money(free), color = if (free < 0) c.expense else c.onHero, style = MaterialTheme.typography.labelLarge)

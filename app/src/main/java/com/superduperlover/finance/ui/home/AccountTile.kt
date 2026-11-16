@@ -1,126 +1,111 @@
 package com.superduperlover.finance.ui.home
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.superduperlover.finance.core.Account
-import com.superduperlover.finance.core.formatMoney
-import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.components.iconRes
-import com.superduperlover.finance.ui.theme.OnAccountTile
+import com.superduperlover.finance.ui.theme.ChiLiV3
 import com.superduperlover.finance.ui.theme.accountTileColor
+import com.superduperlover.finance.ui.theme.v3Shadow
 
-private val TileShape = RoundedCornerShape(16.dp)
+private val CardShape = RoundedCornerShape(22.dp)
 
 /**
- * Account tile (docs/ui-layout.md section 2): filled with the account colour, type icon, name, balance.
- * Tap = transactions of this account, long-press = edit.
+ * v3 account carousel (docs/ui-layout.md section 2): one card per account + a "+" tile. Tap = select / unselect
+ * (filters Home in place), long-press = edit. Cards have no fixed height, so text is never cut at large font scales.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AccountTile(
-    account: Account,
-    balance: Long,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit,
+fun AccountCarousel(
+    accounts: List<Pair<Account, Long>>,
+    selectedId: Long?,
+    hidden: Boolean,
+    onSelect: (Long) -> Unit,
+    onEdit: (Account) -> Unit,
+    onAdd: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = 104.dp)
-            .clip(TileShape)
-            .background(accountTileColor(account.colorKey))
+    LazyRow(
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        items(accounts, key = { "account-${it.first.id}" }) { (account, balance) ->
+            AccountCard(account, balance, active = account.id == selectedId, hidden = hidden, onClick = { onSelect(account.id) }, onLongClick = { onEdit(account) })
+        }
+        item(key = "add-account") { AddAccountCard(onAdd) }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun AccountCard(account: Account, balance: Long, active: Boolean, hidden: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
+    val c = ChiLiV3.colors
+    Box(
+        Modifier
+            .width(122.dp)
+            .v3Shadow(c.shadow2, CardShape)
+            .clip(CardShape)
+            .background(if (active) c.cardActive else c.card)
+            .border(2.dp, if (active) c.accent else Color.Transparent, CardShape)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(12.dp),
-        verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Icon(
-            painter = painterResource(account.type.iconRes()),
-            contentDescription = null,
-            tint = OnAccountTile,
-            modifier = Modifier.size(24.dp),
-        )
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            OneLineText(
-                text = account.name,
-                style = MaterialTheme.typography.labelLarge,
-                color = OnAccountTile,
-            )
-            OneLineText(
-                text = formatMoney(balance, account.currency),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = OnAccountTile,
-            )
+        if (active) Box(Modifier.align(Alignment.TopEnd).size(8.dp).clip(CircleShape).background(c.accent))
+        Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(Modifier.size(width = 44.dp, height = 36.dp).clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.8f)), contentAlignment = Alignment.Center) {
+                Icon(painterResource(account.type.iconRes()), null, Modifier.size(24.dp), tint = accountTileColor(account.colorKey))
+            }
+            Text(account.name, color = c.onCard, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(moneyText(balance, account.currency, hidden), color = if (balance < 0) c.expense else c.accent, style = MaterialTheme.typography.labelMedium)
         }
     }
 }
 
-/** Last tile of the grid: outlined "+ Thêm tài khoản". */
 @Composable
-fun AddAccountTile(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = 104.dp),
-        shape = TileShape,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outlineVariant),
+private fun AddAccountCard(onClick: () -> Unit) {
+    val c = ChiLiV3.colors
+    Column(
+        Modifier
+            .width(76.dp)
+            .v3Shadow(c.shadow2, CardShape)
+            .clip(CardShape)
+            .background(c.card)
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-            Spacer(Modifier.height(8.dp))
-            OneLineText(
-                text = "Thêm tài khoản",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Center,
-                minFontSize = 10.sp,
-            )
+        Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(c.heroMid), contentAlignment = Alignment.Center) {
+            Icon(Icons.Filled.Add, null, tint = c.onHero)
         }
+        Text("Thêm", color = c.onCard, style = MaterialTheme.typography.labelSmall)
     }
 }
