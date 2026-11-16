@@ -114,15 +114,8 @@ fun AccountsPage(
     // null = sheet closed; id 0 = new account
     var editing by remember { mutableStateOf<Account?>(null) }
 
-    val availableCurrencies = CURRENCY_DISPLAY_ORDER.filter { currency ->
-        accounts.any { it.currency == currency }
-    }
-    val selectedCurrency = when {
-        prefs.summaryCurrency in availableCurrencies -> prefs.summaryCurrency!!
-        MAIN_CURRENCY in availableCurrencies -> MAIN_CURRENCY
-        availableCurrencies.isNotEmpty() -> availableCurrencies.first()
-        else -> MAIN_CURRENCY
-    }
+    // v3: main currency only (no currency chips); other-currency accounts keep their own tiles below.
+    val selectedCurrency = MAIN_CURRENCY
 
     // budgets repeat every period: their usage needs every expense since the start date
     val usages = budgets.map { it to budgetUsage(it, allTxns, allAccounts, today) }
@@ -149,14 +142,6 @@ fun AccountsPage(
     val accountNames = allAccounts.associate { it.id to it.name }
     val categoryNames = categories.associate { it.id to it.name }
 
-    var backupWorking by remember { mutableStateOf(false) }
-    var backupError by remember { mutableStateOf<String?>(null) }
-    val startBackup = rememberBackupExport(
-        onWorking = { backupWorking = it },
-        onMessage = { backupError = it.takeIf { m -> m.startsWith("Xuất thất bại") } },
-    )
-    val reminder = backupReminder(today, prefs.lastBackupAt, prefs.txnsSinceBackup)
-
     LazyVerticalGrid(
         columns = GridCells.Adaptive(104.dp),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
@@ -164,269 +149,26 @@ fun AccountsPage(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        if (reminder != null) {
-            item(key = "backup-reminder", span = FullWidth) {
-                BackupReminderCard(reminder, enabled = !backupWorking, error = backupError, onClick = startBackup)
-            }
-        }
         for (jar in pendingJars) {
             item(key = "pending-jar-${jar.goal.id}", span = FullWidth) {
                 PendingJarBanner(jar = jar, onClick = { onOpenGoal(jar.goal.id) })
             }
         }
-        item(key = "summary", span = FullWidth) {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, ChiLiTheme.colors.outline),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    // Row 1: "Tổng số dư" left, currency chips right (when >1 currency)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        OneLineText(
-                            text = "Tổng số dư",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        if (availableCurrencies.size > 1) {
-                            Row(
-                                modifier = Modifier
-                                    .weight(1f, fill = false)
-                                    .padding(start = 8.dp)
-                                    .horizontalScroll(rememberScrollState()),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                availableCurrencies.forEach { currency ->
-                                    FilterChip(
-                                        selected = currency == selectedCurrency,
-                                        onClick = { prefs.summaryCurrency = currency },
-                                        label = {
-                                            OneLineText(
-                                                text = currency.name,
-                                                style = MaterialTheme.typography.labelLarge,
-                                                modifier = Modifier.widthIn(max = 200.dp),
-                                            )
-                                        },
-                                        colors = chiLiChipColors(),
-                                        border = chiLiChipBorder(selected = currency == selectedCurrency),
-                                        modifier = Modifier.heightIn(min = 48.dp),
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // Row 2: big balance (OneLineText, 28sp max / 20sp min, Bold, onSurface or expense if negative)
-                    OneLineText(
-                        text = formatMoney(selectedBalance, selectedCurrency),
-                        style = MaterialTheme.typography.headlineLarge.copy(fontSize = 28.sp),
-                        minFontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (selectedBalance < 0) expenseColor() else MaterialTheme.colorScheme.onSurface,
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        OneLineText(
-                            text = "Tự do: ${formatMoney(selectedFree, selectedCurrency)}",
-                            modifier = Modifier.weight(1f, fill = false),
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            minFontSize = 10.sp,
-                            color = if (selectedFree < 0) expenseColor() else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        OneLineText(
-                            text = " · ",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            minFontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        OneLineText(
-                            text = "Đang giữ chỗ trong hũ: ${formatMoney(selectedReserved, selectedCurrency)}",
-                            modifier = Modifier.weight(2f, fill = false),
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            minFontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-
-                    // Nested box (colorScheme.surfaceContainerLowest well, 16dp corner, 12dp padding, full width)
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            OneLineText(
-                                text = "Còn được tiêu $periodLabel",
-                                style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                minFontSize = 10.sp,
-                            )
-                            if (currencyTotalBudgets.isEmpty()) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    OneLineText(
-                                        text = "Chưa có ngân sách tổng",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                    TextButton(
-                                        onClick = onOpenPlan,
-                                        modifier = Modifier.heightIn(min = 48.dp),
-                                    ) {
-                                        OneLineText("Tạo ngân sách", style = MaterialTheme.typography.labelLarge)
-                                        Spacer(Modifier.width(4.dp))
-                                        Icon(
-                                            imageVector = Icons.Filled.KeyboardArrowRight,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp),
-                                        )
-                                    }
-                                }
-                            } else {
-                                val left = currencyTotalBudgets.sumOf { (_, u) -> u.remaining }
-                                val valueStyle = MaterialTheme.typography.titleLarge.let {
-                                    if (it.fontSize.isSpecified && it.fontSize > 18.sp) it.copy(fontSize = 18.sp) else it
-                                }
-                                OneLineText(
-                                    text = formatMoney(left, selectedCurrency),
-                                    style = valueStyle,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (left < 0) expenseColor() else MaterialTheme.colorScheme.onSurface,
-                                )
-                                if (left < 0) {
-                                    OneLineText(
-                                        text = "Đã vượt ngân sách",
-                                        color = expenseColor(),
-                                        style = MaterialTheme.typography.labelMedium,
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // Row 3: two tiles side by side (weight 1f, 8dp gap), each a nested tile
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        // Thu nhập tile
-                        Surface(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .background(ChiLiTheme.colors.incomeContainer, CircleShape),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(
-                                        imageVector = TxnKind.INCOME.icon(),
-                                        contentDescription = null,
-                                        tint = ChiLiTheme.colors.income,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                }
-                                Column(
-                                    modifier = Modifier.weight(1f),
-                                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                                ) {
-                                    OneLineText(
-                                        text = "Thu nhập",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        minFontSize = 10.sp,
-                                    )
-                                    OneLineText(
-                                        text = "+${formatMoney(selectedTotals.income, selectedCurrency)}",
-                                        style = MaterialTheme.typography.titleSmall.copy(fontSize = 14.sp),
-                                        fontWeight = FontWeight.Bold,
-                                        color = incomeColor(),
-                                        minFontSize = 10.sp,
-                                    )
-                                }
-                            }
-                        }
-
-                        // Chi tiêu tile
-                        Surface(
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .background(ChiLiTheme.colors.expenseContainer, CircleShape),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(
-                                        imageVector = TxnKind.EXPENSE.icon(),
-                                        contentDescription = null,
-                                        tint = ChiLiTheme.colors.onExpenseContainer,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                }
-                                Column(
-                                    modifier = Modifier.weight(1f),
-                                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                                ) {
-                                    OneLineText(
-                                        text = "Chi tiêu",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        minFontSize = 10.sp,
-                                    )
-                                    OneLineText(
-                                        text = "-${formatMoney(selectedTotals.expense, selectedCurrency)}",
-                                        style = MaterialTheme.typography.titleSmall.copy(fontSize = 14.sp),
-                                        fontWeight = FontWeight.Bold,
-                                        color = expenseColor(),
-                                        minFontSize = 10.sp,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        item(key = "hero", span = FullWidth) {
+            HeroCard(
+                balance = selectedBalance,
+                free = selectedFree,
+                reserved = selectedReserved,
+                budgetLeft = currencyTotalBudgets.takeIf { it.isNotEmpty() }?.sumOf { (_, u) -> u.remaining },
+                periodLabel = periodLabel,
+                income = selectedTotals.income,
+                expense = selectedTotals.expense,
+                currency = selectedCurrency,
+                hidden = prefs.hideBalance,
+                onToggleHidden = { prefs.hideBalance = !prefs.hideBalance },
+                onOpenBudgets = onOpenPlan,
+                onOpenJars = onOpenJars,
+            )
         }
 
         item(key = "accounts-title", span = FullWidth) {
@@ -434,7 +176,7 @@ fun AccountsPage(
                 if (it.fontSize.isSpecified && it.fontSize > 18.sp) it.copy(fontSize = 18.sp) else it
             }
             OneLineText(
-                text = "Ví & Tài khoản",
+                text = "Ví và tài khoản",
                 style = titleStyle,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
@@ -563,39 +305,6 @@ private fun PendingJarBanner(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-            }
-        }
-    }
-}
-
-/** Passive reminder (docs/ui-layout.md section 2, cards): tap to export a backup file. */
-@Composable
-private fun BackupReminderCard(
-    reminder: BackupReminder,
-    enabled: Boolean,
-    error: String?,
-    onClick: () -> Unit,
-) {
-    val since = reminder.daysSince?.let { "Đã $it ngày chưa sao lưu" } ?: "Chưa sao lưu lần nào"
-    val text = "$since (${reminder.newTxns} giao dịch mới) — chạm để xuất file"
-    Surface(
-        onClick = onClick,
-        enabled = enabled,
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, ChiLiTheme.colors.warn),
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            if (error != null) {
-                Text(error, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             }
         }
     }

@@ -10,7 +10,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -62,7 +67,22 @@ class V3Colors(
     val onFab: Color,
     val nav: Color,
     val navBorder: Color,
+    /** Depth, from the mock's compose-elevation-1/2/3/fab, hero card outer and the sheet's upward shadow. */
+    val shadow1: V3Shadow,
+    val shadow2: V3Shadow,
+    val shadow3: V3Shadow,
+    val shadowFab: V3Shadow,
+    val shadowHero: V3Shadow,
+    val shadowSheet: V3Shadow,
 )
+
+/** One Modifier.shadow: elevation + ambient / spot colour (Android 9+). */
+@Immutable
+class V3Shadow(val elevation: Dp, val ambient: Color, val spot: Color)
+
+/** Shadow of a [shape] (no clipping: draw the background after it). */
+fun Modifier.v3Shadow(s: V3Shadow, shape: Shape): Modifier =
+    shadow(s.elevation, shape, clip = false, ambientColor = s.ambient, spotColor = s.spot)
 
 val V3Light = V3Colors(
     headerTop = Color(0xFF00B159),
@@ -99,6 +119,12 @@ val V3Light = V3Colors(
     onFab = Color(0xFFF6E8CE),
     nav = Color(0xFFE5E7EB),
     navBorder = Color(0xCCCBD5E1),
+    shadow1 = V3Shadow(2.dp, Color(0x0D000000), Color(0x0F000000)),
+    shadow2 = V3Shadow(4.dp, Color(0x14002312), Color(0x1F002312)),
+    shadow3 = V3Shadow(6.dp, Color(0x1A002312), Color(0x24002312)),
+    shadowFab = V3Shadow(8.dp, Color(0x3D145358), Color(0x29000000)),
+    shadowHero = V3Shadow(5.dp, Color(0x0F0F172A), Color(0x140F172A)),
+    shadowSheet = V3Shadow(12.dp, Color(0x24002814), Color(0x24002814)),
 )
 
 val V3Dark = V3Colors(
@@ -136,6 +162,12 @@ val V3Dark = V3Colors(
     onFab = Color.White,
     nav = Color(0xFF0E1513),
     navBorder = Color(0xFF1E2C27),
+    shadow1 = V3Shadow(2.dp, Color(0x59000000), Color(0x73000000)),
+    shadow2 = V3Shadow(4.dp, Color(0x73000000), Color(0x8C000000)),
+    shadow3 = V3Shadow(6.dp, Color(0x8C000000), Color(0xA6000000)),
+    shadowFab = V3Shadow(8.dp, Color(0x99000000), Color(0x4010B981)),
+    shadowHero = V3Shadow(6.dp, Color(0x73000000), Color(0x73000000)),
+    shadowSheet = V3Shadow(12.dp, Color(0xA6000000), Color(0xA6000000)),
 )
 
 private val LocalV3Colors = staticCompositionLocalOf { V3Light }

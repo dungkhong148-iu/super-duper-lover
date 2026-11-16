@@ -368,7 +368,7 @@ fun GoalSheet(
                 }
             }
         } else {
-            SectionHeaderBand("Tài khoản & Danh mục")
+            SectionHeaderBand("Tài khoản và danh mục")
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
