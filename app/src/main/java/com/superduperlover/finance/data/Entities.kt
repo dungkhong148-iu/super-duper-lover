@@ -11,6 +11,9 @@ import com.superduperlover.finance.core.BudgetPeriod
 import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
 import com.superduperlover.finance.core.ContributionType
+import com.superduperlover.finance.core.Debt
+import com.superduperlover.finance.core.DebtKind
+import com.superduperlover.finance.core.DebtPayment
 import com.superduperlover.finance.core.Currency
 import com.superduperlover.finance.core.DurationUnit
 import com.superduperlover.finance.core.Goal
@@ -61,6 +64,8 @@ data class TxnEntity(
     val note: String,
     /** Transfers only: amount received in the target account's currency (null = same as amount). DB v2. */
     val toAmount: Long?,
+    /** Money moved by a debt (borrow, lend, repay, collect); never counted as spending or income. DB v5. */
+    val debtId: Long?,
 )
 
 @Entity(tableName = "budgets")
@@ -100,6 +105,8 @@ data class GoalEntity(
     val planStart: String?,
     @ColumnInfo(defaultValue = "0") val planBase: Long,
     val lastEvaluatedDate: String?,
+    /** Start a new cycle when settled. DB v5. */
+    @ColumnInfo(defaultValue = "0") val repeat: Boolean,
 )
 
 @Entity(tableName = "goal_contributions", indices = [Index("goalId")])
@@ -114,6 +121,45 @@ data class ContributionEntity(
     val periodIndex: Int?,
 )
 
+/** DB v5. [kind] = DebtKind name; dates ISO; accountId / originTxnId null for a memo-only debt. */
+@Entity(tableName = "debts")
+data class DebtEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long,
+    val kind: String,
+    val title: String,
+    val person: String,
+    val total: Long,
+    val currency: String,
+    val accountId: Long?,
+    val originTxnId: Long?,
+    val startDate: String,
+    val dueDate: String?,
+    val note: String,
+)
+
+@Entity(tableName = "debt_payments", indices = [Index("debtId")])
+data class DebtPaymentEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long,
+    val debtId: Long,
+    val amount: Long,
+    val date: String,
+    val accountId: Long?,
+    val txnId: Long?,
+)
+
+fun DebtEntity.toCore() = Debt(
+    id, DebtKind.valueOf(kind), title, person, total, Currency.valueOf(currency), accountId, originTxnId,
+    LocalDate.parse(startDate), dueDate?.let(LocalDate::parse), note,
+)
+
+fun Debt.toEntity() = DebtEntity(
+    id, kind.name, title, person, total, currency.name, accountId, originTxnId, startDate.toString(), dueDate?.toString(), note,
+)
+
+fun DebtPaymentEntity.toCore() = DebtPayment(id, debtId, amount, LocalDate.parse(date), accountId, txnId)
+
+fun DebtPayment.toEntity() = DebtPaymentEntity(id, debtId, amount, date.toString(), accountId, txnId)
+
 fun AccountEntity.toCore() =
     Account(id, name, AccountType.valueOf(type), openingBalance, archived, colorKey, Currency.valueOf(currency))
 
@@ -123,10 +169,10 @@ fun CategoryEntity.toCore() = Category(id, name, CategoryKind.valueOf(kind), ico
 fun Category.toEntity() = CategoryEntity(id, name, kind.name, icon, archived)
 
 fun TxnEntity.toCore() =
-    Txn(id, TxnKind.valueOf(kind), amount, accountId, toAccountId, categoryId, LocalDate.parse(date), note, toAmount)
+    Txn(id, TxnKind.valueOf(kind), amount, accountId, toAccountId, categoryId, LocalDate.parse(date), note, toAmount, debtId)
 
 fun Txn.toEntity() =
-    TxnEntity(id, kind.name, amount, accountId, toAccountId, categoryId, date.toString(), note, toAmount)
+    TxnEntity(id, kind.name, amount, accountId, toAccountId, categoryId, date.toString(), note, toAmount, debtId)
 
 fun BudgetEntity.toCore() = Budget(
     id, BudgetPeriod.valueOf(period), LocalDate.parse(startDate), accountId, categoryId, limitAmount,
@@ -139,7 +185,7 @@ fun Budget.toEntity() =
 fun GoalEntity.toCore() = Goal(
     id, name, target, deadline?.let(LocalDate::parse), archived, Currency.valueOf(currency),
     completedAt?.let(LocalDate::parse), JarKind.valueOf(kind), JarStatus.valueOf(status), sourceAccountId, categoryId,
-    autoDeduct, toPlan(),
+    autoDeduct, toPlan(), repeat,
 )
 
 private fun GoalEntity.toPlan(): JarPlan? {
@@ -155,7 +201,7 @@ private fun GoalEntity.toPlan(): JarPlan? {
 fun Goal.toEntity() = GoalEntity(
     id, name, target, deadline?.toString(), archived, currency.name, completedAt?.toString(), kind.name, status.name,
     sourceAccountId, categoryId, autoDeduct, plan?.duration?.count, plan?.duration?.unit?.name, plan?.start?.toString(),
-    plan?.baseSaved ?: 0L, plan?.lastEvaluated?.toString(),
+    plan?.baseSaved ?: 0L, plan?.lastEvaluated?.toString(), repeat,
 )
 
 fun ContributionEntity.toCore() = GoalContribution(

@@ -6,6 +6,8 @@ import com.superduperlover.finance.core.Budget
 import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
 import com.superduperlover.finance.core.ContributionType
+import com.superduperlover.finance.core.Debt
+import com.superduperlover.finance.core.DebtPayment
 import com.superduperlover.finance.core.Goal
 import com.superduperlover.finance.core.GoalContribution
 import com.superduperlover.finance.core.JarSaving
@@ -15,7 +17,9 @@ import com.superduperlover.finance.core.RECONCILE_CATEGORY_NAME
 import com.superduperlover.finance.core.Txn
 import com.superduperlover.finance.core.TxnKind
 import com.superduperlover.finance.core.canDeleteGoal
+import com.superduperlover.finance.core.debtTxnKind
 import com.superduperlover.finance.core.fallbackCategoryFor
+import com.superduperlover.finance.core.nextJarCycle
 import com.superduperlover.finance.core.otherCategoryIcon
 import com.superduperlover.finance.core.otherCategoryName
 import com.superduperlover.finance.core.planAccountPurge
@@ -90,6 +94,8 @@ class Repo(private val db: AppDatabase) {
         val plan = planAccountPurge(account, dao.txnsOfAccount(id).map { it.toCore() })
         for (t in plan.deleted) {
             dao.clearContributionTxn(t.id)
+            dao.deletePaymentsForTxn(t.id)
+            dao.clearDebtOriginTxn(t.id)
             dao.deleteTxn(t.id)
         }
         if (plan.converted.isNotEmpty()) {
@@ -108,6 +114,8 @@ class Repo(private val db: AppDatabase) {
     private suspend fun dropAccountRefs(id: Long) {
         dao.deleteBudgetsForAccount(id)
         dao.clearGoalSourceAccount(id)
+        dao.clearDebtAccount(id)
+        dao.clearDebtPaymentAccount(id)
     }
 
     private suspend fun dropCategoryRefs(id: Long) {
@@ -238,7 +246,82 @@ class Repo(private val db: AppDatabase) {
 
     suspend fun txn(id: Long): Txn? = dao.txnById(id)?.toCore()
 
-    suspend fun deleteTxn(id: Long) = dao.deleteTxn(id)
+    /** Also drops the debt repayment this transaction recorded, and forgets it as a debt's origin transaction. */
+    suspend fun deleteTxn(id: Long) = db.withTransaction {
+        dao.deletePaymentsForTxn(id)
+        dao.clearDebtOriginTxn(id)
+        dao.deleteTxn(id)
+    }
+
+    // debts
+    fun debts(): Flow<List<Debt>> = dao.debts().map { rows -> rows.map { it.toCore() } }
+
+    fun debtPayments(): Flow<List<DebtPayment>> = dao.debtPayments().map { rows -> rows.map { it.toCore() } }
+
+    /**
+     * Creates [debt] (id 0). With [accountId] the real transaction is created too (borrow: INCOME, lend: EXPENSE,
+     * dated the start date, noted with the title, `debtId` set) and the debt takes the currency of that account;
+     * without it the debt is memo only and touches no account. Returns the debt id.
+     */
+    suspend fun createDebt(debt: Debt, accountId: Long?): Long = db.withTransaction {
+        val account = accountId?.let { dao.accountById(it)?.toCore() }
+        val base = debt.copy(id = 0, accountId = null, originTxnId = null, currency = account?.currency ?: debt.currency)
+        val id = dao.upsertDebt(base.toEntity())
+        if (account != null) {
+            val txn = Txn(0, debtTxnKind(debt.kind, false), debt.total, account.id, null, null, debt.startDate, debt.title, debtId = id)
+            val txnId = dao.upsertTxn(txn.toEntity())
+            dao.upsertDebt(base.copy(id = id, accountId = account.id, originTxnId = txnId).toEntity())
+        }
+        id
+    }
+
+    /**
+     * Edits title, person, due date, note and total of an existing debt. A new total below what is already paid is
+     * refused (false); the origin transaction follows the total.
+     */
+    suspend fun updateDebt(debt: Debt): Boolean = db.withTransaction {
+        val old = dao.debtById(debt.id)?.toCore() ?: return@withTransaction false
+        val paid = dao.paymentsOfDebt(old.id).sumOf { it.amount }
+        if (debt.total < paid || debt.total <= 0) return@withTransaction false
+        dao.upsertDebt(old.copy(title = debt.title, person = debt.person, dueDate = debt.dueDate, note = debt.note, total = debt.total).toEntity())
+        old.originTxnId?.let { dao.txnById(it) }?.let { dao.upsertTxn(it.copy(amount = debt.total)) }
+        true
+    }
+
+    /**
+     * Records a repayment (OWE) or collection (LENT) of [amount] on [date]. With [accountId] (same currency as the debt)
+     * the real transaction is created (repay: EXPENSE, collect: INCOME); without it the payment is memo only. Returns
+     * the payment id, or null when the amount is not between 1 and what is still open.
+     */
+    suspend fun addDebtPayment(debtId: Long, amount: Long, date: LocalDate, accountId: Long?): Long? = db.withTransaction {
+        val debt = dao.debtById(debtId)?.toCore() ?: return@withTransaction null
+        val remaining = debt.total - dao.paymentsOfDebt(debtId).sumOf { it.amount }
+        if (amount < 1 || amount > remaining) return@withTransaction null
+        val account = accountId?.let { dao.accountById(it)?.toCore() }
+        if (accountId != null && (account == null || account.currency != debt.currency)) return@withTransaction null
+        val txnId = account?.let {
+            dao.upsertTxn(Txn(0, debtTxnKind(debt.kind, true), amount, it.id, null, null, date, debt.title, debtId = debtId).toEntity())
+        }
+        dao.upsertDebtPayment(DebtPaymentEntity(0, debtId, amount, date.toString(), account?.id, txnId))
+    }
+
+    /** Removes a payment and its real transaction (the debt is open again). */
+    suspend fun deleteDebtPayment(id: Long) = db.withTransaction {
+        val payment = dao.debtPaymentById(id) ?: return@withTransaction
+        payment.txnId?.let { dao.deleteTxn(it) }
+        dao.deleteDebtPaymentRow(id)
+    }
+
+    /** Removes the debt, its payments and every real transaction they created. */
+    suspend fun deleteDebt(id: Long) = db.withTransaction {
+        val debt = dao.debtById(id) ?: return@withTransaction
+        for (p in dao.paymentsOfDebt(id)) {
+            p.txnId?.let { dao.deleteTxn(it) }
+            dao.deleteDebtPaymentRow(p.id)
+        }
+        debt.originTxnId?.let { dao.deleteTxn(it) }
+        dao.deleteDebtRow(id)
+    }
 
     // budgets
     /** All budgets. Each repeats every period from its start date; use `budgetUsage(..., today)` for the current one. */
@@ -376,6 +459,7 @@ class Repo(private val db: AppDatabase) {
             ContributionEntity(0, goal.id, spent, date.toString(), ContributionType.SETTLEMENT.name, txnId, null),
         )
         dao.setGoalCompletedAt(goal.id, date.toString())
+        nextJarCycle(goal, date)?.let { dao.upsertGoal(it.toEntity()) }
         return txnId
     }
 
@@ -387,6 +471,8 @@ class Repo(private val db: AppDatabase) {
             budgets = dao.allBudgets(),
             goals = dao.allGoals(),
             contributions = dao.allContributions(),
+            debts = dao.allDebts(),
+            debtPayments = dao.allDebtPayments(),
         )
         data.toJson(exportedAt = java.time.LocalDateTime.now().withNano(0).toString())
     }
@@ -400,6 +486,8 @@ class Repo(private val db: AppDatabase) {
             return listOf("Tệp sao lưu bị lỗi: ${e.message}")
         }
         db.withTransaction {
+            dao.clearDebtPayments()
+            dao.clearDebts()
             dao.clearContributions()
             dao.clearGoals()
             dao.clearBudgets()
@@ -413,6 +501,8 @@ class Repo(private val db: AppDatabase) {
             for (b in data.budgets) dao.upsertBudget(b)
             for (g in data.goals) dao.upsertGoal(g)
             for (c in data.contributions) dao.upsertContribution(c)
+            for (d in data.debts) dao.upsertDebt(d)
+            for (p in data.debtPayments) dao.upsertDebtPayment(p)
         }
         return emptyList()
     }

@@ -219,4 +219,58 @@ interface AppDao {
 
     @Query("DELETE FROM goal_contributions")
     suspend fun clearContributions()
+
+    // debts (DB v5)
+
+    @Query("SELECT * FROM debts ORDER BY id")
+    fun debts(): Flow<List<DebtEntity>>
+
+    @Query("SELECT * FROM debt_payments ORDER BY date, id")
+    fun debtPayments(): Flow<List<DebtPaymentEntity>>
+
+    @Upsert
+    suspend fun upsertDebt(entity: DebtEntity): Long
+
+    @Upsert
+    suspend fun upsertDebtPayment(entity: DebtPaymentEntity): Long
+
+    @Query("SELECT * FROM debts WHERE id = :id")
+    suspend fun debtById(id: Long): DebtEntity?
+
+    @Query("SELECT * FROM debt_payments WHERE id = :id")
+    suspend fun debtPaymentById(id: Long): DebtPaymentEntity?
+
+    @Query("SELECT * FROM debt_payments WHERE debtId = :debtId")
+    suspend fun paymentsOfDebt(debtId: Long): List<DebtPaymentEntity>
+
+    @Query("DELETE FROM debts WHERE id = :id")
+    suspend fun deleteDebtRow(id: Long)
+
+    @Query("DELETE FROM debt_payments WHERE id = :id")
+    suspend fun deleteDebtPaymentRow(id: Long)
+
+    /** A transaction about to be deleted: the repayment it recorded goes with it (the debt is open again). */
+    @Query("DELETE FROM debt_payments WHERE txnId = :txnId")
+    suspend fun deletePaymentsForTxn(txnId: Long)
+
+    @Query("UPDATE debts SET originTxnId = NULL WHERE originTxnId = :txnId")
+    suspend fun clearDebtOriginTxn(txnId: Long)
+
+    @Query("UPDATE debts SET accountId = NULL WHERE accountId = :accountId")
+    suspend fun clearDebtAccount(accountId: Long)
+
+    @Query("UPDATE debt_payments SET accountId = NULL WHERE accountId = :accountId")
+    suspend fun clearDebtPaymentAccount(accountId: Long)
+
+    @Query("SELECT * FROM debts ORDER BY id")
+    suspend fun allDebts(): List<DebtEntity>
+
+    @Query("SELECT * FROM debt_payments ORDER BY id")
+    suspend fun allDebtPayments(): List<DebtPaymentEntity>
+
+    @Query("DELETE FROM debts")
+    suspend fun clearDebts()
+
+    @Query("DELETE FROM debt_payments")
+    suspend fun clearDebtPayments()
 }

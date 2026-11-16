@@ -19,8 +19,10 @@ import androidx.sqlite.execSQL
         BudgetEntity::class,
         GoalEntity::class,
         ContributionEntity::class,
+        DebtEntity::class,
+        DebtPaymentEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
     autoMigrations = [AutoMigration(from = 1, to = 2, spec = Migration1To2::class)],
 )
@@ -30,7 +32,7 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "finance.db")
-                .addMigrations(Migration2To3, Migration3To4)
+                .addMigrations(Migration2To3, Migration3To4, Migration4To5)
                 .addCallback(SeedCallback)
                 .build()
     }
@@ -126,5 +128,27 @@ object Migration3To4 : Migration(3, 4) {
         connection.execSQL("ALTER TABLE `goal_contributions` ADD COLUMN `type` TEXT NOT NULL DEFAULT 'MANUAL'")
         connection.execSQL("ALTER TABLE `goal_contributions` ADD COLUMN `txnId` INTEGER")
         connection.execSQL("ALTER TABLE `goal_contributions` ADD COLUMN `periodIndex` INTEGER")
+    }
+}
+
+/**
+ * v4 -> v5, one step on purpose (debts and jar repeat ship together, so the real data is migrated and backed up
+ * once). New: txns.debtId, goals.repeat (default 0), tables debts and debt_payments. Old rows keep every value.
+ * Must match schemas/.../5.json.
+ */
+object Migration4To5 : Migration(4, 5) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE `txns` ADD COLUMN `debtId` INTEGER")
+        connection.execSQL("ALTER TABLE `goals` ADD COLUMN `repeat` INTEGER NOT NULL DEFAULT 0")
+        connection.execSQL(
+            "CREATE TABLE IF NOT EXISTS `debts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `kind` TEXT NOT NULL, " +
+                "`title` TEXT NOT NULL, `person` TEXT NOT NULL, `total` INTEGER NOT NULL, `currency` TEXT NOT NULL, " +
+                "`accountId` INTEGER, `originTxnId` INTEGER, `startDate` TEXT NOT NULL, `dueDate` TEXT, `note` TEXT NOT NULL)",
+        )
+        connection.execSQL(
+            "CREATE TABLE IF NOT EXISTS `debt_payments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`debtId` INTEGER NOT NULL, `amount` INTEGER NOT NULL, `date` TEXT NOT NULL, `accountId` INTEGER, `txnId` INTEGER)",
+        )
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_debt_payments_debtId` ON `debt_payments` (`debtId`)")
     }
 }

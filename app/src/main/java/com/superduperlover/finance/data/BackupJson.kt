@@ -8,6 +8,7 @@ import com.superduperlover.finance.core.budgetPeriodFromBackup
 import com.superduperlover.finance.core.budgetStartDateFromBackup
 import com.superduperlover.finance.core.contributionTypeFromBackup
 import com.superduperlover.finance.core.currencyFromBackup
+import com.superduperlover.finance.core.debtKindFromBackup
 import com.superduperlover.finance.core.jarKindFromBackup
 import com.superduperlover.finance.core.jarStatusFromBackup
 import com.superduperlover.finance.core.validateBackup
@@ -22,6 +23,8 @@ class BackupData(
     val budgets: List<BudgetEntity>,
     val goals: List<GoalEntity>,
     val contributions: List<ContributionEntity>,
+    val debts: List<DebtEntity> = emptyList(),
+    val debtPayments: List<DebtPaymentEntity> = emptyList(),
 )
 
 fun BackupData.toJson(exportedAt: String): String {
@@ -70,6 +73,7 @@ fun BackupData.toJson(exportedAt: String): String {
         obj.put("categoryId", jsonNull(t.categoryId))
         obj.put("date", t.date)
         obj.put("note", t.note)
+        obj.put("debtId", jsonNull(t.debtId))
         txnsArr.put(obj)
     }
     root.put("txns", txnsArr)
@@ -109,6 +113,7 @@ fun BackupData.toJson(exportedAt: String): String {
         obj.put("planStart", jsonNull(g.planStart))
         obj.put("planBase", g.planBase)
         obj.put("lastEvaluatedDate", jsonNull(g.lastEvaluatedDate))
+        obj.put("repeat", g.repeat)
         goalsArr.put(obj)
     }
     root.put("goals", goalsArr)
@@ -126,6 +131,37 @@ fun BackupData.toJson(exportedAt: String): String {
         contributionsArr.put(obj)
     }
     root.put("goalContributions", contributionsArr)
+
+    val debtsArr = JSONArray()
+    for (d in debts) {
+        val obj = JSONObject()
+        obj.put("id", d.id)
+        obj.put("kind", d.kind)
+        obj.put("title", d.title)
+        obj.put("person", d.person)
+        obj.put("total", d.total)
+        obj.put("currency", d.currency)
+        obj.put("accountId", jsonNull(d.accountId))
+        obj.put("originTxnId", jsonNull(d.originTxnId))
+        obj.put("startDate", d.startDate)
+        obj.put("dueDate", jsonNull(d.dueDate))
+        obj.put("note", d.note)
+        debtsArr.put(obj)
+    }
+    root.put("debts", debtsArr)
+
+    val debtPaymentsArr = JSONArray()
+    for (p in debtPayments) {
+        val obj = JSONObject()
+        obj.put("id", p.id)
+        obj.put("debtId", p.debtId)
+        obj.put("amount", p.amount)
+        obj.put("date", p.date)
+        obj.put("accountId", jsonNull(p.accountId))
+        obj.put("txnId", jsonNull(p.txnId))
+        debtPaymentsArr.put(obj)
+    }
+    root.put("debtPayments", debtPaymentsArr)
 
     return root.toString(2)
 }
@@ -217,6 +253,7 @@ fun parseBackup(root: Map<String, Any?>): BackupData {
             date = toStr(r["date"]),
             note = toStr(r["note"]),
             toAmount = toLongOrNull(r["toAmount"]),
+            debtId = toLongOrNull(r["debtId"]),
         )
     }
     val budgets = (root["budgets"] as List<*>).map {
@@ -254,6 +291,7 @@ fun parseBackup(root: Map<String, Any?>): BackupData {
             planStart = toStrOrNull(r["planStart"]),
             planBase = toLongOrNull(r["planBase"]) ?: 0L,
             lastEvaluatedDate = toStrOrNull(r["lastEvaluatedDate"]),
+            repeat = (r["repeat"] as? Boolean) ?: false,
         )
     }
     val contributions = (root["goalContributions"] as List<*>).map {
@@ -268,5 +306,33 @@ fun parseBackup(root: Map<String, Any?>): BackupData {
             periodIndex = toLongOrNull(r["periodIndex"])?.toInt(),
         )
     }
-    return BackupData(accounts, categories, txns, budgets, goals, contributions)
+    // version 4 and older have neither table: no debts
+    val debts = (root["debts"] as? List<*>).orEmpty().map {
+        val r = it as Map<*, *>
+        DebtEntity(
+            id = toLong(r["id"]),
+            kind = debtKindFromBackup(r["kind"]).name,
+            title = toStr(r["title"]),
+            person = toStr(r["person"]),
+            total = toLong(r["total"]),
+            currency = currencyFromBackup(r["currency"]).name,
+            accountId = toLongOrNull(r["accountId"]),
+            originTxnId = toLongOrNull(r["originTxnId"]),
+            startDate = toStr(r["startDate"]),
+            dueDate = toStrOrNull(r["dueDate"]),
+            note = toStrOrNull(r["note"]) ?: "",
+        )
+    }
+    val debtPayments = (root["debtPayments"] as? List<*>).orEmpty().map {
+        val r = it as Map<*, *>
+        DebtPaymentEntity(
+            id = toLong(r["id"]),
+            debtId = toLong(r["debtId"]),
+            amount = toLong(r["amount"]),
+            date = toStr(r["date"]),
+            accountId = toLongOrNull(r["accountId"]),
+            txnId = toLongOrNull(r["txnId"]),
+        )
+    }
+    return BackupData(accounts, categories, txns, budgets, goals, contributions, debts, debtPayments)
 }
