@@ -54,6 +54,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.compositeOver
@@ -65,6 +67,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.superduperlover.finance.core.Category
@@ -585,6 +588,16 @@ fun AddTransactionScreen(
         }
 
         // 6. Date + note row: two nested tiles side by side (8dp gap, fixed above the pad)
+        var showNoteKeyboard by rememberSaveable { mutableStateOf(false) }
+        var useSystemKeyboard by remember { mutableStateOf(false) }
+        val imeVisible = WindowInsets.isImeVisible
+
+        LaunchedEffect(imeVisible) {
+            if (!imeVisible && useSystemKeyboard) {
+                useSystemKeyboard = false
+            }
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -628,68 +641,107 @@ fun AddTransactionScreen(
                     )
                 }
             }
-            BasicTextField(
-                value = note,
-                onValueChange = { note = it },
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodyMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurface,
-                ),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                modifier = Modifier
-                    .weight(0.55f)
-                    .fillMaxHeight()
-                    .heightIn(min = 56.dp)
-                    .semantics { contentDescription = "Ghi chú" },
-                decorationBox = { innerTextField ->
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 16.dp),
-                            contentAlignment = Alignment.CenterStart,
+            if (useSystemKeyboard) {
+                val focusRequester = remember { FocusRequester() }
+                LaunchedEffect(Unit) { focusRequester.requestFocus() }
+                BasicTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    modifier = Modifier
+                        .weight(0.55f)
+                        .fillMaxHeight()
+                        .heightIn(min = 56.dp)
+                        .focusRequester(focusRequester)
+                        .semantics { contentDescription = "Ghi chú" },
+                    decorationBox = { innerTextField ->
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
-                            if (note.isEmpty()) {
-                                Text(
-                                    text = "Ghi chú...",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                )
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 16.dp),
+                                contentAlignment = Alignment.CenterStart,
+                            ) {
+                                if (note.isEmpty()) {
+                                    Text(text = "Ghi chú...", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                                }
+                                innerTextField()
                             }
-                            innerTextField()
+                        }
+                    },
+                )
+            } else {
+                Surface(
+                    onClick = { showNoteKeyboard = true },
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                    border = BorderStroke(
+                        1.dp,
+                        if (showNoteKeyboard) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.outlineVariant,
+                    ),
+                    modifier = Modifier
+                        .weight(0.55f)
+                        .fillMaxHeight()
+                        .heightIn(min = 56.dp)
+                        .semantics { contentDescription = "Ghi chú" },
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 16.dp),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        if (note.isEmpty()) {
+                            Text(text = "Ghi chú...", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                        } else {
+                            Text(text = note, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
-                },
-            )
+                }
+            }
         }
 
         // 8. Fixed Calculator Pad (hidden when soft keyboard is open)
         if (!WindowInsets.isImeVisible) {
             val padMin = if (txnId == 0L) 48.dp * 4 + 8.dp * 4 + 56.dp else 48.dp * 4 + 8.dp * 3
             val padMax = if (txnId == 0L) 56.dp * 4 + 8.dp * 4 + 56.dp else 56.dp * 4 + 8.dp * 3
-            AmountPad(
-                currency = currency,
-                onDigit = ::onDigit,
-                onDot = ::onDot,
-                onOperator = ::onOperator,
-                onBackspace = ::onBackspace,
-                onClear = ::onClear,
-                onEquals = ::onEquals,
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 12.dp)
-                    .heightIn(
-                        min = padMin,
-                        max = padMax,
-                    ),
-                onSave = if (txnId == 0L) ::save else null,
-            )
+            if (showNoteKeyboard) {
+                NoteKeyboard(
+                    note = note,
+                    onNoteChange = { note = it },
+                    onDone = { showNoteKeyboard = false },
+                    onSwitchToSystemKeyboard = {
+                        showNoteKeyboard = false
+                        useSystemKeyboard = true
+                    },
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 12.dp)
+                        .heightIn(min = padMin, max = padMax),
+                )
+            } else {
+                AmountPad(
+                    currency = currency,
+                    onDigit = ::onDigit,
+                    onDot = ::onDot,
+                    onOperator = ::onOperator,
+                    onBackspace = ::onBackspace,
+                    onClear = ::onClear,
+                    onEquals = ::onEquals,
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 12.dp)
+                        .heightIn(
+                            min = padMin,
+                            max = padMax,
+                        ),
+                    onSave = if (txnId == 0L) ::save else null,
+                )
+            }
         }
     }
 
