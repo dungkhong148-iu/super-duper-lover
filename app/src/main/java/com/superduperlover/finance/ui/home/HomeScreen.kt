@@ -15,6 +15,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -28,16 +29,17 @@ import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.theme.ChiLiTheme
 import kotlinx.coroutines.launch
 
-private val PAGE_TITLES = listOf("Tài khoản", "Ngân sách")
+private val PAGE_TITLES = listOf("Tài khoản", "Lịch")
 
 /**
  * "Trang chủ" tab: top bar, segmented card with a swipeable pager (docs/ui-layout.md section 1 & 2b).
- * Page 0 = [AccountsPage], page 1 = [PlanPage].
+ * Page 0 = [AccountsPage], page 1 = Lịch (placeholder until N4).
  */
 @Composable
 fun HomeScreen(
     onOpenAccountTransactions: (Long) -> Unit,
     onOpenGoal: (Long) -> Unit,
+    onOpenBudgets: () -> Unit,
     onOpenJars: () -> Unit = {},
 ) {
     val pagerState = rememberPagerState { PAGE_TITLES.size }
@@ -92,11 +94,13 @@ fun HomeScreen(
             when (page) {
                 0 -> AccountsPage(
                     onOpenAccountTransactions = onOpenAccountTransactions,
-                    onOpenPlan = { showPage(1) },
+                    onOpenPlan = onOpenBudgets,
                     onOpenGoal = onOpenGoal,
                     onOpenJars = onOpenJars,
                 )
-                else -> PlanPage()
+                else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Lịch: sắp có", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }

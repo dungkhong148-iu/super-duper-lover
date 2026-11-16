@@ -3,10 +3,9 @@ package com.superduperlover.finance.ui
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +34,7 @@ import com.superduperlover.finance.ui.components.ChiLiTopBar
 import com.superduperlover.finance.ui.components.OneLineText
 import com.superduperlover.finance.ui.goals.GoalDetailScreen
 import com.superduperlover.finance.ui.home.HomeScreen
+import com.superduperlover.finance.ui.home.PlanPage
 import com.superduperlover.finance.ui.jars.JarsScreen
 import com.superduperlover.finance.ui.settings.AppearanceScreen
 import com.superduperlover.finance.ui.settings.ArchiveScreen
@@ -50,9 +50,9 @@ private enum class Tab(
     val iconRes: Int? = null,
 ) {
     HOME("home", "Trang chủ", icon = Icons.Filled.Home),
-    TRANSACTIONS("transactions", "Giao dịch", icon = Icons.AutoMirrored.Filled.List),
+    BUDGET("budget", "Ngân sách", iconRes = R.drawable.ic_wallet),
     JARS("jars", "Kho hũ", iconRes = R.drawable.ic_savings),
-    SETTINGS("settings", "Cài đặt", icon = Icons.Filled.Settings),
+    MORE("more", "Khác", icon = Icons.Filled.Menu),
 }
 
 private const val ADD_ROUTE = "add/{txnId}"
@@ -61,7 +61,7 @@ private const val BACKUP_ROUTE = "backup"
 private const val APPEARANCE_ROUTE = "appearance"
 private const val ARCHIVE_ROUTE = "archive"
 
-// Transactions tab; the optional argument opens it already filtered to one account (tap on an account tile).
+// Full transaction list (no longer a tab): Home "Xem chi tiết", Khác > "Tra cứu sổ giao dịch"; the optional argument opens it filtered to one account.
 private const val TRANSACTIONS_PATTERN = "transactions?accountId={accountId}"
 
 @Composable
@@ -120,8 +120,8 @@ fun FinanceApp() {
             }
         },
         floatingActionButton = {
-            // "+" on Trang chủ and Giao dịch only; not on Cài đặt.
-            if (currentTab == Tab.HOME || currentTab == Tab.TRANSACTIONS) {
+            // "+" on Trang chủ only.
+            if (currentTab == Tab.HOME) {
                 FloatingActionButton(onClick = { navController.navigate("add/0") }) {
                     Icon(Icons.Filled.Add, contentDescription = "Thêm giao dịch")
                 }
@@ -136,11 +136,9 @@ fun FinanceApp() {
             composable(Tab.HOME.route) {
                 HomeScreen(
                     onOpenAccountTransactions = { id ->
-                        navController.navigate("transactions?accountId=$id") {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                        }
+                        navController.navigate("transactions?accountId=$id") { launchSingleTop = true }
                     },
+                    onOpenBudgets = { openTab(Tab.BUDGET) },
                     onOpenGoal = { id -> navController.navigate("goal/$id") },
                     onOpenJars = { openTab(Tab.JARS) },
                 )
@@ -156,15 +154,22 @@ fun FinanceApp() {
             ) { entry ->
                 val accountId = entry.arguments?.getLong("accountId")?.takeIf { it >= 0 }
                 Column {
-                    ChiLiTopBar("Giao dịch")
+                    ChiLiTopBar("Giao dịch", onBack = { navController.popBackStack() })
                     TransactionsScreen(
                         onEdit = { id -> navController.navigate("add/$id") },
                         initialAccountId = accountId,
                     )
                 }
             }
-            composable(Tab.SETTINGS.route) {
+            composable(Tab.BUDGET.route) {
+                Column {
+                    ChiLiTopBar("Ngân sách")
+                    PlanPage()
+                }
+            }
+            composable(Tab.MORE.route) {
                 SettingsTabScreen(
+                    onOpenTransactions = { navController.navigate("transactions") { launchSingleTop = true } },
                     onOpenCategories = { navController.navigate(CATEGORIES_ROUTE) },
                     onOpenBackup = { navController.navigate(BACKUP_ROUTE) },
                     onOpenAppearance = { navController.navigate(APPEARANCE_ROUTE) },

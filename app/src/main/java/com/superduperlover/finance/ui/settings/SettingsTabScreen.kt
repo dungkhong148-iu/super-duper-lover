@@ -25,9 +25,10 @@ import com.superduperlover.finance.ui.components.SectionCard
 import com.superduperlover.finance.ui.theme.LocalAppPrefs
 import com.superduperlover.finance.ui.theme.ThemeMode
 
-/** "Cài đặt" tab: a list of settings entries (docs/ui-layout.md section 1). */
+/** "Khác" tab: a list of settings entries (docs/ui-layout.md section 1). */
 @Composable
 fun SettingsTabScreen(
+    onOpenTransactions: () -> Unit,
     onOpenCategories: () -> Unit,
     onOpenBackup: () -> Unit,
     onOpenAppearance: () -> Unit,
@@ -41,12 +42,14 @@ fun SettingsTabScreen(
     }
 
     Column(Modifier.fillMaxSize()) {
-        ChiLiTopBar("Cài đặt")
+        ChiLiTopBar("Khác")
         Column(
             Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             SectionCard {
+                SettingsRow("Tra cứu sổ giao dịch", "Tìm, lọc theo ngày, tài khoản, danh mục", onOpenTransactions)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 SettingsRow("Giao diện", themeSubtitle, onOpenAppearance)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 SettingsRow("Danh mục", "Thêm, đổi tên danh mục chi tiêu và thu nhập", onOpenCategories)
