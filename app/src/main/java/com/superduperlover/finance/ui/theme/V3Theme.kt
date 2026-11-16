@@ -149,10 +149,10 @@ object ChiLiV3 {
 val UvnFontFamily = FontFamily(Font(R.font.uvn_ai_cap_nhe, FontWeight.Normal))
 
 /**
- * Size multiplier that makes UVN look as big as Roboto does today (UVN: x-height 0.43 em vs 0.53, cap 0.61 vs 0.71).
- * The ONE place to calibrate; the demo "ChiLi v3" lets the user pick 1.15 / 1.2 / 1.3.
+ * Size multiplier of the whole UVN type scale (user pick N2: option A 1.15 x 0.85 = about 0.98 of the sp used today).
+ * The ONE place to calibrate. UVN draws small: x-height 0.43 em vs Roboto 0.53, cap 0.61 vs 0.71.
  */
-const val V3_FONT_CALIBRATION = 1.2f
+const val V3_FONT_CALIBRATION = 0.98f
 
 /** Material 3 type scale in UVN. Every size = Material default x [calibration]; no fake bold (the font has one weight). */
 fun v3Typography(calibration: Float = V3_FONT_CALIBRATION): Typography {

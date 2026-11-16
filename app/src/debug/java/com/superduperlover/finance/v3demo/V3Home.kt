@@ -12,6 +12,7 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -55,8 +57,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Velocity
@@ -82,7 +86,6 @@ import kotlin.math.roundToInt
 // N2 demo (b)+(c): Home "Tài khoản" of the v3 mock on real ChiLi data (read-only), and the collapsing white sheet
 // over the account carousel inside the 2-page pager + yellow accordion. Nothing here is wired into the real app.
 
-private val CarouselHeight = 148.dp
 private val SheetShape = RoundedCornerShape(topStart = 34.dp, topEnd = 34.dp)
 
 private class HomeData(
@@ -133,7 +136,7 @@ fun V3HomeFrame(collapsing: Boolean) {
     val scope = rememberCoroutineScope()
     var selected by remember { mutableStateOf<Long?>(null) }
     val label = selected?.let { id -> data.accounts.firstOrNull { it.id == id }?.name }
-        ?: if (data.sample) "Tất cả nguồn tiền (dữ liệu mẫu)" else "Tất cả nguồn tiền"
+        ?: if (data.sample) "Tất cả · mẫu" else "Tất cả"
 
     Column(Modifier.fillMaxSize().background(c.headerTop)) {
         Row(
@@ -170,22 +173,23 @@ fun V3HomeFrame(collapsing: Boolean) {
 @Composable
 private fun V3AccountsPage(data: HomeData, selected: Long?, onSelect: (Long) -> Unit, collapsing: Boolean) {
     val c = ChiLiV3.colors
-    val maxCollapse = with(LocalDensity.current) { CarouselHeight.toPx() }
+    // Height of the carousel layer, measured (it grows with the font scale); it is also the collapse distance.
+    var carouselPx by remember { mutableIntStateOf(0) }
     var offset by remember { mutableFloatStateOf(0f) }
     val scope = rememberCoroutineScope()
 
     suspend fun snap() {
-        val target = if (offset < -maxCollapse / 2) -maxCollapse else 0f
+        val target = if (offset < -carouselPx / 2f) -carouselPx.toFloat() else 0f
         animate(offset, target) { v, _ -> offset = v }
     }
 
-    // Collapsing-toolbar pattern: swipe up shrinks the carousel before the sheet content scrolls; swipe down
-    // grows it back once the content is at its top.
-    val connection = remember(maxCollapse) {
+    // Collapsing-toolbar pattern: swipe up slides the sheet over the carousel before the sheet content scrolls;
+    // swipe down brings it back once the content is at its top. The sticky bar above the pager never moves.
+    val connection = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (available.y >= 0f || offset <= -maxCollapse) return Offset.Zero
-                val new = (offset + available.y).coerceAtLeast(-maxCollapse)
+                if (available.y >= 0f || offset <= -carouselPx.toFloat()) return Offset.Zero
+                val new = (offset + available.y).coerceAtLeast(-carouselPx.toFloat())
                 return Offset(0f, new - offset).also { offset = new }
             }
 
@@ -203,38 +207,42 @@ private fun V3AccountsPage(data: HomeData, selected: Long?, onSelect: (Long) -> 
     }
 
     val accountsShown = if (selected == null) data.accounts else data.accounts.filter { it.id == selected }
-    Column(Modifier.fillMaxSize().then(if (collapsing) Modifier.nestedScroll(connection) else Modifier)) {
-        Box(
-            Modifier.fillMaxWidth()
-                .layout { m, cons ->
-                    val p = m.measure(cons.copy(minHeight = 0))
-                    val o = if (collapsing) offset.roundToInt() else 0
-                    layout(p.width, (p.height + o).coerceAtLeast(0)) { p.place(0, o) }
-                }
-                .clipToBounds()
-                .background(Brush.verticalGradient(listOf(c.headerTop, c.headerBottom))),
+    // Page = one clipped box with the header gradient behind everything: the carousel slides up (clipped), the sheet is
+    // laid out from the carousel's bottom edge (+offset, never above 0) down to the page bottom, so nothing can
+    // overlap the bar or leave a gap.
+    Box(
+        Modifier.fillMaxSize().clipToBounds()
+            .background(Brush.verticalGradient(listOf(c.headerTop, c.headerBottom)))
+            .then(if (collapsing) Modifier.nestedScroll(connection) else Modifier),
+    ) {
+        LazyRow(
+            Modifier.fillMaxWidth().onSizeChanged { carouselPx = it.height }
+                .graphicsLayer { translationY = if (collapsing) offset else 0f },
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            LazyRow(
-                Modifier.height(CarouselHeight),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                items(data.accounts, key = { it.id }) { a ->
-                    AccountCard(a, accountBalance(a, data.txns), active = a.id == selected, onClick = { onSelect(a.id) })
-                }
-                item(key = "add") { AddTile() }
+            items(data.accounts, key = { it.id }) { a ->
+                AccountCard(a, accountBalance(a, data.txns), active = a.id == selected, onClick = { onSelect(a.id) })
             }
+            item(key = "add") { AddTile() }
         }
 
-        Surface(Modifier.fillMaxSize(), shape = SheetShape, color = c.sheet, shadowElevation = 12.dp) {
+        Surface(
+            Modifier.layout { m, cons ->
+                val top = (carouselPx + (if (collapsing) offset else 0f)).roundToInt().coerceIn(0, cons.maxHeight)
+                val p = m.measure(Constraints.fixed(cons.maxWidth, cons.maxHeight - top))
+                layout(cons.maxWidth, cons.maxHeight) { p.place(0, top) }
+            },
+            shape = SheetShape, color = c.sheet, shadowElevation = 12.dp,
+        ) {
             Column {
                 val handleMod = if (collapsing) {
                     Modifier.draggable(
-                        rememberDraggableState { d -> offset = (offset + d).coerceIn(-maxCollapse, 0f) },
+                        rememberDraggableState { d -> offset = (offset + d).coerceIn(-carouselPx.toFloat(), 0f) },
                         Orientation.Vertical,
                         onDragStopped = { snap() },
-                    ).clickable { scope.launch { animate(offset, if (offset < 0f) 0f else -maxCollapse) { v, _ -> offset = v } } }
+                    ).clickable { scope.launch { animate(offset, if (offset < 0f) 0f else -carouselPx.toFloat()) { v, _ -> offset = v } } }
                 } else Modifier
                 Box(Modifier.fillMaxWidth().then(handleMod).padding(top = 10.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
                     Box(Modifier.width(40.dp).height(6.dp).clip(CircleShape).background(c.onSheetMuted.copy(alpha = 0.35f)))
@@ -248,14 +256,15 @@ private fun V3AccountsPage(data: HomeData, selected: Long?, onSelect: (Long) -> 
 @Composable
 private fun AccountCard(a: Account, balance: Long, active: Boolean, onClick: () -> Unit) {
     val c = ChiLiV3.colors
+    // No fixed height: the card grows with the font (1.25 em line at "Chữ 1,25").
     Box(
-        Modifier.width(122.dp).height(106.dp).clip(RoundedCornerShape(22.dp))
+        Modifier.width(122.dp).clip(RoundedCornerShape(22.dp))
             .background(if (active) c.cardActive else c.card)
             .border(2.dp, if (active) c.accent else Color.Transparent, RoundedCornerShape(22.dp))
             .clickable(onClick = onClick).padding(12.dp),
     ) {
         if (active) Box(Modifier.align(Alignment.TopEnd).size(8.dp).clip(CircleShape).background(c.accent))
-        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceBetween) {
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(Modifier.width(44.dp).height(36.dp).clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.8f)), contentAlignment = Alignment.Center) {
                 Icon(painterResource(a.type.iconRes()), null, Modifier.size(24.dp), tint = c.onCard)
             }

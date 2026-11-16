@@ -44,6 +44,7 @@ import com.superduperlover.finance.core.formatMoney
 import com.superduperlover.finance.ui.setChiLiContent
 import com.superduperlover.finance.ui.theme.ChiLiV3
 import com.superduperlover.finance.ui.theme.V3Theme
+import com.superduperlover.finance.ui.theme.V3_FONT_CALIBRATION
 
 /**
  * Debug-only "ChiLi v3" (task N2): font + colour calibration samples, Home "Tài khoản" mock-up (light / dark) and the
@@ -56,14 +57,14 @@ class V3DemoActivity : ComponentActivity() {
     }
 }
 
-private val Options = listOf("A ×1,15" to 1.15f, "B ×1,2" to 1.2f, "C ×1,3" to 1.3f)
+private val Options = listOf("Chốt ×0,98" to V3_FONT_CALIBRATION, "A ×1,15" to 1.15f)
 
 @Composable
 private fun V3Demo() {
     var dark by remember { mutableStateOf(false) }
     var big by remember { mutableStateOf(false) }
     var collapsing by remember { mutableStateOf(true) }
-    var calib by remember { mutableFloatStateOf(1.2f) }
+    var calib by remember { mutableFloatStateOf(V3_FONT_CALIBRATION) }
     var tab by remember { mutableStateOf(0) }
 
     // Header is green in both modes -> light status icons; nav bar follows the sheet colour.
