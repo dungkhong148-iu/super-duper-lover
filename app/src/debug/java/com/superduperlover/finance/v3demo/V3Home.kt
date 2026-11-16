@@ -57,7 +57,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.Constraints
@@ -99,16 +98,18 @@ private class HomeData(
 
 /** Real data of the debug app; when it has no account yet a small sample set so the gestures can still be tried. */
 @Composable
-private fun rememberHomeData(): HomeData {
+private fun rememberHomeData(): HomeData? {
     val repo = LocalRepo.current
-    val accounts by remember(repo) { repo.accounts() }.collectAsState(initial = emptyList())
-    val txns by remember(repo) { repo.txns() }.collectAsState(initial = emptyList())
-    val categories by remember(repo) { repo.categories(includeArchived = true) }.collectAsState(initial = emptyList())
-    val budgets by remember(repo) { repo.budgets() }.collectAsState(initial = emptyList())
-    val jars by remember(repo) { repo.jarSavings() }.collectAsState(initial = emptyList())
-    val reserved = reservedByCurrency(jars)[MAIN_CURRENCY] ?: 0L
-    if (accounts.isNotEmpty()) {
-        return HomeData(accounts, txns, categories.associate { it.id to it.name }, budgets, reserved, sample = false)
+    // null = not loaded yet: show nothing instead of the sample set, so the page never swaps data mid-session.
+    val accounts by remember(repo) { repo.accounts() }.collectAsState(initial = null)
+    val txns by remember(repo) { repo.txns() }.collectAsState(initial = null)
+    val categories by remember(repo) { repo.categories(includeArchived = true) }.collectAsState(initial = null)
+    val budgets by remember(repo) { repo.budgets() }.collectAsState(initial = null)
+    val jars by remember(repo) { repo.jarSavings() }.collectAsState(initial = null)
+    if (accounts == null || txns == null || categories == null || budgets == null || jars == null) return null
+    val reserved = reservedByCurrency(jars!!)[MAIN_CURRENCY] ?: 0L
+    if (accounts!!.isNotEmpty()) {
+        return HomeData(accounts!!, txns!!, categories!!.associate { it.id to it.name }, budgets!!, reserved, sample = false)
     }
     val today = LocalDate.now()
     val sampleAccounts = listOf(
@@ -132,6 +133,10 @@ private fun rememberHomeData(): HomeData {
 fun V3HomeFrame(collapsing: Boolean) {
     val c = ChiLiV3.colors
     val data = rememberHomeData()
+    if (data == null) {
+        Box(Modifier.fillMaxSize().background(c.sheet))
+        return
+    }
     val pager = rememberPagerState { 2 }
     val scope = rememberCoroutineScope()
     var selected by remember { mutableStateOf<Long?>(null) }
@@ -183,7 +188,7 @@ private fun V3AccountsPage(data: HomeData, selected: Long?, onSelect: (Long) -> 
         animate(offset, target) { v, _ -> offset = v }
     }
 
-    // Collapsing-toolbar pattern: swipe up slides the sheet over the carousel before the sheet content scrolls;
+    // Layers: swipe up slides the sheet plate up over the fixed carousel (covers it) before the sheet content scrolls;
     // swipe down brings it back once the content is at its top. The sticky bar above the pager never moves.
     val connection = remember {
         object : NestedScrollConnection {
@@ -207,17 +212,16 @@ private fun V3AccountsPage(data: HomeData, selected: Long?, onSelect: (Long) -> 
     }
 
     val accountsShown = if (selected == null) data.accounts else data.accounts.filter { it.id == selected }
-    // Page = one clipped box with the header gradient behind everything: the carousel slides up (clipped), the sheet is
+    // Page = one clipped box with the header gradient behind everything: the carousel never moves; the sheet (drawn on top) is
     // laid out from the carousel's bottom edge (+offset, never above 0) down to the page bottom, so nothing can
-    // overlap the bar or leave a gap.
+    // overlap the bar or leave a gap. The sheet holds all the content, so moving it moves every part.
     Box(
         Modifier.fillMaxSize().clipToBounds()
             .background(Brush.verticalGradient(listOf(c.headerTop, c.headerBottom)))
             .then(if (collapsing) Modifier.nestedScroll(connection) else Modifier),
     ) {
         LazyRow(
-            Modifier.fillMaxWidth().onSizeChanged { carouselPx = it.height }
-                .graphicsLayer { translationY = if (collapsing) offset else 0f },
+            Modifier.fillMaxWidth().onSizeChanged { carouselPx = it.height },
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.CenterVertically,
