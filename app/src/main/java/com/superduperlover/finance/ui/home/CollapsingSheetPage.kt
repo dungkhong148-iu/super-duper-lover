@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -46,22 +48,25 @@ import kotlin.math.roundToInt
 val SheetShape = RoundedCornerShape(topStart = 34.dp, topEnd = 34.dp)
 
 /**
- * v3 Home page: [carousel] sits fixed on the header gradient; the white sheet (everything else, [content] gets its
- * scroll state) is one plate drawn on top. Swipe up slides the plate up and covers the carousel, then the list
+ * v3 Home page: [carousel] sits fixed on the header gradient; the white sheet (a pager of pages, [pageContent] gets
+ * the page and its scroll state) is one plate drawn on top, shared by every page. Swipe up slides the plate up and covers the carousel, then the list
  * scrolls; swipe down scrolls the list back to its top, then moves the plate down. The handle drags / taps it.
  * The sticky bar above the pager is never touched.
  */
 @Composable
 fun CollapsingSheetPage(
     carousel: @Composable () -> Unit,
+    pagerState: PagerState,
     modifier: Modifier = Modifier,
-    content: @Composable (ScrollState) -> Unit,
+    pageContent: @Composable (page: Int, scroll: ScrollState) -> Unit,
 ) {
     val c = ChiLiV3.colors
     // Carousel height (measured: it grows with the font scale) = how far the plate can slide up. offset: 0 .. -carouselPx.
     var carouselPx by remember { mutableIntStateOf(0) }
     var offset by remember { mutableFloatStateOf(0f) }
-    val scroll = rememberScrollState()
+    // One list per page; the plate position is shared, only the visible page's list is scrolled back first.
+    val scrolls = List(pagerState.pageCount) { rememberScrollState() }
+    val scroll = scrolls[pagerState.currentPage]
     val scope = rememberCoroutineScope()
 
     suspend fun settle(target: Float) = animate(offset, target) { v, _ -> offset = v }
@@ -121,7 +126,9 @@ fun CollapsingSheetPage(
                 ) {
                     Box(Modifier.width(40.dp).height(6.dp).clip(CircleShape).background(c.onSheetMuted.copy(alpha = 0.35f)))
                 }
-                content(scroll)
+                HorizontalPager(pagerState, Modifier.fillMaxSize(), verticalAlignment = Alignment.Top) { page ->
+                    pageContent(page, scrolls[page])
+                }
             }
         }
     }

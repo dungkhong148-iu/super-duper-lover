@@ -36,6 +36,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -98,7 +99,8 @@ import java.time.YearMonth
  * and "Ngân sách cần chú ý". Every number comes from `:core` (accountBalance, budgetUsage, txnTotals).
  */
 @Composable
-fun AccountsPage(
+fun HomeBody(
+    pagerState: PagerState,
     selectedId: Long?,
     onSelectedChange: (Long?) -> Unit,
     /** Full list; the id (when an account is selected) opens it filtered to that account. */
@@ -173,7 +175,12 @@ fun AccountsPage(
                 onAdd = { editing = Account(0, "", AccountType.CASH, 0) },
             )
         },
-    ) { scroll ->
+        pagerState = pagerState,
+    ) { page, scroll ->
+        if (page == 1) {
+            CalendarPage(accountId = selected?.id, scroll = scroll)
+            return@CollapsingSheetPage
+        }
         Column(
             Modifier.fillMaxSize().verticalScroll(scroll).padding(start = 16.dp, end = 16.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),

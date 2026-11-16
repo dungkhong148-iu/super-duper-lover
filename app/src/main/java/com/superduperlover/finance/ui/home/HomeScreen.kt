@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
@@ -37,8 +36,8 @@ import kotlinx.coroutines.launch
 private val PAGE_TITLES = listOf("Tài khoản", "Lịch")
 
 /**
- * "Trang chủ" tab (docs/ui-layout.md section 1): green sticky bar (filter label + Tài khoản | Lịch pill) over a
- * swipeable pager. Page 0 = [AccountsPage], page 1 = Lịch (placeholder until N4).
+ * "Trang chủ" tab (docs/ui-layout.md section 1): green sticky bar (filter label + Tài khoản | Lịch pill) over [HomeBody]:
+ * the account carousel and the white plate whose pager holds Tài khoản and Lịch.
  */
 @Composable
 fun HomeScreen(
@@ -75,19 +74,15 @@ fun HomeScreen(
                 }
             }
         }
-        HorizontalPager(pagerState, Modifier.weight(1f), verticalAlignment = Alignment.Top) { page ->
-            when (page) {
-                0 -> AccountsPage(
-                    selectedId = selectedId,
-                    onSelectedChange = { selectedId = it },
-                    onOpenTransactions = onOpenTransactions,
-                    onEditTxn = onEditTxn,
-                    onOpenPlan = onOpenBudgets,
-                    onOpenGoal = onOpenGoal,
-                    onOpenJars = onOpenJars,
-                )
-                else -> CalendarPage()
-            }
-        }
+        HomeBody(
+            pagerState = pagerState,
+            selectedId = selectedId,
+            onSelectedChange = { selectedId = it },
+            onOpenTransactions = onOpenTransactions,
+            onEditTxn = onEditTxn,
+            onOpenPlan = onOpenBudgets,
+            onOpenGoal = onOpenGoal,
+            onOpenJars = onOpenJars,
+        )
     }
 }
