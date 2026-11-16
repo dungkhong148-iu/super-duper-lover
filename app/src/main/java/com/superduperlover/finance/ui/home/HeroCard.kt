@@ -1,5 +1,6 @@
 package com.superduperlover.finance.ui.home
 
+import com.superduperlover.finance.ui.theme.tapScale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -92,7 +93,11 @@ fun HeroCard(
                     )
                 }
             }
-            Text(money(balance), color = if (balance < 0) c.expense else c.heroBalance, style = MaterialTheme.typography.headlineLarge)
+            Text(
+                money(balance),
+                color = if (balance < 0) c.expense else c.heroBalance,
+                style = MaterialTheme.typography.headlineLarge.copy(shadow = c.heroBalanceShadow),
+            )
             Spacer(Modifier.height(10.dp))
 
             Column(
@@ -139,9 +144,9 @@ fun HeroCard(
 private fun TypePill(label: String, value: String, kind: TxnKind, fill: Color, active: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val c = ChiLiV3.colors
     Row(
-        modifier.v3Shadow(c.shadow2, CircleShape).clip(CircleShape).background(fill)
+        modifier.tapScale(onClick).v3Shadow(c.shadow2, CircleShape).clip(CircleShape).background(fill)
             .border(2.dp, if (active) Color.White else Color.Transparent, CircleShape)
-            .clickable(onClick = onClick).padding(horizontal = 10.dp, vertical = 8.dp),
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {

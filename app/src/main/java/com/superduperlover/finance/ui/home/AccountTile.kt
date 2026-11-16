@@ -1,5 +1,6 @@
 package com.superduperlover.finance.ui.home
 
+import com.superduperlover.finance.ui.theme.tapScale
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -71,11 +72,11 @@ private fun AccountCard(account: Account, balance: Long, active: Boolean, hidden
     Box(
         Modifier
             .width(122.dp)
+            .tapScale(onClick, onLongClick)
             .v3Shadow(c.shadow2, CardShape)
             .clip(CardShape)
             .background(if (active) c.cardActive else c.card)
             .border(2.dp, if (active) c.accent else Color.Transparent, CardShape)
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(12.dp),
     ) {
         if (active) Box(Modifier.align(Alignment.TopEnd).size(8.dp).clip(CircleShape).background(c.accent))
@@ -95,10 +96,10 @@ private fun AddAccountCard(onClick: () -> Unit) {
     Column(
         Modifier
             .width(76.dp)
+            .tapScale(onClick)
             .v3Shadow(c.shadow2, CardShape)
             .clip(CardShape)
             .background(c.card)
-            .clickable(onClick = onClick)
             .padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),

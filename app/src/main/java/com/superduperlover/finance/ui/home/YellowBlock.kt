@@ -1,5 +1,6 @@
 package com.superduperlover.finance.ui.home
 
+import com.superduperlover.finance.ui.theme.tapScale
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -141,7 +142,7 @@ fun YellowBlock(
                         if (txns.size > MAX_ROWS) "Hiện $MAX_ROWS / ${txns.size} giao dịch" else "${txns.size} giao dịch",
                         Modifier.weight(1f), color = c.onYellow, style = MaterialTheme.typography.labelMedium,
                     )
-                    Box(Modifier.clip(CircleShape).background(Color(0xE60F172A)).clickable(onClick = onOpenAll).padding(horizontal = 14.dp, vertical = 8.dp)) {
+                    Box(Modifier.tapScale(onOpenAll).clip(CircleShape).background(Color(0xE60F172A)).padding(horizontal = 14.dp, vertical = 8.dp)) {
                         Text("Xem chi tiết", color = Color.White, style = MaterialTheme.typography.labelMedium)
                     }
                 }
@@ -171,9 +172,9 @@ private fun TxnRow(t: Txn, accounts: Map<Long, Account>, categories: Map<Long, C
         TxnKind.TRANSFER -> c.onTxRow
     }
     val sign = when (t.kind) { TxnKind.INCOME -> "+"; TxnKind.EXPENSE -> "-"; TxnKind.TRANSFER -> "" }
-    val shape = RoundedCornerShape(14.dp)
+    val shape = RoundedCornerShape(16.dp)
     Row(
-        Modifier.fillMaxWidth().v3Shadow(c.shadow1, shape).clip(shape).background(c.txRow).clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().tapScale(onClick).v3Shadow(c.shadow1, shape).clip(shape).background(c.txRow).padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {

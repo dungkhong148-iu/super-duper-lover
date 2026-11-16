@@ -1,5 +1,18 @@
 package com.superduperlover.finance.ui.theme
 
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.composed
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
@@ -57,6 +70,8 @@ class V3Colors(
     val yellowChipSelected: Color,
     val txRow: Color,
     val onTxRow: Color,
+    /** Embossed text shadow of the big Hero balance (light only). */
+    val heroBalanceShadow: Shadow,
     val income: Color,
     val expense: Color,
     val incomePill: Color,
@@ -79,6 +94,23 @@ class V3Colors(
 /** One Modifier.shadow: elevation + ambient / spot colour (Android 9+). */
 @Immutable
 class V3Shadow(val elevation: Dp, val ambient: Color, val spot: Color)
+
+/**
+ * Press effect of the mock (.tap-scale): scales to 0.96 for 140 ms while pressed, no ripple. Put it FIRST in the chain
+ * (before shadow / clip / background) so the whole item scales; it also makes the item clickable.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+fun Modifier.tapScale(onClick: () -> Unit, onLongClick: (() -> Unit)? = null): Modifier = composed {
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.96f else 1f,
+        animationSpec = tween(140, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)),
+        label = "tapScale",
+    )
+    graphicsLayer { scaleX = scale; scaleY = scale }
+        .combinedClickable(interactionSource = source, indication = null, onLongClick = onLongClick, onClick = onClick)
+}
 
 /** Shadow of a [shape] (no clipping: draw the background after it). */
 fun Modifier.v3Shadow(s: V3Shadow, shape: Shape): Modifier =
@@ -109,6 +141,7 @@ val V3Light = V3Colors(
     yellowChipSelected = Color(0xFFFFFFFF),
     txRow = Color(0xE6FFFFFF),
     onTxRow = Color(0xFF0F172A),
+    heroBalanceShadow = Shadow(Color(0x73FFFFFF), Offset(0f, 2f), 0f),
     income = Color(0xFF047857),
     expense = Color(0xFFE11D48),
     incomePill = Color(0xFF00A859),
@@ -152,6 +185,7 @@ val V3Dark = V3Colors(
     yellowChipSelected = Color(0x40F59E0B),
     txRow = Color(0xE61F2925),
     onTxRow = Color(0xFFE2EBE6),
+    heroBalanceShadow = Shadow.None,
     income = Color(0xFF4ADE80),
     expense = Color(0xFFFB7185),
     incomePill = Color(0x4D059669),
