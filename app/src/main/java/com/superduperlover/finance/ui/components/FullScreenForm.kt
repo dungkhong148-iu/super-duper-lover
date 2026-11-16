@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -16,7 +18,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -46,18 +49,19 @@ fun FullScreenForm(
                 .padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onClose, modifier = Modifier.size(48.dp)) {
+            FilledTonalIconButton(onClick = onClose, modifier = Modifier.size(48.dp)) {
                 Icon(Icons.Filled.Close, contentDescription = "Đóng")
             }
             OneLineText(
                 text = title,
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
             )
-            IconButton(onClick = onSave, enabled = saveEnabled, modifier = Modifier.size(48.dp)) {
+            FilledIconButton(onClick = onSave, enabled = saveEnabled, modifier = Modifier.size(48.dp)) {
                 Icon(Icons.Filled.Check, contentDescription = "Lưu")
             }
+            Spacer(Modifier.width(8.dp))
         }
         Column(
             Modifier

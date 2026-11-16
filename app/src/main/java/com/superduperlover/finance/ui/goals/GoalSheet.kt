@@ -265,6 +265,7 @@ fun GoalSheet(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             OutlinedTextField(
+                shape = RoundedCornerShape(16.dp),
                 value = name,
                 onValueChange = {
                     name = it
@@ -288,6 +289,7 @@ fun GoalSheet(
             }
 
             OutlinedTextField(
+                shape = RoundedCornerShape(16.dp),
                 value = targetText,
                 onValueChange = {
                     targetText = it
@@ -568,6 +570,7 @@ fun GoalSheet(
 
                 if (isCustom || !isQuickDuration(duration)) {
                         OutlinedTextField(
+                shape = RoundedCornerShape(16.dp),
                             value = customCountText,
                             onValueChange = { input ->
                                 val filtered = input.filter { it.isDigit() }.take(3)

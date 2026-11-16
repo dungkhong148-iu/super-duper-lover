@@ -62,15 +62,13 @@ fun SectionCard(
     }
 }
 
-/** Strip that groups the fields of a form (docs/ui-layout.md section 2, "Full-screen form"). */
+/** Title that groups the fields of a form (docs/ui-layout.md section 2, "Full-screen form"): accent label, no strip. */
 @Composable
 fun SectionHeaderBand(text: String, modifier: Modifier = Modifier) {
-    Surface(color = MaterialTheme.colorScheme.surfaceVariant, modifier = modifier.fillMaxWidth()) {
-        OneLineText(
-            text = text,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        )
-    }
+    OneLineText(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 4.dp),
+    )
 }
