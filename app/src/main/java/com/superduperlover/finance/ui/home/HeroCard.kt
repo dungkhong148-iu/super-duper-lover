@@ -95,7 +95,7 @@ fun HeroCard(
             }
             Text(
                 money(balance),
-                color = if (balance < 0) c.expense else c.heroBalance,
+                color = if (balance < 0) c.heroNegative else c.heroBalance,
                 style = MaterialTheme.typography.headlineLarge.copy(shadow = c.heroBalanceShadow),
             )
             Spacer(Modifier.height(10.dp))
@@ -113,7 +113,7 @@ fun HeroCard(
                     ) {
                         Text(
                             if (budgetLeft == null) "Tạo ngân sách" else money(budgetLeft),
-                            color = if (budgetLeft != null && budgetLeft < 0) c.expense else c.onHeroChip,
+                            color = if (budgetLeft != null && budgetLeft < 0) c.heroNegative else c.onHeroChip,
                             style = MaterialTheme.typography.labelMedium,
                         )
                         Icon(Icons.Filled.KeyboardArrowRight, null, Modifier.size(16.dp), tint = c.onHeroChip)
@@ -122,7 +122,7 @@ fun HeroCard(
                 if (showFree) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Column(Modifier.weight(1f)) {
                         Text("Tự do", color = c.onHero, style = MaterialTheme.typography.labelSmall)
-                        Text(money(free), color = if (free < 0) c.expense else c.onHero, style = MaterialTheme.typography.labelLarge)
+                        Text(money(free), color = if (free < 0) c.heroNegative else c.onHero, style = MaterialTheme.typography.labelLarge)
                     }
                     Column(Modifier.weight(1f).clickable(onClick = onOpenJars)) {
                         Text("Trong hũ", color = c.onHero, style = MaterialTheme.typography.labelSmall)
@@ -133,8 +133,8 @@ fun HeroCard(
             Spacer(Modifier.height(12.dp))
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                TypePill("Thu nhập", "+" + money(income), TxnKind.INCOME, c.incomePill, typeFilter == TxnKind.INCOME, Modifier.weight(1f)) { onTypeFilter(TxnKind.INCOME) }
-                TypePill("Chi tiêu", "-" + money(expense), TxnKind.EXPENSE, c.expensePill, typeFilter == TxnKind.EXPENSE, Modifier.weight(1f)) { onTypeFilter(TxnKind.EXPENSE) }
+                TypePill("Thu nhập", "+" + money(income), TxnKind.INCOME, c.heroPillIncome, typeFilter == TxnKind.INCOME, Modifier.weight(1f)) { onTypeFilter(TxnKind.INCOME) }
+                TypePill("Chi tiêu", "-" + money(expense), TxnKind.EXPENSE, c.heroPillExpense, typeFilter == TxnKind.EXPENSE, Modifier.weight(1f)) { onTypeFilter(TxnKind.EXPENSE) }
             }
         }
     }
