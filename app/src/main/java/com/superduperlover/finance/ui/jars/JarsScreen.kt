@@ -109,53 +109,6 @@ fun JarsScreen(
             },
         )
 
-        val summaryShape = RoundedCornerShape(26.dp)
-        if (selectedTab == JarTab.SAVINGS) Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp)
-                .v3Shadow(c.shadow3, summaryShape)
-                .clip(summaryShape)
-                .background(Brush.linearGradient(listOf(c.headerTop, c.headerBottom)))
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = "Tổng tiền trong hũ",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = c.onHeader,
-                )
-                val activeCount = jarSavings.count { it.goal.isReserving() }
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0x33FFFFFF))
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                ) {
-                    Text(
-                        text = "$activeCount hũ",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = c.onHeader,
-                    )
-                }
-            }
-            Text(
-                text = moneyText(totalReserved, MAIN_CURRENCY, prefs.hideBalance),
-                style = MaterialTheme.typography.headlineLarge,
-                color = c.onHeader,
-            )
-            Text(
-                text = "Tiền giữ chỗ cho các mục tiêu và chi phí sắp tới",
-                style = MaterialTheme.typography.bodyMedium,
-                color = c.onHeader,
-            )
-        }
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -209,6 +162,54 @@ fun JarsScreen(
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    item(key = "summary") {
+                        val summaryShape = RoundedCornerShape(26.dp)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .v3Shadow(c.shadow3, summaryShape)
+                                .clip(summaryShape)
+                                .background(Brush.linearGradient(listOf(c.headerTop, c.headerBottom)))
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Text(
+                                    text = "Tổng tiền trong hũ",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = c.onHeader,
+                                )
+                                val activeCount = jarSavings.count { it.goal.isReserving() }
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(Color(0x33FFFFFF))
+                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                                ) {
+                                    Text(
+                                        text = "$activeCount hũ",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = c.onHeader,
+                                    )
+                                }
+                            }
+                            Text(
+                                text = moneyText(totalReserved, MAIN_CURRENCY, prefs.hideBalance),
+                                style = MaterialTheme.typography.headlineLarge,
+                                color = c.onHeader,
+                            )
+                            Text(
+                                text = "Tiền giữ chỗ cho các mục tiêu và chi phí sắp tới",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = c.onHeader,
+                            )
+                        }
+                    }
+
                     if (jarSavings.isEmpty()) {
                         item(key = "empty_jars") {
                             EmptyState(
