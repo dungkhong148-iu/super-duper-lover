@@ -119,7 +119,10 @@ fun BudgetsScreen() {
         )
     }
 
-    val totalEntries = sortedBudgetsWithUsage.filter { (b, _) -> b.categoryId == null && b.currency == MAIN_CURRENCY }
+    // Only the one budget for all accounts + all categories; summing every all-category budget would double count.
+    val totalUsage = sortedBudgetsWithUsage.firstOrNull { (b, _) ->
+        b.accountId == null && b.categoryId == null && b.currency == MAIN_CURRENCY
+    }?.second
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -138,7 +141,7 @@ fun BudgetsScreen() {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (totalEntries.isEmpty()) {
+                if (totalUsage == null) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -156,33 +159,6 @@ fun BudgetsScreen() {
                         color = c.onHeader,
                     )
                 } else {
-                    val totalSpent = totalEntries.sumOf { it.second.spent }
-                    val totalLimit = totalEntries.sumOf { it.second.limit }
-                    val totalRemaining = totalEntries.sumOf { it.second.remaining }
-                    val totalCarried = totalEntries.sumOf { it.second.carried }
-                    val effectiveLimit = totalLimit + totalCarried
-                    val ratio = if (effectiveLimit > 0) {
-                        totalSpent.toDouble() / effectiveLimit.toDouble()
-                    } else if (totalSpent == 0L) {
-                        0.0
-                    } else {
-                        1.0
-                    }
-                    val statuses = totalEntries.map { it.second.status }
-                    val worstStatus = when {
-                        BudgetStatus.OVER in statuses -> BudgetStatus.OVER
-                        BudgetStatus.WARN in statuses -> BudgetStatus.WARN
-                        else -> BudgetStatus.OK
-                    }
-                    val totalUsage = BudgetUsage(
-                        spent = totalSpent,
-                        limit = totalLimit,
-                        remaining = totalRemaining,
-                        ratio = ratio,
-                        status = worstStatus,
-                        range = totalEntries.first().second.range,
-                        carried = totalCarried,
-                    )
                     val pace = budgetPace(totalUsage, today)
 
                     Row(
