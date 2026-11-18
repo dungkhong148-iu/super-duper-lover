@@ -382,6 +382,12 @@ fun AddTransactionScreen(
         }
     }
 
+    var showNoteKeyboard by rememberSaveable { mutableStateOf(false) }
+    var useSystemKeyboard by remember { mutableStateOf(false) }
+    val imeVisible = WindowInsets.isImeVisible
+    // A text keyboard (system or in-app) replaces the pad, so the pad's Lưu key is gone: the tick saves.
+    val textKeyboardOpen = imeVisible || showNoteKeyboard
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -409,7 +415,7 @@ fun AddTransactionScreen(
                     .weight(1f)
                     .padding(horizontal = 4.dp),
             )
-            if (txnId != 0L || WindowInsets.isImeVisible) {
+            if (txnId != 0L || textKeyboardOpen) {
                 IconButton(
                     onClick = ::save,
                     modifier = Modifier.size(48.dp),
@@ -463,6 +469,7 @@ fun AddTransactionScreen(
                 expr = expr,
                 currency = currency,
                 errors = amountErrors.distinct(),
+                compact = textKeyboardOpen,
             )
 
             // 4. Picker row
@@ -588,10 +595,6 @@ fun AddTransactionScreen(
         }
 
         // 6. Date + note row: two nested tiles side by side (8dp gap, fixed above the pad)
-        var showNoteKeyboard by rememberSaveable { mutableStateOf(false) }
-        var useSystemKeyboard by remember { mutableStateOf(false) }
-        val imeVisible = WindowInsets.isImeVisible
-
         LaunchedEffect(imeVisible) {
             if (!imeVisible && useSystemKeyboard) {
                 useSystemKeyboard = false
@@ -719,9 +722,8 @@ fun AddTransactionScreen(
                         useSystemKeyboard = true
                     },
                     modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 12.dp)
-                        .heightIn(min = padMin, max = padMax),
+                        .padding(horizontal = 4.dp)
+                        .padding(bottom = 8.dp),
                 )
             } else {
                 AmountPad(
@@ -932,6 +934,8 @@ private fun AmountHeader(
     currency: Currency,
     errors: List<String>,
     modifier: Modifier = Modifier,
+    // Smaller card while a text keyboard is open, so the category grid is not cut.
+    compact: Boolean = false,
 ) {
     val baseCardColor = MaterialTheme.colorScheme.surfaceContainerLow
     val tintColor = when (kind) {
@@ -963,7 +967,7 @@ private fun AmountHeader(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 88.dp),
+            .heightIn(min = if (compact) 56.dp else 88.dp),
         shape = RoundedCornerShape(24.dp),
         color = cardColor,
         border = BorderStroke(1.dp, ChiLiTheme.colors.outline),
@@ -971,7 +975,7 @@ private fun AmountHeader(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 20.dp),
+                .padding(horizontal = 16.dp, vertical = if (compact) 8.dp else 20.dp),
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.Center,
         ) {
