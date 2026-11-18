@@ -82,6 +82,7 @@ internal fun BudgetSheet(
     var selectedPeriod by remember { mutableStateOf(budget.period) }
     var selectedStartDate by remember { mutableStateOf(budget.startDate) }
     var rollover by remember { mutableStateOf(budget.rollover) }
+    var nameInput by remember { mutableStateOf(budget.name ?: "") }
 
     var showDatePicker by remember { mutableStateOf(false) }
 
@@ -111,7 +112,8 @@ internal fun BudgetSheet(
         limitInput != initialLimitInput ||
         selectedPeriod != budget.period ||
         selectedStartDate != budget.startDate ||
-        rollover != budget.rollover
+        rollover != budget.rollover ||
+        nameInput != (budget.name ?: "")
 
     val saveEnabled = limitInput.isNotBlank()
 
@@ -141,6 +143,7 @@ internal fun BudgetSheet(
                         period = selectedPeriod,
                         startDate = selectedStartDate,
                         rollover = rollover,
+                        name = nameInput.trim().ifBlank { null },
                     )
                 )
                 onDismiss()
@@ -156,6 +159,23 @@ internal fun BudgetSheet(
         saveEnabled = saveEnabled,
         hasChanges = hasChanges,
     ) {
+        FormSection("Tên") {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+            ) {
+                OutlinedTextField(
+                    shape = RoundedCornerShape(16.dp),
+                    value = nameInput,
+                    onValueChange = { nameInput = it },
+                    label = { Text("Tên ngân sách (không bắt buộc)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
         FormSection("Phạm vi") {
             Column(
                 modifier = Modifier

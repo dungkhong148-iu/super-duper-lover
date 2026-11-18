@@ -66,6 +66,8 @@ data class Budget(
     val limit: Long,
     val currency: Currency = MAIN_CURRENCY,
     val rollover: Boolean = false,
+    /** Optional label shown instead of the category name; null = none (DB v6). */
+    val name: String? = null,
 )
 
 /** First and last day (both included) of one budget period. */

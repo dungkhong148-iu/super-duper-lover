@@ -9,9 +9,10 @@ import java.time.format.DateTimeParseException
  * and version 2 (budgets have `month` instead of period / startDate / rollover; goals have no completedAt)
  * and version 3 (goals have no jar fields, contributions no type: they read as plain saving goals)
  * and version 4 (no debts, debtPayments, txns.debtId or goals.repeat: they read as empty / null / false).
+ * and version 5 (budgets have no `name`: it reads as null).
  * The tables `debts` and `debtPayments` are optional: a missing one means no rows.
  */
-const val BACKUP_VERSION = 5
+const val BACKUP_VERSION = 6
 
 /** Value of the `app` field in the header of an exported file. */
 const val BACKUP_APP_NAME = "ChiLi"

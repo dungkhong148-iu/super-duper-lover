@@ -60,8 +60,8 @@ class BackupTest {
     }
 
     @Test
-    fun version6Fails() {
-        val errors = validateBackup(minimalValidBackup(version = 6))
+    fun version7Fails() {
+        val errors = validateBackup(minimalValidBackup(version = 7))
         assertTrue(errors.isNotEmpty())
         assertTrue(errors.any { it.contains("Phiên bản") })
     }

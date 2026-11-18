@@ -254,7 +254,7 @@ fun HomeBody(
                 SectionCard(title = "Ngân sách cần chú ý", onAction = onOpenPlan) {
                     attention.forEach { (budget, usage) ->
                         val account = budget.accountId?.let { accountNames[it] ?: "?" } ?: "Tất cả tài khoản (${budget.currency.name})"
-                        val category = budget.categoryId?.let { categoryNames[it] ?: "?" } ?: "Tất cả danh mục"
+                        val category = budget.name ?: budget.categoryId?.let { categoryNames[it] ?: "?" } ?: "Tất cả danh mục"
                         val color = budgetStatusColor(usage.status)
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {

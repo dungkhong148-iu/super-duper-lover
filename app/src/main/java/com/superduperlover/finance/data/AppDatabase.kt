@@ -22,7 +22,7 @@ import androidx.sqlite.execSQL
         DebtEntity::class,
         DebtPaymentEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
     autoMigrations = [AutoMigration(from = 1, to = 2, spec = Migration1To2::class)],
 )
@@ -32,7 +32,7 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "finance.db")
-                .addMigrations(Migration2To3, Migration3To4, Migration4To5)
+                .addMigrations(Migration2To3, Migration3To4, Migration4To5, Migration5To6)
                 .addCallback(SeedCallback)
                 .build()
     }
@@ -150,5 +150,12 @@ object Migration4To5 : Migration(4, 5) {
                 "`debtId` INTEGER NOT NULL, `amount` INTEGER NOT NULL, `date` TEXT NOT NULL, `accountId` INTEGER, `txnId` INTEGER)",
         )
         connection.execSQL("CREATE INDEX IF NOT EXISTS `index_debt_payments_debtId` ON `debt_payments` (`debtId`)")
+    }
+}
+
+/** v5 -> v6: budgets.name (optional label). Old rows get NULL. Must match schemas/.../6.json. */
+object Migration5To6 : Migration(5, 6) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE `budgets` ADD COLUMN `name` TEXT")
     }
 }

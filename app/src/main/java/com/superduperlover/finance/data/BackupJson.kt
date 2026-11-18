@@ -89,6 +89,7 @@ fun BackupData.toJson(exportedAt: String): String {
         obj.put("categoryId", jsonNull(b.categoryId))
         obj.put("limit", b.limitAmount)
         obj.put("currency", b.currency)
+        obj.put("name", jsonNull(b.name))
         budgetsArr.put(obj)
     }
     root.put("budgets", budgetsArr)
@@ -268,6 +269,7 @@ fun parseBackup(root: Map<String, Any?>): BackupData {
             limitAmount = toLong(r["limit"]),
             currency = currencyFromBackup(r["currency"]).name,
             rollover = (r["rollover"] as? Boolean) ?: false,
+            name = toStrOrNull(r["name"]), // version 5 and older: no name
         )
     }
     val goals = (root["goals"] as List<*>).map {

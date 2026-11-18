@@ -246,7 +246,7 @@ fun BudgetsScreen() {
                 for ((budget, usage) in sortedBudgetsWithUsage) {
                     val statusColor = budgetStatusColor(usage.status)
                     val accountName = budget.accountId?.let { accountsById[it]?.name ?: "?" } ?: "Tất cả tài khoản (${budget.currency.name})"
-                    val categoryName = budget.categoryId?.let { categoriesById[it]?.name ?: "?" } ?: "Tất cả danh mục"
+                    val categoryName = budget.name ?: budget.categoryId?.let { categoriesById[it]?.name ?: "?" } ?: "Tất cả danh mục"
 
                     val range = usage.range
                     val startStr = range.start.dayMonth()

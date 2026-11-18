@@ -80,6 +80,8 @@ data class BudgetEntity(
     val limitAmount: Long,
     @ColumnInfo(defaultValue = "VND") val currency: String,
     val rollover: Boolean,
+    // Optional budget name, DB v6.
+    val name: String?,
 )
 
 @Entity(tableName = "goals")
@@ -176,11 +178,11 @@ fun Txn.toEntity() =
 
 fun BudgetEntity.toCore() = Budget(
     id, BudgetPeriod.valueOf(period), LocalDate.parse(startDate), accountId, categoryId, limitAmount,
-    Currency.valueOf(currency), rollover,
+    Currency.valueOf(currency), rollover, name,
 )
 
 fun Budget.toEntity() =
-    BudgetEntity(id, period.name, startDate.toString(), accountId, categoryId, limit, currency.name, rollover)
+    BudgetEntity(id, period.name, startDate.toString(), accountId, categoryId, limit, currency.name, rollover, name)
 
 fun GoalEntity.toCore() = Goal(
     id, name, target, deadline?.let(LocalDate::parse), archived, Currency.valueOf(currency),
