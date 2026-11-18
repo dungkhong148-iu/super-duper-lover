@@ -41,6 +41,7 @@ import com.superduperlover.finance.core.Budget
 import com.superduperlover.finance.core.BudgetPeriod
 import com.superduperlover.finance.core.Category
 import com.superduperlover.finance.core.CategoryKind
+import com.superduperlover.finance.core.Currency
 import com.superduperlover.finance.core.amountToInput
 import com.superduperlover.finance.core.currencySymbol
 import com.superduperlover.finance.core.parseAmount
@@ -93,6 +94,15 @@ internal fun BudgetSheet(
     var limitInput by remember { mutableStateOf(initialLimitInput) }
     var limitError by remember { mutableStateOf<String?>(null) }
     var duplicateError by remember { mutableStateOf<String?>(null) }
+
+    // A category already budgeted on the same account is not offered again ("Tất cả" counts as one choice).
+    // Existing duplicates are left alone; the budget being edited never blocks itself.
+    val isTaken = { accountId: Long?, cur: Currency, categoryId: Long? ->
+        existingBudgets.any {
+            it.id != budget.id && it.accountId == accountId && it.categoryId == categoryId &&
+                (accountId != null || it.currency == cur)
+        }
+    }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
     val hasChanges = selectedAccountId != budget.accountId ||
@@ -163,6 +173,7 @@ internal fun BudgetSheet(
                         selected = selectedAccountId == null,
                         onClick = {
                             selectedAccountId = null
+                            if (isTaken(null, pickedCurrency, selectedCategoryId)) selectedCategoryId = null
                             duplicateError = null
                         },
                         label = { OneLineText("Tất cả") },
@@ -178,6 +189,7 @@ internal fun BudgetSheet(
                             selected = selectedAccountId == acc.id,
                             onClick = {
                                 selectedAccountId = acc.id
+                                if (isTaken(acc.id, acc.currency, selectedCategoryId)) selectedCategoryId = null
                                 duplicateError = null
                             },
                             label = { OneLineText("${acc.name} · ${acc.currency.name}") },
@@ -192,7 +204,7 @@ internal fun BudgetSheet(
                     Modifier.horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    FilterChip(
+                    if (selectedCategoryId == null || !isTaken(selectedAccountId, currency, null)) FilterChip(
                         shape = RoundedCornerShape(12.dp),
                         selected = selectedCategoryId == null,
                         onClick = {
@@ -206,7 +218,7 @@ internal fun BudgetSheet(
                     val displayedCategories = remember(categories, budget.categoryId) {
                         categories.filter { it.kind == CategoryKind.EXPENSE && (!it.archived || it.id == budget.categoryId) }
                     }
-                    displayedCategories.forEach { cat ->
+                    displayedCategories.filter { it.id == selectedCategoryId || !isTaken(selectedAccountId, currency, it.id) }.forEach { cat ->
                         FilterChip(
                         shape = RoundedCornerShape(12.dp),
                             selected = selectedCategoryId == cat.id,
@@ -299,6 +311,7 @@ internal fun BudgetSheet(
                         selected = pickedCurrency,
                         onSelect = {
                             pickedCurrency = it
+                            if (isTaken(null, it, selectedCategoryId)) selectedCategoryId = null
                             duplicateError = null
                         },
                         label = "Loại tiền (các tài khoản cùng loại)",
