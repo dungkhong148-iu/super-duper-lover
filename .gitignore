@@ -22,3 +22,6 @@ raw/
 .deck/
 graphify-out/
 logs/
+
+# UVN Ai Cap Nhe: personal-use licence, never publish (copy from raw/redesign/UVN-Ai-Cap-Nhe.ttf)
+app/src/main/res/font/uvn_ai_cap_nhe.ttf
