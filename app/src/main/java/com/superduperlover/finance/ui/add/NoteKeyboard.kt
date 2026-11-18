@@ -37,7 +37,7 @@ import com.superduperlover.finance.ui.theme.ChiLiV3
 // 52dp below its top (Gboard's toolbar slot) and the 10-unit grid spans the full width.
 private val KEYBOARD_HEIGHT = 332.dp
 private val KEY_INSET_X = 2.5.dp
-// Per row: key height and the gap below it (that gap stays tappable, it belongs to the row's cell).
+// Per row: key height and the gap below it (the gap is not tappable).
 private val KEY_HEIGHTS = listOf(35.9.dp, 38.dp, 38.dp, 38.4.dp, 41.6.dp)
 private val ROW_GAPS = listOf(6.8.dp, 7.8.dp, 7.8.dp, 7.8.dp, 0.dp)
 private val TOP_SPACE = 52.3.dp
@@ -117,7 +117,7 @@ fun NoteKeyboard(
     }
 }
 
-/** One row: the cell is the key plus the gap below it, so the whole cell is tappable. */
+/** One row: the cell is the key plus the gap below it; only the visible key is tappable. */
 @Composable
 private fun KeyRow(index: Int, content: @Composable RowScope.() -> Unit) {
     Row(
@@ -150,15 +150,16 @@ private fun RowScope.NoteKey(
         modifier = Modifier
             .weight(units)
             .fillMaxHeight()
+            .padding(start = KEY_INSET_X, end = KEY_INSET_X, bottom = ROW_GAPS[index])
+            .clip(RoundedCornerShape(6.dp))
+            .background(if (pressed) pressedOverlay.compositeOver(containerColor) else containerColor)
+            // after the padding: a tap in the gap between keys presses nothing
             .combinedClickable(
                 interactionSource = source,
                 indication = null,
                 onLongClick = onLongClick,
                 onClick = onClick,
             )
-            .padding(start = KEY_INSET_X, end = KEY_INSET_X, bottom = ROW_GAPS[index])
-            .clip(RoundedCornerShape(6.dp))
-            .background(if (pressed) pressedOverlay.compositeOver(containerColor) else containerColor)
             .semantics {
                 if (contentDescription != null) this.contentDescription = contentDescription
             },
