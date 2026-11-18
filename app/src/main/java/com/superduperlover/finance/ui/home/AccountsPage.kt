@@ -144,8 +144,10 @@ fun HomeBody(
 
     // budgets repeat every period: their usage needs every expense since the start date
     val usages = budgets.map { it to budgetUsage(it, allTxns, allAccounts, today) }
-    val totalBudgets = usages.filter { (b, _) -> b.categoryId == null }
-    val currencyTotalBudgets = totalBudgets.filter { (b, _) -> b.currency == selectedCurrency }
+    // Only the one budget for all accounts + all categories (summing every all-category budget double counts).
+    val currencyTotalBudgets = usages
+        .filter { (b, _) -> b.accountId == null && b.categoryId == null && b.currency == selectedCurrency }
+        .take(1)
     val periodLabel = currencyTotalBudgets.map { (b, _) -> b.period }.distinct().singleOrNull()?.thisLabel() ?: "kỳ này"
 
     val attention = usages
