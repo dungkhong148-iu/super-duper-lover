@@ -5,15 +5,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -32,9 +32,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.superduperlover.finance.ui.theme.ChiLiV3
 
-// Gboard-like: keys 48dp tall (touch target), 4dp apart, the rows use the full width.
-private val KEY_HEIGHT = 48.dp
-private val KEY_GAP = 4.dp
+// Same geometry as Gboard on the user's Redmi (1080x2400, 450 dpi), measured from device screenshots
+// (q2 compare, 2026-11-18): the keyboard is 332dp tall and anchored at the bottom; the key rows start
+// 52dp below its top (Gboard's toolbar slot) and the 10-unit grid spans the full width.
+private val KEYBOARD_HEIGHT = 332.dp
+private val KEY_INSET_X = 2.5.dp
+// Per row: key height and the gap below it (that gap stays tappable, it belongs to the row's cell).
+private val KEY_HEIGHTS = listOf(35.9.dp, 38.dp, 38.dp, 38.4.dp, 41.6.dp)
+private val ROW_GAPS = listOf(6.8.dp, 7.8.dp, 7.8.dp, 7.8.dp, 0.dp)
+private val TOP_SPACE = 52.3.dp
 
 @Composable
 fun NoteKeyboard(
@@ -44,173 +50,115 @@ fun NoteKeyboard(
     onSwitchToSystemKeyboard: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val key = ChiLiV3.colors
     Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(KEY_GAP),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(KEYBOARD_HEIGHT)
+            .padding(horizontal = 2.1.dp),
     ) {
-        // Row 1 (Digits, 10 keys, each Modifier.weight(1f))
-        Row(
-            modifier = Modifier
-                .height(KEY_HEIGHT)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(KEY_GAP),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "0").forEach { digit ->
-                NoteKey(
-                    text = digit,
-                    onClick = { onNoteChange(note + digit) },
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight(),
-                )
-            }
-        }
+        Spacer(Modifier.height(TOP_SPACE))
 
-        // Row 2 (QWERTY top row, 10 keys, each Modifier.weight(1f))
-        Row(
-            modifier = Modifier
-                .height(KEY_HEIGHT)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(KEY_GAP),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            listOf("q", "w", "e", "r", "t", "y", "u", "i", "o", "p").forEach { letter ->
-                NoteKey(
-                    text = letter,
-                    onClick = { onNoteChange(note + letter) },
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight(),
-                )
-            }
+        KeyRow(0) {
+            "1234567890".forEach { ch -> NoteKey(0, 1f, ch.toString(), { onNoteChange(note + ch) }) }
         }
-
-        // Row 3 (QWERTY home row, 9 keys, total weight 10f)
-        Row(
-            modifier = Modifier
-                .height(KEY_HEIGHT)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(KEY_GAP),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Spacer(modifier = Modifier.weight(0.5f))
-            listOf("a", "s", "d", "f", "g", "h", "j", "k", "l").forEach { letter ->
-                NoteKey(
-                    text = letter,
-                    onClick = { onNoteChange(note + letter) },
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight(),
-                )
-            }
-            Spacer(modifier = Modifier.weight(0.5f))
+        KeyRow(1) {
+            "qwertyuiop".forEach { ch -> NoteKey(1, 1f, ch.toString(), { onNoteChange(note + ch) }) }
         }
-
-        // Row 4 (QWERTY bottom row + Backspace, total weight 10f)
-        Row(
-            modifier = Modifier
-                .height(KEY_HEIGHT)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(KEY_GAP),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Spacer(modifier = Modifier.weight(0.5f))
-            listOf("z", "x", "c", "v", "b", "n", "m").forEach { letter ->
-                NoteKey(
-                    text = letter,
-                    onClick = { onNoteChange(note + letter) },
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight(),
-                )
-            }
-            Spacer(modifier = Modifier.weight(0.5f))
+        KeyRow(2) {
+            Spacer(Modifier.weight(0.5f))
+            "asdfghjkl".forEach { ch -> NoteKey(2, 1f, ch.toString(), { onNoteChange(note + ch) }) }
+            Spacer(Modifier.weight(0.5f))
+        }
+        KeyRow(3) {
+            Spacer(Modifier.weight(1.5f)) // Gboard's shift slot
+            "zxcvbnm".forEach { ch -> NoteKey(3, 1f, ch.toString(), { onNoteChange(note + ch) }) }
             NoteKey(
+                index = 3,
+                units = 1.5f,
                 text = "⌫",
                 onClick = { if (note.isNotEmpty()) onNoteChange(note.dropLast(1)) },
                 onLongClick = { onNoteChange("") },
-                containerColor = ChiLiV3.colors.card,
+                containerColor = key.card,
                 contentDescription = "Xóa ký tự cuối",
-                modifier = Modifier
-                    .weight(2f)
-                    .fillMaxHeight(),
             )
         }
-
-        // Row 5 (Bottom action row, total weight 10f)
-        Row(
-            modifier = Modifier
-                .height(KEY_HEIGHT)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(KEY_GAP),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        KeyRow(4) {
             NoteKey(
+                index = 4,
+                units = 1.5f,
                 text = "⌨",
                 onClick = onSwitchToSystemKeyboard,
-                containerColor = ChiLiV3.colors.card,
+                containerColor = key.card,
                 contentDescription = "Bàn phím hệ thống",
-                modifier = Modifier
-                    .weight(1.5f)
-                    .fillMaxHeight(),
             )
+            Spacer(Modifier.weight(2f)) // Gboard's emoji and globe slots
             NoteKey(
+                index = 4,
+                units = 4f,
                 text = "Cách",
                 onClick = { onNoteChange(note + " ") },
                 style = MaterialTheme.typography.titleMedium,
-                containerColor = ChiLiV3.colors.card,
+                containerColor = key.card,
                 contentDescription = "Dấu cách",
-                modifier = Modifier
-                    .weight(5.5f)
-                    .fillMaxHeight(),
             )
+            Spacer(Modifier.weight(1f)) // Gboard's "." slot
             NoteKey(
+                index = 4,
+                units = 1.5f,
                 text = "Xong",
                 onClick = onDone,
-                containerColor = ChiLiV3.colors.accent,
+                style = MaterialTheme.typography.titleSmall,
+                containerColor = key.accent,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                style = MaterialTheme.typography.titleMedium,
                 contentDescription = "Xong",
-                modifier = Modifier
-                    .weight(3f)
-                    .fillMaxHeight(),
             )
         }
     }
 }
 
+/** One row: the cell is the key plus the gap below it, so the whole cell is tappable. */
+@Composable
+private fun KeyRow(index: Int, content: @Composable RowScope.() -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(KEY_HEIGHTS[index] + ROW_GAPS[index]),
+        content = content,
+    )
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun NoteKey(
+private fun RowScope.NoteKey(
+    index: Int,
+    units: Float,
     text: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
     contentDescription: String? = null,
     style: TextStyle = MaterialTheme.typography.headlineSmall,
-    fontWeight: FontWeight = FontWeight.Normal,
     containerColor: Color = ChiLiV3.colors.cardActive,
     contentColor: Color = ChiLiV3.colors.onCard,
 ) {
-    val shape = RoundedCornerShape(8.dp)
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
     // Pressed: the key turns clearly accent-tinted (the accent key itself goes darker).
     val pressedOverlay = if (containerColor == ChiLiV3.colors.accent) Color.Black.copy(alpha = 0.3f)
     else ChiLiV3.colors.accent.copy(alpha = 0.45f)
     Box(
-        modifier = modifier
+        modifier = Modifier
+            .weight(units)
             .fillMaxHeight()
-            .heightIn(min = 48.dp)
-            .clip(shape)
-            .background(if (pressed) pressedOverlay.compositeOver(containerColor) else containerColor)
             .combinedClickable(
                 interactionSource = source,
                 indication = null,
                 onLongClick = onLongClick,
                 onClick = onClick,
             )
+            .padding(start = KEY_INSET_X, end = KEY_INSET_X, bottom = ROW_GAPS[index])
+            .clip(RoundedCornerShape(6.dp))
+            .background(if (pressed) pressedOverlay.compositeOver(containerColor) else containerColor)
             .semantics {
                 if (contentDescription != null) this.contentDescription = contentDescription
             },
@@ -218,8 +166,9 @@ private fun NoteKey(
     ) {
         Text(
             text = text,
+            modifier = Modifier.padding(bottom = 4.dp), // the font sits ~2dp low in a short key
             style = style,
-            fontWeight = fontWeight,
+            fontWeight = FontWeight.Normal,
             color = contentColor,
             maxLines = 1,
         )
