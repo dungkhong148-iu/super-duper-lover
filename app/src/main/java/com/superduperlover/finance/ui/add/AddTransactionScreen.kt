@@ -711,7 +711,8 @@ fun AddTransactionScreen(
         // 8. Fixed Calculator Pad (hidden when soft keyboard is open)
         if (!WindowInsets.isImeVisible) {
             val padMin = if (txnId == 0L) 48.dp * 4 + 8.dp * 4 + 56.dp else 48.dp * 4 + 8.dp * 3
-            val padMax = if (txnId == 0L) 56.dp * 4 + 8.dp * 4 + 56.dp else 56.dp * 4 + 8.dp * 3
+            // 48dp keys (the minimum): with 56dp keys the category grid is cut ~15dp on the Redmi.
+            val padMax = padMin
             if (showNoteKeyboard) {
                 NoteKeyboard(
                     note = note,
